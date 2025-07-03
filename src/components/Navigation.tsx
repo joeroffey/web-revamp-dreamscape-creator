@@ -21,7 +21,7 @@ export const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
             <img 
-              src="/lovable-uploads/c84d053f-63ed-4962-84d3-cec99682fcab.png" 
+              src="/lovable-uploads/eba50e37-1df6-41e8-8a26-7c4a6591821b.png" 
               alt="Revitalise Hub Logo" 
               className="h-12 w-auto"
             />
