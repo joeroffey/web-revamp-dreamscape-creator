@@ -56,6 +56,24 @@ export const AboutSection = () => {
                 serious wellness enthusiasts and athletes alike.
               </p>
             </div>
+
+            {/* Founders Section */}
+            <div className="mt-8 p-6 bg-card wellness-card">
+              <h3 className="text-xl font-bold text-foreground mb-4">Meet Our Founders</h3>
+              <div className="flex items-center gap-4 mb-4">
+                <img 
+                  src="/lovable-uploads/103c68d2-52d4-4bb6-b77a-2938942d6c71.png" 
+                  alt="Revitalise Hub Founders" 
+                  className="w-24 h-24 object-cover rounded-xl"
+                />
+                <div>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Our founders are passionate wellness advocates dedicated to bringing 
+                    science-backed thermal therapy to our community.
+                  </p>
+                </div>
+              </div>
+            </div>
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Button variant="wellness" size="lg">
