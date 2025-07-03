@@ -1,11 +1,8 @@
 import { Navigation } from "@/components/Navigation";
-import { VideoHero } from "@/components/VideoHero";
-import { ServicesSection } from "@/components/ServicesSection";
-import { BenefitsSection } from "@/components/BenefitsSection";
-import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { HeroSection } from "@/components/HeroSection";
 import { AboutSection } from "@/components/AboutSection";
+import { PhotoGallery } from "@/components/PhotoGallery";
 import { ContactSection } from "@/components/ContactSection";
-import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -13,21 +10,20 @@ const Index = () => {
       <Navigation />
       
       <main>
-        <VideoHero 
-          title="REVITALISE HUB"
-          subtitle="Welcome To"
-          description="Experience the transformative power of thermal therapy. Our premium ice baths and sauna create the perfect environment for recovery, wellness, and mental clarity."
-          posterImage="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
-        />
+        <section id="home">
+          <HeroSection />
+        </section>
         
-        <ServicesSection />
-        <BenefitsSection />
-        <TestimonialsSection />
-        <AboutSection />
-        <ContactSection />
+        <PhotoGallery />
+        
+        <section id="about">
+          <AboutSection />
+        </section>
+        
+        <section id="contact">
+          <ContactSection />
+        </section>
       </main>
-      
-      <Footer />
     </div>
   );
 };
