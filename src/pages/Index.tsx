@@ -16,7 +16,7 @@ const Index = () => {
           title="REVITALISE HUB"
           subtitle="Welcome To"
           description="Experience the transformative power of thermal therapy. Our premium ice baths and sauna create the perfect environment for recovery, wellness, and mental clarity."
-          posterImage="/lovable-uploads/4b835fc2-686a-4098-bcd0-3b9519ea6cc0.png"
+          posterImage="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
         />
         
         <ServicesSection />
