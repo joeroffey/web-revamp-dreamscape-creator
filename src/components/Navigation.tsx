@@ -20,14 +20,11 @@ export const Navigation = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <Snowflake className="h-8 w-8 text-accent" />
-              <Flame className="h-8 w-8 text-wellness-heat" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground">Revitalise</span>
-              <span className="text-sm text-muted-foreground -mt-1">Hub</span>
-            </div>
+            <img 
+              src="/lovable-uploads/c84d053f-63ed-4962-84d3-cec99682fcab.png" 
+              alt="Revitalise Hub Logo" 
+              className="h-12 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
