@@ -2,41 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Revitalise Hub Wellness Design System - Premium spa & wellness theme
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors - Clean, modern wellness palette */
+    --background: 20 20% 97%;
+    --foreground: 25 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 25 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 25 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Deep forest green for trust & wellness */
+    --primary: 150 30% 25%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 150 50% 45%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Warm earth tones for sauna/heat */
+    --secondary: 25 35% 85%;
+    --secondary-foreground: 25 25% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent - Cool blue for ice therapy */
+    --accent: 200 60% 45%;
+    --accent-foreground: 0 0% 98%;
+    --accent-light: 200 40% 85%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Muted - Soft neutral tones */
+    --muted: 20 15% 92%;
+    --muted-foreground: 25 15% 45%;
+
+    /* Wellness specific colors */
+    --wellness-ice: 195 60% 50%;
+    --wellness-heat: 15 70% 55%;
+    --wellness-calm: 150 25% 85%;
+    
+    /* Gradients for premium feel */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-ice: linear-gradient(135deg, hsl(var(--wellness-ice)), hsl(var(--accent-light)));
+    --gradient-heat: linear-gradient(135deg, hsl(var(--wellness-heat)), hsl(25 60% 65%));
+    --gradient-hero: linear-gradient(180deg, hsl(var(--background) / 0.1), hsl(var(--background) / 0.8));
+
+    /* Shadows for depth */
+    --shadow-wellness: 0 10px 40px hsl(var(--primary) / 0.15);
+    --shadow-card: 0 4px 20px hsl(var(--primary) / 0.08);
+    --shadow-button: 0 4px 15px hsl(var(--accent) / 0.25);
+
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-quick: all 0.2s ease-out;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 20 15% 88%;
+    --input: 20 15% 88%;
+    --ring: 150 30% 25%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,33 +83,40 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark mode - Premium spa evening ambiance */
+    --background: 25 15% 8%;
+    --foreground: 20 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 25 12% 12%;
+    --card-foreground: 20 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 25 12% 12%;
+    --popover-foreground: 20 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 150 40% 60%;
+    --primary-foreground: 25 15% 8%;
+    --primary-glow: 150 50% 70%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 25 20% 20%;
+    --secondary-foreground: 20 20% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 200 50% 60%;
+    --accent-foreground: 25 15% 8%;
+    --accent-light: 200 30% 25%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 25 12% 15%;
+    --muted-foreground: 20 15% 65%;
+
+    --wellness-ice: 195 50% 65%;
+    --wellness-heat: 15 60% 65%;
+    --wellness-calm: 150 20% 20%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 25 12% 18%;
+    --input: 25 12% 18%;
+    --ring: 150 40% 60%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -101,5 +135,58 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Wellness component styles */
+  .wellness-card {
+    @apply bg-card border border-border rounded-[var(--radius)] shadow-[var(--shadow-card)] transition-[var(--transition-smooth)];
+  }
+  
+  .wellness-card:hover {
+    @apply shadow-[var(--shadow-wellness)] transform translate-y-[-2px];
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-ice {
+    background: var(--gradient-ice);
+  }
+  
+  .gradient-heat {
+    background: var(--gradient-heat);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .video-overlay {
+    background: linear-gradient(180deg, 
+      hsl(var(--background) / 0.1) 0%, 
+      hsl(var(--background) / 0.3) 50%,
+      hsl(var(--background) / 0.8) 100%
+    );
+  }
+
+  .wellness-button {
+    @apply inline-flex items-center justify-center rounded-[var(--radius)] text-sm font-medium transition-[var(--transition-quick)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .wellness-button-primary {
+    @apply wellness-button bg-primary text-primary-foreground shadow-[var(--shadow-button)] hover:bg-primary/90;
+  }
+
+  .wellness-button-ice {
+    @apply wellness-button bg-accent text-accent-foreground shadow-[var(--shadow-button)] hover:bg-accent/90;
+  }
+
+  .wellness-button-heat {
+    @apply wellness-button text-white shadow-[var(--shadow-button)] hover:opacity-90;
+    background: var(--gradient-heat);
   }
 }
