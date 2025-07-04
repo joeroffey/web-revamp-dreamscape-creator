@@ -110,33 +110,51 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen relative">
+      {/* Background Video/Image */}
+      <div className="absolute inset-0 z-0">
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+          className="w-full h-full object-cover"
+          poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
+        >
+          <source 
+            src="https://ismifvjzvvylehmdmdrz.supabase.co/storage/v1/object/public/data101/video.mp4" 
+            type="video/mp4" 
+          />
+        </video>
+        <div className="absolute inset-0 bg-black/60" />
+      </div>
+
       <Navigation />
       
-      <main className="pt-20">
+      <main className="relative z-10 pt-20">
         <section className="py-24">
           <div className="max-w-md mx-auto px-6">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-light text-foreground mb-4">
+              <h1 className="text-4xl font-light text-white mb-4 tracking-wide">
                 Welcome to Revitalise Hub
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-white/80 text-lg">
                 Sign in to your account or create a new one
               </p>
             </div>
 
-            <Card className="wellness-card">
-              <CardContent className="p-6">
+            <Card className="wellness-card backdrop-blur-lg bg-white/10 border-white/20 shadow-2xl">
+              <CardContent className="p-8">
                 <Tabs defaultValue="login" className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="login">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20">
+                    <TabsTrigger value="login" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">Sign Up</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="login">
-                    <form onSubmit={handleLogin} className="space-y-4">
+                    <form onSubmit={handleLogin} className="space-y-6">
                       <div>
-                        <Label htmlFor="login-email" className="flex items-center gap-2">
+                        <Label htmlFor="login-email" className="flex items-center gap-2 text-white font-medium">
                           <Mail className="h-4 w-4" />
                           Email
                         </Label>
@@ -146,12 +164,13 @@ const Auth = () => {
                           value={loginData.email}
                           onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                           placeholder="your.email@example.com"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                           required
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="login-password" className="flex items-center gap-2">
+                        <Label htmlFor="login-password" className="flex items-center gap-2 text-white font-medium">
                           <Lock className="h-4 w-4" />
                           Password
                         </Label>
@@ -161,13 +180,14 @@ const Auth = () => {
                           value={loginData.password}
                           onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                           placeholder="Enter your password"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                           required
                         />
                       </div>
 
                       <Button 
                         type="submit" 
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                         disabled={loading}
                       >
                         {loading ? "Signing in..." : "Sign In"}
@@ -176,9 +196,9 @@ const Auth = () => {
                   </TabsContent>
 
                   <TabsContent value="signup">
-                    <form onSubmit={handleSignup} className="space-y-4">
+                    <form onSubmit={handleSignup} className="space-y-5">
                       <div>
-                        <Label htmlFor="signup-name" className="flex items-center gap-2">
+                        <Label htmlFor="signup-name" className="flex items-center gap-2 text-white font-medium">
                           <User className="h-4 w-4" />
                           Full Name
                         </Label>
@@ -188,12 +208,13 @@ const Auth = () => {
                           value={signupData.fullName}
                           onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
                           placeholder="Your full name"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                           required
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="signup-email" className="flex items-center gap-2">
+                        <Label htmlFor="signup-email" className="flex items-center gap-2 text-white font-medium">
                           <Mail className="h-4 w-4" />
                           Email
                         </Label>
@@ -203,12 +224,13 @@ const Auth = () => {
                           value={signupData.email}
                           onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                           placeholder="your.email@example.com"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                           required
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="signup-phone" className="flex items-center gap-2">
+                        <Label htmlFor="signup-phone" className="flex items-center gap-2 text-white font-medium">
                           <Phone className="h-4 w-4" />
                           Phone Number
                         </Label>
@@ -218,11 +240,12 @@ const Auth = () => {
                           value={signupData.phone}
                           onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                           placeholder="Your phone number"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="signup-password" className="flex items-center gap-2">
+                        <Label htmlFor="signup-password" className="flex items-center gap-2 text-white font-medium">
                           <Lock className="h-4 w-4" />
                           Password
                         </Label>
@@ -232,12 +255,13 @@ const Auth = () => {
                           value={signupData.password}
                           onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                           placeholder="Create a password"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                           required
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="confirm-password" className="flex items-center gap-2">
+                        <Label htmlFor="confirm-password" className="flex items-center gap-2 text-white font-medium">
                           <Lock className="h-4 w-4" />
                           Confirm Password
                         </Label>
@@ -247,13 +271,14 @@ const Auth = () => {
                           value={signupData.confirmPassword}
                           onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                           placeholder="Confirm your password"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
                           required
                         />
                       </div>
 
                       <Button 
                         type="submit" 
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                         disabled={loading}
                       >
                         {loading ? "Creating Account..." : "Create Account"}
