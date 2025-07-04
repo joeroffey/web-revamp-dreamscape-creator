@@ -13,7 +13,7 @@ export const Navigation = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border/50">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary backdrop-blur-sm border-b border-border/50">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -31,7 +31,7 @@ export const Navigation = () => {
               <a
                 key={item.name}
                 href={item.href}
-                className="text-foreground hover:text-primary transition-colors font-light text-lg"
+                className="text-primary-foreground hover:text-primary-foreground/80 transition-colors font-light text-lg"
               >
                 {item.name}
               </a>
@@ -41,7 +41,7 @@ export const Navigation = () => {
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center">
             <Button 
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-full px-6"
               onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
             >
               <Calendar className="h-4 w-4 mr-2" />
@@ -53,7 +53,7 @@ export const Navigation = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden text-primary-foreground hover:text-primary-foreground/80"
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -68,7 +68,7 @@ export const Navigation = () => {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="text-foreground hover:text-primary transition-colors font-light text-lg"
+                  className="text-primary-foreground hover:text-primary-foreground/80 transition-colors font-light text-lg"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}
@@ -76,7 +76,7 @@ export const Navigation = () => {
               ))}
               <div className="pt-4">
                 <Button 
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-full"
                   onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
