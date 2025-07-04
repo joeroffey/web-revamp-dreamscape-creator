@@ -21,13 +21,13 @@ export const Navigation = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border/50">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-24 md:h-28">
           {/* Logo */}
           <Link to="/" className="flex items-center flex-shrink-0">
             <img 
               src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-12 md:h-16 w-auto"
+              className="h-16 md:h-20 lg:h-24 w-auto"
             />
           </Link>
 
@@ -45,7 +45,7 @@ export const Navigation = () => {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4 flex-shrink-0">
+          <div className="hidden md:flex items-center flex-shrink-0">
             {user ? (
               <Link to="/dashboard">
                 <Button variant="outline" className="rounded-full px-6 py-2 border-primary/20 text-primary hover:bg-primary/10 transition-all duration-300">
@@ -61,12 +61,6 @@ export const Navigation = () => {
                 </Button>
               </Link>
             )}
-            <Link to="/booking">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 py-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                <Calendar className="h-4 w-4 mr-2" />
-                Book Session
-              </Button>
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -110,12 +104,6 @@ export const Navigation = () => {
                     </Button>
                   </Link>
                 )}
-                <Link to="/booking" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Book Your Session
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
