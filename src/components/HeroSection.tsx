@@ -4,13 +4,27 @@ import { Calendar } from "lucide-react";
 export const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Video */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
-          alt="Revitalise Hub Interior"
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
           className="w-full h-full object-cover"
-        />
+          poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
+        >
+          <source 
+            src="https://ismifvjzvvylehmdmdrz.supabase.co/storage/v1/object/public/data101/website.video.MP4" 
+            type="video/mp4" 
+          />
+          {/* Fallback image if video fails */}
+          <img 
+            src="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
+            alt="Revitalise Hub"
+            className="w-full h-full object-cover"
+          />
+        </video>
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
