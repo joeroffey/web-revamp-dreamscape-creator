@@ -153,7 +153,7 @@ const Auth = () => {
 
                   <TabsContent value="login">
                     <form onSubmit={handleLogin} className="space-y-6">
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="login-email" className="flex items-center gap-2 text-white font-medium">
                           <Mail className="h-4 w-4" />
                           Email
@@ -169,7 +169,7 @@ const Auth = () => {
                         />
                       </div>
                       
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="login-password" className="flex items-center gap-2 text-white font-medium">
                           <Lock className="h-4 w-4" />
                           Password
@@ -196,8 +196,8 @@ const Auth = () => {
                   </TabsContent>
 
                   <TabsContent value="signup">
-                    <form onSubmit={handleSignup} className="space-y-5">
-                      <div>
+                    <form onSubmit={handleSignup} className="space-y-6">
+                      <div className="space-y-3">
                         <Label htmlFor="signup-name" className="flex items-center gap-2 text-white font-medium">
                           <User className="h-4 w-4" />
                           Full Name
@@ -213,7 +213,7 @@ const Auth = () => {
                         />
                       </div>
 
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="signup-email" className="flex items-center gap-2 text-white font-medium">
                           <Mail className="h-4 w-4" />
                           Email
@@ -229,7 +229,7 @@ const Auth = () => {
                         />
                       </div>
 
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="signup-phone" className="flex items-center gap-2 text-white font-medium">
                           <Phone className="h-4 w-4" />
                           Phone Number
@@ -244,7 +244,7 @@ const Auth = () => {
                         />
                       </div>
 
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="signup-password" className="flex items-center gap-2 text-white font-medium">
                           <Lock className="h-4 w-4" />
                           Password
@@ -260,7 +260,7 @@ const Auth = () => {
                         />
                       </div>
 
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="confirm-password" className="flex items-center gap-2 text-white font-medium">
                           <Lock className="h-4 w-4" />
                           Confirm Password

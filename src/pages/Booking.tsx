@@ -126,9 +126,9 @@ const Booking = () => {
                 <h3 className="text-2xl font-semibold mb-6">Booking Details</h3>
                 <Card className="wellness-card">
                   <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
+                    <div className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
                           <Label htmlFor="customerName" className="flex items-center gap-2">
                             <User className="h-4 w-4" />
                             Full Name *
@@ -142,7 +142,7 @@ const Booking = () => {
                             required
                           />
                         </div>
-                        <div>
+                        <div className="space-y-3">
                           <Label htmlFor="customerEmail" className="flex items-center gap-2">
                             <Mail className="h-4 w-4" />
                             Email Address *
@@ -159,7 +159,7 @@ const Booking = () => {
                         </div>
                       </div>
                       
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="customerPhone" className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
                           Phone Number
@@ -174,7 +174,7 @@ const Booking = () => {
                         />
                       </div>
 
-                      <div>
+                      <div className="space-y-3">
                         <Label htmlFor="specialRequests">Special Requests</Label>
                         <Textarea
                           id="specialRequests"
