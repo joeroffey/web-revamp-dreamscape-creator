@@ -21,7 +21,7 @@ export const Navigation = () => {
             <img 
               src="/lovable-uploads/eba50e37-1df6-41e8-8a26-7c4a6591821b.png" 
               alt="Revitalise Hub Logo" 
-              className="h-8 w-auto"
+              className="h-12 md:h-14 w-auto"
             />
           </Link>
 
@@ -40,7 +40,10 @@ export const Navigation = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6">
+            <Button 
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6"
+              onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
+            >
               <Calendar className="h-4 w-4 mr-2" />
               Book Session
             </Button>
@@ -72,7 +75,10 @@ export const Navigation = () => {
                 </a>
               ))}
               <div className="pt-4">
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">
+                <Button 
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                  onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
+                >
                   <Calendar className="h-4 w-4 mr-2" />
                   Book Your Session
                 </Button>

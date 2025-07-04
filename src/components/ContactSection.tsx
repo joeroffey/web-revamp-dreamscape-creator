@@ -78,6 +78,7 @@ export const ContactSection = () => {
             <Button 
               size="lg" 
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-4 text-lg font-medium rounded-full"
+              onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
             >
               Book A Session
             </Button>
