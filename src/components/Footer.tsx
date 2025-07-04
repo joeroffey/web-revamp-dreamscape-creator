@@ -125,12 +125,12 @@ export const Footer = () => {
               © 2024 Revitalise Hub. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <a href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <Link to="/privacy-policy" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
                 Privacy Policy
-              </a>
-              <a href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                Terms of Service
-              </a>
+              </Link>
+              <Link to="/terms-conditions" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+                Terms & Conditions
+              </Link>
               <a href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
                 Cookie Policy
               </a>
