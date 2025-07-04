@@ -7,9 +7,11 @@ export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
-    { name: "Home", href: "#home" },
-    { name: "About", href: "#about" },
-    { name: "Contact", href: "#contact" },
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" },
+    { name: "Booking", href: "/booking" },
+    { name: "Gift Cards", href: "/gift-cards" },
   ];
 
   return (
@@ -21,20 +23,20 @@ export const Navigation = () => {
             <img 
               src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-16 md:h-18 w-auto"
+              className="h-18 md:h-20 w-auto"
             />
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-12">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className="text-foreground hover:text-primary transition-colors font-light text-lg"
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -65,14 +67,14 @@ export const Navigation = () => {
           <div className="md:hidden py-6 border-t border-border/50">
             <div className="flex flex-col space-y-6">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.name}
-                  href={item.href}
+                  to={item.href}
                   className="text-foreground hover:text-primary transition-colors font-light text-lg"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
               <div className="pt-4">
                 <Button 
