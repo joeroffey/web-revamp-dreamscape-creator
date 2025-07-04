@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { AboutSection } from "@/components/AboutSection";
+import { Footer } from "@/components/Footer";
 
 const About = () => {
   return (
@@ -9,6 +10,8 @@ const About = () => {
       <main className="pt-20">
         <AboutSection />
       </main>
+      
+      <Footer />
     </div>
   );
 };

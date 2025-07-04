@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 
 const TermsConditions = () => {
   return (
@@ -91,6 +92,8 @@ const TermsConditions = () => {
           </div>
         </section>
       </main>
+      
+      <Footer />
     </div>
   );
 };

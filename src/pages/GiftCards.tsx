@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -298,6 +299,8 @@ const GiftCards = () => {
           </div>
         </section>
       </main>
+      
+      <Footer />
     </div>
   );
 };
