@@ -13,9 +13,6 @@ export const HeroSection = () => {
           playsInline
           className="w-full h-full object-cover"
           poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
-          onError={() => console.log('Video failed to load')}
-          onLoadStart={() => console.log('Video loading started')}
-          onCanPlay={() => console.log('Video can play')}
         >
           <source 
             src="https://ismifvjzvvylehmdmdrz.supabase.co/storage/v1/object/public/data101/video.mp4" 
