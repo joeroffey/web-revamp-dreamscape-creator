@@ -15,7 +15,7 @@ export const HeroSection = () => {
           poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
         >
           <source 
-            src="https://ismifvjzvvylehmdmdrz.supabase.co/storage/v1/object/public/data101/website.video.MP4" 
+            src="/website-video.mp4" 
             type="video/mp4" 
           />
           {/* Fallback image if video fails */}
