@@ -127,9 +127,9 @@ const GiftCards = () => {
                   <h3 className="text-2xl font-semibold mb-6">Gift Card Details</h3>
                   <Card className="wellness-card">
                     <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
+                      <div className="space-y-6">
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
                             <Label htmlFor="purchaserName" className="flex items-center gap-2">
                               <User className="h-4 w-4" />
                               Your Name *
@@ -143,7 +143,7 @@ const GiftCards = () => {
                               required
                             />
                           </div>
-                          <div>
+                          <div className="space-y-3">
                             <Label htmlFor="purchaserEmail" className="flex items-center gap-2">
                               <Mail className="h-4 w-4" />
                               Your Email *
@@ -160,8 +160,8 @@ const GiftCards = () => {
                           </div>
                         </div>
                         
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
                             <Label htmlFor="recipientName" className="flex items-center gap-2">
                               <Gift className="h-4 w-4" />
                               Recipient Name
@@ -174,7 +174,7 @@ const GiftCards = () => {
                               placeholder="Gift recipient's name"
                             />
                           </div>
-                          <div>
+                          <div className="space-y-3">
                             <Label htmlFor="recipientEmail">Recipient Email</Label>
                             <Input
                               id="recipientEmail"
@@ -187,7 +187,7 @@ const GiftCards = () => {
                           </div>
                         </div>
 
-                        <div>
+                        <div className="space-y-3">
                           <Label htmlFor="message">Personal Message</Label>
                           <Textarea
                             id="message"
