@@ -25,6 +25,7 @@ export type Database = {
           session_time: string
           special_requests: string | null
           stripe_session_id: string | null
+          time_slot_id: string | null
           updated_at: string
         }
         Insert: {
@@ -42,6 +43,7 @@ export type Database = {
           session_time: string
           special_requests?: string | null
           stripe_session_id?: string | null
+          time_slot_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -59,9 +61,18 @@ export type Database = {
           session_time?: string
           special_requests?: string | null
           stripe_session_id?: string | null
+          time_slot_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_time_slot_id_fkey"
+            columns: ["time_slot_id"]
+            isOneToOne: false
+            referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gift_cards: {
         Row: {
@@ -120,12 +131,55 @@ export type Database = {
         }
         Relationships: []
       }
+      time_slots: {
+        Row: {
+          booked_count: number | null
+          capacity: number | null
+          created_at: string
+          id: string
+          is_available: boolean | null
+          service_type: string
+          slot_date: string
+          slot_time: string
+          updated_at: string
+        }
+        Insert: {
+          booked_count?: number | null
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          service_type: string
+          slot_date: string
+          slot_time: string
+          updated_at?: string
+        }
+        Update: {
+          booked_count?: number | null
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          service_type?: string
+          slot_date?: string
+          slot_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      confirm_booking: {
+        Args: { p_time_slot_id: string; p_stripe_session_id: string }
+        Returns: boolean
+      }
+      generate_time_slots: {
+        Args: { start_date: string; end_date: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
