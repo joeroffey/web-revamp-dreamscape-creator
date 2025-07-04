@@ -91,26 +91,27 @@ export const Footer = () => {
                 <li className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-primary-foreground/70 mt-0.5 flex-shrink-0" />
                   <span className="text-primary-foreground/80 text-sm">
-                    123 Wellness Street<br />
-                    City, County, Postcode
+                    Unit 7, Ensign yard<br />
+                    670 Ampress Ln<br />
+                    Lymington SO41 8QY
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-primary-foreground/70 flex-shrink-0" />
                   <a 
-                    href="tel:+441234567890"
+                    href="tel:01590698691"
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    +44 (0) 123 456 7890
+                    01590 698 691 / 0754 696 5111
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-primary-foreground/70 flex-shrink-0" />
                   <a 
-                    href="mailto:hello@revitalisehub.co.uk"
+                    href="mailto:info@revitalisehub.co.uk"
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    hello@revitalisehub.co.uk
+                    info@revitalisehub.co.uk
                   </a>
                 </li>
               </ul>

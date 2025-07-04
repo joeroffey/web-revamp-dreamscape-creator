@@ -19,13 +19,25 @@ export const PhotoGallery = () => {
     {
       src: "/lovable-uploads/103c68d2-52d4-4bb6-b77a-2938942d6c71.png",
       alt: "Founders team"
+    },
+    {
+      src: "/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png",
+      alt: "Facility exterior view"
+    },
+    {
+      src: "/lovable-uploads/c84d053f-63ed-4962-84d3-cec99682fcab.png",
+      alt: "Sauna interior"
+    },
+    {
+      src: "/lovable-uploads/eba50e37-1df6-41e8-8a26-7c4a6591821b.png",
+      alt: "Wellness facility"
     }
   ];
 
   return (
     <section className="py-16 bg-muted/30">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((image, index) => (
             <div 
               key={index}

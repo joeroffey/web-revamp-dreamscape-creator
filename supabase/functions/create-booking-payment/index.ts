@@ -70,20 +70,6 @@ serve(async (req) => {
       throw new Error("Invalid service type");
     }
 
-    // Reserve the slot temporarily by incrementing booked count
-    const { error: reserveError } = await supabase
-      .from("time_slots")
-      .update({ 
-        booked_count: timeSlot.booked_count + 1,
-        is_available: timeSlot.booked_count + 1 >= timeSlot.capacity ? false : true
-      })
-      .eq("id", timeSlotId)
-      .eq("booked_count", timeSlot.booked_count); // Optimistic locking
-
-    if (reserveError) {
-      throw new Error("Unable to reserve time slot - may have been booked by someone else");
-    }
-
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
