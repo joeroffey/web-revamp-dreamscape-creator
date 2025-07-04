@@ -1,11 +1,30 @@
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Snowflake, Flame } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Booking = () => {
+  const { toast } = useToast();
+  const [selectedService, setSelectedService] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    sessionDate: "",
+    sessionTime: "",
+    specialRequests: "",
+  });
+
   const services = [
     {
+      id: "ice_bath",
       icon: Snowflake,
       name: "Ice Bath Session",
       duration: "20 minutes",
@@ -13,6 +32,7 @@ const Booking = () => {
       description: "Cold water immersion therapy for recovery and mental clarity"
     },
     {
+      id: "sauna",
       icon: Flame,
       name: "Sauna Session",
       duration: "30 minutes",
@@ -20,6 +40,7 @@ const Booking = () => {
       description: "Heat therapy session in our spacious 8-person sauna"
     },
     {
+      id: "combined",
       icon: Calendar,
       name: "Combined Session",
       duration: "50 minutes",
@@ -27,6 +48,55 @@ const Booking = () => {
       description: "Full thermal therapy experience with both ice bath and sauna"
     }
   ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleBooking = async (serviceId: string) => {
+    if (!formData.customerName || !formData.customerEmail || !formData.sessionDate || !formData.sessionTime) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields before booking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-booking-payment', {
+        body: {
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          serviceType: serviceId,
+          sessionDate: formData.sessionDate,
+          sessionTime: formData.sessionTime,
+          specialRequests: formData.specialRequests,
+        }
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe checkout
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Booking Failed",
+        description: "There was an error processing your booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -44,32 +114,146 @@ const Booking = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 mb-16">
-              {services.map((service, index) => (
-                <Card key={service.name} className="wellness-card">
-                  <CardHeader className="text-center">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <service.icon className="h-8 w-8 text-primary" />
+            <div className="grid lg:grid-cols-2 gap-12">
+              {/* Booking Form */}
+              <div>
+                <h3 className="text-2xl font-semibold mb-6">Booking Details</h3>
+                <Card className="wellness-card">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="customerName" className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Full Name *
+                          </Label>
+                          <Input
+                            id="customerName"
+                            name="customerName"
+                            value={formData.customerName}
+                            onChange={handleInputChange}
+                            placeholder="Your full name"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="customerEmail" className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            Email Address *
+                          </Label>
+                          <Input
+                            id="customerEmail"
+                            name="customerEmail"
+                            type="email"
+                            value={formData.customerEmail}
+                            onChange={handleInputChange}
+                            placeholder="your.email@example.com"
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="customerPhone" className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          Phone Number
+                        </Label>
+                        <Input
+                          id="customerPhone"
+                          name="customerPhone"
+                          type="tel"
+                          value={formData.customerPhone}
+                          onChange={handleInputChange}
+                          placeholder="Your phone number"
+                        />
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="sessionDate">Session Date *</Label>
+                          <Input
+                            id="sessionDate"
+                            name="sessionDate"
+                            type="date"
+                            value={formData.sessionDate}
+                            onChange={handleInputChange}
+                            min={new Date().toISOString().split('T')[0]}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="sessionTime">Session Time *</Label>
+                          <Input
+                            id="sessionTime"
+                            name="sessionTime"
+                            type="time"
+                            value={formData.sessionTime}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="specialRequests">Special Requests</Label>
+                        <Textarea
+                          id="specialRequests"
+                          name="specialRequests"
+                          value={formData.specialRequests}
+                          onChange={handleInputChange}
+                          placeholder="Any special requirements or requests..."
+                          rows={3}
+                        />
+                      </div>
                     </div>
-                    <CardTitle className="text-xl font-semibold">{service.name}</CardTitle>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>{service.duration}</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="text-center space-y-4">
-                    <p className="text-muted-foreground">{service.description}</p>
-                    <p className="text-2xl font-semibold text-primary">{service.price}</p>
-                    <Button 
-                      size="lg" 
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                      onClick={() => alert("Booking system requires Supabase integration")}
-                    >
-                      Book Now
-                    </Button>
                   </CardContent>
                 </Card>
-              ))}
+              </div>
+
+              {/* Service Selection */}
+              <div>
+                <h3 className="text-2xl font-semibold mb-6">Select Your Service</h3>
+                <div className="space-y-4">
+                  {services.map((service) => (
+                    <Card 
+                      key={service.id} 
+                      className={`wellness-card cursor-pointer transition-all ${
+                        selectedService === service.id ? 'ring-2 ring-primary' : ''
+                      }`}
+                      onClick={() => setSelectedService(service.id)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                            <service.icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-lg font-semibold">{service.name}</h4>
+                              <span className="text-xl font-semibold text-primary">{service.price}</span>
+                            </div>
+                            <p className="text-muted-foreground text-sm mb-2">{service.description}</p>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{service.duration}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {selectedService === service.id && (
+                          <Button 
+                            size="lg" 
+                            className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                            onClick={() => handleBooking(service.id)}
+                            disabled={isLoading}
+                          >
+                            {isLoading ? "Processing..." : `Book ${service.name}`}
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="text-center bg-muted/30 rounded-lg p-8">

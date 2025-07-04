@@ -2,17 +2,104 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Gift, Heart, Star } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Gift, Heart, Star, User, Mail } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const GiftCards = () => {
+  const { toast } = useToast();
   const [customAmount, setCustomAmount] = useState("");
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    purchaserName: "",
+    purchaserEmail: "",
+    recipientName: "",
+    recipientEmail: "",
+    message: "",
+  });
   
   const presetAmounts = [
     { amount: 25, popular: false },
     { amount: 50, popular: true },
     { amount: 100, popular: false },
   ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleAmountSelect = (amount: number) => {
+    setSelectedAmount(amount);
+    setCustomAmount("");
+  };
+
+  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomAmount(e.target.value);
+    setSelectedAmount(null);
+  };
+
+  const getCurrentAmount = () => {
+    return selectedAmount || (customAmount ? Number(customAmount) : 0);
+  };
+
+  const handlePurchase = async () => {
+    const amount = getCurrentAmount();
+    
+    if (!formData.purchaserName || !formData.purchaserEmail || !amount) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields and select an amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (amount < 10 || amount > 500) {
+      toast({
+        title: "Invalid Amount",
+        description: "Gift card amount must be between £10 and £500.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-gift-card-payment', {
+        body: {
+          purchaserName: formData.purchaserName,
+          purchaserEmail: formData.purchaserEmail,
+          recipientName: formData.recipientName || null,
+          recipientEmail: formData.recipientEmail || null,
+          amount: amount,
+          message: formData.message || null,
+        }
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe checkout
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Gift card purchase error:', error);
+      toast({
+        title: "Purchase Failed",
+        description: "There was an error processing your gift card purchase. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -33,63 +120,161 @@ const GiftCards = () => {
               </p>
             </div>
 
-            <div className="max-w-4xl mx-auto">
-              <h3 className="text-2xl font-semibold text-center mb-8">Choose Your Amount</h3>
-              
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                {presetAmounts.map((preset) => (
-                  <Card key={preset.amount} className={`wellness-card cursor-pointer relative ${preset.popular ? 'ring-2 ring-primary' : ''}`}>
-                    {preset.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                          <Star className="h-3 w-3" />
-                          Most Popular
+            <div className="max-w-6xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-12">
+                {/* Gift Card Form */}
+                <div>
+                  <h3 className="text-2xl font-semibold mb-6">Gift Card Details</h3>
+                  <Card className="wellness-card">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="purchaserName" className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Your Name *
+                            </Label>
+                            <Input
+                              id="purchaserName"
+                              name="purchaserName"
+                              value={formData.purchaserName}
+                              onChange={handleInputChange}
+                              placeholder="Your full name"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="purchaserEmail" className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              Your Email *
+                            </Label>
+                            <Input
+                              id="purchaserEmail"
+                              name="purchaserEmail"
+                              type="email"
+                              value={formData.purchaserEmail}
+                              onChange={handleInputChange}
+                              placeholder="your.email@example.com"
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="recipientName" className="flex items-center gap-2">
+                              <Gift className="h-4 w-4" />
+                              Recipient Name
+                            </Label>
+                            <Input
+                              id="recipientName"
+                              name="recipientName"
+                              value={formData.recipientName}
+                              onChange={handleInputChange}
+                              placeholder="Gift recipient's name"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="recipientEmail">Recipient Email</Label>
+                            <Input
+                              id="recipientEmail"
+                              name="recipientEmail"
+                              type="email"
+                              value={formData.recipientEmail}
+                              onChange={handleInputChange}
+                              placeholder="recipient@example.com"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="message">Personal Message</Label>
+                          <Textarea
+                            id="message"
+                            name="message"
+                            value={formData.message}
+                            onChange={handleInputChange}
+                            placeholder="Add a personal message to your gift card..."
+                            rows={3}
+                          />
                         </div>
                       </div>
-                    )}
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-3xl font-light">£{preset.amount}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center">
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Amount Selection */}
+                <div>
+                  <h3 className="text-2xl font-semibold mb-6">Choose Amount</h3>
+                  
+                  <div className="grid gap-4 mb-6">
+                    {presetAmounts.map((preset) => (
+                      <Card 
+                        key={preset.amount} 
+                        className={`wellness-card cursor-pointer relative transition-all ${
+                          selectedAmount === preset.amount ? 'ring-2 ring-primary' : ''
+                        } ${preset.popular ? 'border-primary/50' : ''}`}
+                        onClick={() => handleAmountSelect(preset.amount)}
+                      >
+                        {preset.popular && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                              <Star className="h-3 w-3" />
+                              Most Popular
+                            </div>
+                          </div>
+                        )}
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-2xl font-semibold">£{preset.amount}</span>
+                            <div className={`w-4 h-4 rounded-full border-2 ${
+                              selectedAmount === preset.amount ? 'bg-primary border-primary' : 'border-gray-300'
+                            }`} />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <Card className="wellness-card mb-6">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <Label>Custom Amount (£10 - £500)</Label>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-2xl font-semibold">£</span>
+                          <Input
+                            type="number"
+                            placeholder="Enter amount"
+                            value={customAmount}
+                            onChange={handleCustomAmountChange}
+                            className="text-lg"
+                            min="10"
+                            max="500"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="wellness-card">
+                    <CardContent className="p-6 text-center">
+                      <div className="mb-4">
+                        <span className="text-3xl font-semibold text-primary">
+                          £{getCurrentAmount() || '0'}
+                        </span>
+                      </div>
                       <Button 
                         size="lg" 
                         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                        onClick={() => alert("Gift card purchase requires Supabase integration")}
+                        onClick={handlePurchase}
+                        disabled={isLoading || !getCurrentAmount()}
                       >
-                        Select £{preset.amount}
+                        {isLoading ? "Processing..." : `Purchase Gift Card`}
                       </Button>
                     </CardContent>
                   </Card>
-                ))}
+                </div>
               </div>
-
-              <Card className="wellness-card mb-8">
-                <CardHeader className="text-center">
-                  <CardTitle className="text-xl">Custom Amount</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-semibold">£</span>
-                    <Input
-                      type="number"
-                      placeholder="Enter amount"
-                      value={customAmount}
-                      onChange={(e) => setCustomAmount(e.target.value)}
-                      className="text-lg"
-                      min="10"
-                      max="500"
-                    />
-                  </div>
-                  <Button 
-                    size="lg" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                    disabled={!customAmount || Number(customAmount) < 10}
-                    onClick={() => alert("Gift card purchase requires Supabase integration")}
-                  >
-                    Purchase £{customAmount} Gift Card
-                  </Button>
-                </CardContent>
-              </Card>
 
               <div className="bg-muted/30 rounded-lg p-8 text-center">
                 <Heart className="h-8 w-8 text-primary mx-auto mb-4" />

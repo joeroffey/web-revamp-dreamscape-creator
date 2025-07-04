@@ -9,7 +9,117 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_status: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          duration_minutes: number
+          id: string
+          payment_status: string | null
+          price_amount: number
+          service_type: string
+          session_date: string
+          session_time: string
+          special_requests: string | null
+          stripe_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_status?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          duration_minutes: number
+          id?: string
+          payment_status?: string | null
+          price_amount: number
+          service_type: string
+          session_date: string
+          session_time: string
+          special_requests?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_status?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          duration_minutes?: number
+          id?: string
+          payment_status?: string | null
+          price_amount?: number
+          service_type?: string
+          session_date?: string
+          session_time?: string
+          special_requests?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gift_cards: {
+        Row: {
+          amount: number
+          created_at: string
+          expires_at: string | null
+          gift_code: string
+          id: string
+          is_redeemed: boolean | null
+          message: string | null
+          payment_status: string | null
+          purchaser_email: string
+          purchaser_name: string
+          recipient_email: string | null
+          recipient_name: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+          stripe_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expires_at?: string | null
+          gift_code?: string
+          id?: string
+          is_redeemed?: boolean | null
+          message?: string | null
+          payment_status?: string | null
+          purchaser_email: string
+          purchaser_name: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expires_at?: string | null
+          gift_code?: string
+          id?: string
+          is_redeemed?: boolean | null
+          message?: string | null
+          payment_status?: string | null
+          purchaser_email?: string
+          purchaser_name?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
