@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Calendar } from "lucide-react";
+import { Menu, X, Calendar, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/components/AuthContext";
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   const navItems = [
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
+    { name: "Our Hub", href: "/our-hub" },
+    { name: "Memberships", href: "/memberships" },
     { name: "Contact", href: "/contact" },
     { name: "Booking", href: "/booking" },
     { name: "Gift Cards", href: "/gift-cards" },
@@ -41,14 +45,28 @@ export const Navigation = () => {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center">
-            <Button 
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6"
-              onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Book Session
-            </Button>
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <Link to="/dashboard">
+                <Button variant="outline" className="rounded-full px-6">
+                  <User className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" className="rounded-full px-6">
+                  <User className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
+            <Link to="/booking">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6">
+                <Calendar className="h-4 w-4 mr-2" />
+                Book Session
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -76,14 +94,28 @@ export const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
-              <div className="pt-4">
-                <Button 
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                  onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Book Your Session
-                </Button>
+              <div className="pt-4 space-y-3">
+                {user ? (
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" className="w-full rounded-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" className="w-full rounded-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Sign In
+                    </Button>
+                  </Link>
+                )}
+                <Link to="/booking" onClick={() => setIsOpen(false)}>
+                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Your Session
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

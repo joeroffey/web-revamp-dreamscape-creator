@@ -27,6 +27,7 @@ export type Database = {
           stripe_session_id: string | null
           time_slot_id: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           booking_status?: string | null
@@ -45,6 +46,7 @@ export type Database = {
           stripe_session_id?: string | null
           time_slot_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           booking_status?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           stripe_session_id?: string | null
           time_slot_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -127,6 +130,72 @@ export type Database = {
           redeemed_at?: string | null
           redeemed_by?: string | null
           stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      memberships: {
+        Row: {
+          created_at: string
+          discount_percentage: number | null
+          id: string
+          last_session_reset: string | null
+          membership_type: string
+          sessions_per_week: number
+          sessions_remaining: number | null
+          status: string
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percentage?: number | null
+          id?: string
+          last_session_reset?: string | null
+          membership_type: string
+          sessions_per_week: number
+          sessions_remaining?: number | null
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          discount_percentage?: number | null
+          id?: string
+          last_session_reset?: string | null
+          membership_type?: string
+          sessions_per_week?: number
+          sessions_remaining?: number | null
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
