@@ -11,9 +11,7 @@ interface BookingRequest {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
-  serviceType: 'ice_bath' | 'sauna' | 'combined';
-  sessionDate: string;
-  sessionTime: string;
+  timeSlotId: string;
   specialRequests?: string;
 }
 
@@ -34,14 +32,12 @@ serve(async (req) => {
       customerName,
       customerEmail,
       customerPhone,
-      serviceType,
-      sessionDate,
-      sessionTime,
+      timeSlotId,
       specialRequests
     }: BookingRequest = await req.json();
 
     // Validate required fields
-    if (!customerName || !customerEmail || !serviceType || !sessionDate || !sessionTime) {
+    if (!customerName || !customerEmail || !timeSlotId) {
       throw new Error("Missing required booking information");
     }
 
@@ -57,9 +53,35 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const service = serviceConfig[serviceType];
+    // Get time slot details and check availability
+    const { data: timeSlot, error: slotError } = await supabase
+      .from("time_slots")
+      .select("*")
+      .eq("id", timeSlotId)
+      .eq("is_available", true)
+      .single();
+
+    if (slotError || !timeSlot) {
+      throw new Error("Time slot not available or does not exist");
+    }
+
+    const service = serviceConfig[timeSlot.service_type as keyof typeof serviceConfig];
     if (!service) {
       throw new Error("Invalid service type");
+    }
+
+    // Reserve the slot temporarily by incrementing booked count
+    const { error: reserveError } = await supabase
+      .from("time_slots")
+      .update({ 
+        booked_count: timeSlot.booked_count + 1,
+        is_available: timeSlot.booked_count + 1 >= timeSlot.capacity ? false : true
+      })
+      .eq("id", timeSlotId)
+      .eq("booked_count", timeSlot.booked_count); // Optimistic locking
+
+    if (reserveError) {
+      throw new Error("Unable to reserve time slot - may have been booked by someone else");
     }
 
     // Create Stripe checkout session
@@ -71,7 +93,7 @@ serve(async (req) => {
             currency: "gbp",
             product_data: {
               name: service.name,
-              description: `${service.duration} minute session on ${sessionDate} at ${sessionTime}`,
+              description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time}`,
             },
             unit_amount: service.price,
           },
@@ -83,11 +105,9 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/booking`,
       metadata: {
         type: "booking",
+        timeSlotId: timeSlotId,
         customerName,
         customerEmail,
-        serviceType,
-        sessionDate,
-        sessionTime,
       }
     });
 
@@ -98,12 +118,13 @@ serve(async (req) => {
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
-        service_type: serviceType,
-        session_date: sessionDate,
-        session_time: sessionTime,
+        service_type: timeSlot.service_type,
+        session_date: timeSlot.slot_date,
+        session_time: timeSlot.slot_time,
         duration_minutes: service.duration,
         price_amount: service.price,
         stripe_session_id: session.id,
+        time_slot_id: timeSlotId,
         special_requests: specialRequests,
         payment_status: "pending",
       });

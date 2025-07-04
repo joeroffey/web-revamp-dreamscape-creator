@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone } from "lucide-react";
+import { TimeSlotPicker } from "@/components/TimeSlotPicker";
+import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone, Check } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,13 +13,16 @@ import { useToast } from "@/hooks/use-toast";
 const Booking = () => {
   const { toast } = useToast();
   const [selectedService, setSelectedService] = useState<string>("");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{
+    id: string;
+    date: string;
+    time: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
     customerPhone: "",
-    sessionDate: "",
-    sessionTime: "",
     specialRequests: "",
   });
 
@@ -56,11 +60,15 @@ const Booking = () => {
     });
   };
 
-  const handleBooking = async (serviceId: string) => {
-    if (!formData.customerName || !formData.customerEmail || !formData.sessionDate || !formData.sessionTime) {
+  const handleTimeSlotSelect = (slotId: string, date: string, time: string) => {
+    setSelectedTimeSlot({ id: slotId, date, time });
+  };
+
+  const handleBooking = async () => {
+    if (!formData.customerName || !formData.customerEmail || !selectedTimeSlot) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields before booking.",
+        description: "Please fill in all required fields and select a time slot.",
         variant: "destructive",
       });
       return;
@@ -73,9 +81,7 @@ const Booking = () => {
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
-          serviceType: serviceId,
-          sessionDate: formData.sessionDate,
-          sessionTime: formData.sessionTime,
+          timeSlotId: selectedTimeSlot.id,
           specialRequests: formData.specialRequests,
         }
       });
@@ -168,32 +174,6 @@ const Booking = () => {
                         />
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="sessionDate">Session Date *</Label>
-                          <Input
-                            id="sessionDate"
-                            name="sessionDate"
-                            type="date"
-                            value={formData.sessionDate}
-                            onChange={handleInputChange}
-                            min={new Date().toISOString().split('T')[0]}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="sessionTime">Session Time *</Label>
-                          <Input
-                            id="sessionTime"
-                            name="sessionTime"
-                            type="time"
-                            value={formData.sessionTime}
-                            onChange={handleInputChange}
-                            required
-                          />
-                        </div>
-                      </div>
-
                       <div>
                         <Label htmlFor="specialRequests">Special Requests</Label>
                         <Textarea
@@ -210,19 +190,24 @@ const Booking = () => {
                 </Card>
               </div>
 
-              {/* Service Selection */}
+              {/* Service Selection and Time Slots */}
               <div>
-                <h3 className="text-2xl font-semibold mb-6">Select Your Service</h3>
-                <div className="space-y-4">
+                <h3 className="text-2xl font-semibold mb-6">Select Your Service & Time</h3>
+                
+                {/* Service Selection */}
+                <div className="space-y-4 mb-6">
                   {services.map((service) => (
                     <Card 
                       key={service.id} 
                       className={`wellness-card cursor-pointer transition-all ${
                         selectedService === service.id ? 'ring-2 ring-primary' : ''
                       }`}
-                      onClick={() => setSelectedService(service.id)}
+                      onClick={() => {
+                        setSelectedService(service.id);
+                        setSelectedTimeSlot(null); // Reset time slot when changing service
+                      }}
                     >
-                      <CardContent className="p-6">
+                      <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                             <service.icon className="h-6 w-6 text-primary" />
@@ -230,7 +215,12 @@ const Booking = () => {
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="text-lg font-semibold">{service.name}</h4>
-                              <span className="text-xl font-semibold text-primary">{service.price}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl font-semibold text-primary">{service.price}</span>
+                                {selectedService === service.id && (
+                                  <Check className="h-5 w-5 text-primary" />
+                                )}
+                              </div>
                             </div>
                             <p className="text-muted-foreground text-sm mb-2">{service.description}</p>
                             <div className="flex items-center gap-2 text-muted-foreground">
@@ -239,20 +229,65 @@ const Booking = () => {
                             </div>
                           </div>
                         </div>
-                        {selectedService === service.id && (
-                          <Button 
-                            size="lg" 
-                            className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                            onClick={() => handleBooking(service.id)}
-                            disabled={isLoading}
-                          >
-                            {isLoading ? "Processing..." : `Book ${service.name}`}
-                          </Button>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
                 </div>
+
+                {/* Time Slot Picker */}
+                {selectedService && (
+                  <div className="mb-6">
+                    <TimeSlotPicker
+                      serviceType={selectedService}
+                      onSlotSelect={handleTimeSlotSelect}
+                      selectedSlotId={selectedTimeSlot?.id}
+                    />
+                  </div>
+                )}
+
+                {/* Booking Summary and Confirmation */}
+                {selectedService && selectedTimeSlot && (
+                  <Card className="wellness-card">
+                    <CardContent className="p-6">
+                      <h4 className="text-lg font-semibold mb-4">Booking Summary</h4>
+                      <div className="space-y-2 text-sm mb-6">
+                        <div className="flex justify-between">
+                          <span>Service:</span>
+                          <span className="font-medium">
+                            {services.find(s => s.id === selectedService)?.name}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Date:</span>
+                          <span className="font-medium">
+                            {new Date(selectedTimeSlot.date).toLocaleDateString('en-GB', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Time:</span>
+                          <span className="font-medium">{selectedTimeSlot.time.slice(0, 5)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold text-primary">
+                          <span>Total:</span>
+                          <span>{services.find(s => s.id === selectedService)?.price}</span>
+                        </div>
+                      </div>
+                      <Button 
+                        size="lg" 
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                        onClick={handleBooking}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Processing..." : "Confirm Booking & Pay"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
 
