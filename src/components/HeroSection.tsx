@@ -75,8 +75,7 @@ export const HeroSection = () => {
             }}
           >
             <source 
-              src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Website%20video.MP4" 
-              type="video/mp4" 
+              src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4"  
             />
           </video>
         )}
