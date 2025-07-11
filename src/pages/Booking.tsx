@@ -172,8 +172,17 @@ const Booking = () => {
       <Navigation />
       
       <main className="pt-20 sm:pt-24 md:pt-28 lg:pt-32">
-        <section className="py-12 sm:py-16 md:py-24 bg-background">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <section 
+          className="py-12 sm:py-16 md:py-24 bg-background relative"
+          style={{
+            backgroundImage: `url(/lovable-uploads/af0943f0-f779-42a3-9fac-5856501d1100.png)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          <div className="absolute inset-0 bg-background/80" />
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
             <div className="text-center mb-12 md:mb-16">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-foreground mb-4 sm:mb-6 tracking-tight">
                 Book Your Session
