@@ -175,7 +175,7 @@ const Booking = () => {
         <section 
           className="py-12 sm:py-16 md:py-24 bg-background relative"
           style={{
-            backgroundImage: `url(/lovable-uploads/af0943f0-f779-42a3-9fac-5856501d1100.png)`,
+            backgroundImage: `url(/lovable-uploads/200afcba-40b0-4441-8d09-d864997a01e9.png)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
@@ -192,159 +192,175 @@ const Booking = () => {
               </p>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-              {/* Booking Form */}
-              <div className="order-2 lg:order-1">
-                <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Details</h3>
-                <Card className="wellness-card">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="space-y-4 sm:space-y-6">
-                      <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="space-y-2 sm:space-y-3">
-                          <Label htmlFor="customerName" className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            Full Name *
-                          </Label>
-                          <Input
-                            id="customerName"
-                            name="customerName"
-                            value={formData.customerName}
-                            onChange={handleInputChange}
-                            placeholder="Your full name"
-                            className={formErrors.customerName ? "border-destructive" : ""}
-                            required
-                          />
-                          {formErrors.customerName && (
-                            <p className="text-sm text-destructive flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {formErrors.customerName}
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-2 sm:space-y-3">
-                          <Label htmlFor="customerEmail" className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            Email Address *
-                          </Label>
-                          <Input
-                            id="customerEmail"
-                            name="customerEmail"
-                            type="email"
-                            value={formData.customerEmail}
-                            onChange={handleInputChange}
-                            placeholder="your.email@example.com"
-                            className={formErrors.customerEmail ? "border-destructive" : ""}
-                            required
-                          />
-                          {formErrors.customerEmail && (
-                            <p className="text-sm text-destructive flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {formErrors.customerEmail}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2 sm:space-y-3">
-                        <Label htmlFor="customerPhone" className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          Phone Number
-                        </Label>
-                        <Input
-                          id="customerPhone"
-                          name="customerPhone"
-                          type="tel"
-                          value={formData.customerPhone}
-                          onChange={handleInputChange}
-                          placeholder="Your phone number"
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:space-y-3">
-                        <Label htmlFor="specialRequests">Special Requests</Label>
-                        <Textarea
-                          id="specialRequests"
-                          name="specialRequests"
-                          value={formData.specialRequests}
-                          onChange={handleInputChange}
-                          placeholder="Any special requirements or requests..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Service Selection and Time Slots */}
-              <div className="order-1 lg:order-2">
-                <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Select Your Service & Time</h3>
-                
+            {/* Service Selection and Time Slots */}
+            <div className="mb-8 lg:mb-12">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Select Your Service & Time</h3>
+              
+              <div className="grid lg:grid-cols-2 gap-8">
                 {/* Service Selection */}
-                <div className="space-y-3 sm:space-y-4 mb-6">
-                  {formErrors.service && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {formErrors.service}
-                    </p>
-                  )}
-                  {services.map((service) => (
-                    <Card 
-                      key={service.id} 
-                      className={`wellness-card cursor-pointer transition-all ${
-                        selectedService === service.id ? 'ring-2 ring-primary' : ''
-                      } ${formErrors.service ? 'border-destructive/50' : ''}`}
-                      onClick={() => handleServiceSelect(service.id)}
-                    >
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                            <service.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-base sm:text-lg font-semibold truncate">{service.name}</h4>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-lg sm:text-xl font-semibold text-primary">{service.price}</span>
-                                {selectedService === service.id && (
-                                  <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                                )}
+                <div>
+                  <h4 className="text-lg font-medium mb-4">Choose Your Service</h4>
+                  <div className="space-y-3 sm:space-y-4">
+                    {formErrors.service && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.service}
+                      </p>
+                    )}
+                    {services.map((service) => (
+                      <Card 
+                        key={service.id} 
+                        className={`wellness-card cursor-pointer transition-all ${
+                          selectedService === service.id ? 'ring-2 ring-primary' : ''
+                        } ${formErrors.service ? 'border-destructive/50' : ''}`}
+                        onClick={() => handleServiceSelect(service.id)}
+                      >
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex items-start gap-3 sm:gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                              <service.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-base sm:text-lg font-semibold truncate">{service.name}</h4>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className="text-lg sm:text-xl font-semibold text-primary">{service.price}</span>
+                                  {selectedService === service.id && (
+                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-muted-foreground text-xs sm:text-sm mb-2">{service.description}</p>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                <span className="text-xs sm:text-sm">{service.duration}</span>
                               </div>
                             </div>
-                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">{service.description}</p>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="text-xs sm:text-sm">{service.duration}</span>
-                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Time Slot Picker */}
-                {selectedService && (
-                  <div className="mb-6">
-                    {formErrors.timeSlot && (
-                      <p className="text-sm text-destructive flex items-center gap-1 mb-3">
-                        <AlertCircle className="h-3 w-3" />
-                        {formErrors.timeSlot}
-                      </p>
-                    )}
-                    <TimeSlotPicker
-                      serviceType={selectedService}
-                      onSlotSelect={handleTimeSlotSelect}
-                      selectedSlotId={selectedTimeSlot?.id}
-                    />
-                  </div>
-                )}
+                <div>
+                  <h4 className="text-lg font-medium mb-4">Select Your Time</h4>
+                  {selectedService ? (
+                    <div>
+                      {formErrors.timeSlot && (
+                        <p className="text-sm text-destructive flex items-center gap-1 mb-3">
+                          <AlertCircle className="h-3 w-3" />
+                          {formErrors.timeSlot}
+                        </p>
+                      )}
+                      <TimeSlotPicker
+                        serviceType={selectedService}
+                        onSlotSelect={handleTimeSlotSelect}
+                        selectedSlotId={selectedTimeSlot?.id}
+                      />
+                    </div>
+                  ) : (
+                    <Card className="wellness-card">
+                      <CardContent className="p-6 text-center">
+                        <p className="text-muted-foreground">Please select a service first to view available time slots</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            </div>
 
-                {/* Booking Summary and Confirmation */}
-                {selectedService && selectedTimeSlot && (
-                  <Card className="wellness-card">
-                    <CardContent className="p-4 sm:p-6">
-                      <h4 className="text-lg font-semibold mb-4">Booking Summary</h4>
+            {/* Booking Form */}
+            <div className="mb-8 lg:mb-12">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Details</h3>
+              <Card className="wellness-card">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label htmlFor="customerName" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Full Name *
+                        </Label>
+                        <Input
+                          id="customerName"
+                          name="customerName"
+                          value={formData.customerName}
+                          onChange={handleInputChange}
+                          placeholder="Your full name"
+                          className={formErrors.customerName ? "border-destructive" : ""}
+                          required
+                        />
+                        {formErrors.customerName && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {formErrors.customerName}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label htmlFor="customerEmail" className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          Email Address *
+                        </Label>
+                        <Input
+                          id="customerEmail"
+                          name="customerEmail"
+                          type="email"
+                          value={formData.customerEmail}
+                          onChange={handleInputChange}
+                          placeholder="your.email@example.com"
+                          className={formErrors.customerEmail ? "border-destructive" : ""}
+                          required
+                        />
+                        {formErrors.customerEmail && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {formErrors.customerEmail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="customerPhone" className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        Phone Number
+                      </Label>
+                      <Input
+                        id="customerPhone"
+                        name="customerPhone"
+                        type="tel"
+                        value={formData.customerPhone}
+                        onChange={handleInputChange}
+                        placeholder="Your phone number"
+                      />
+                    </div>
+
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="specialRequests">Special Requests</Label>
+                      <Textarea
+                        id="specialRequests"
+                        name="specialRequests"
+                        value={formData.specialRequests}
+                        onChange={handleInputChange}
+                        placeholder="Any special requirements or requests..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Booking Summary and Confirmation - Always Visible */}
+            <div className="mb-8">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Summary</h3>
+              <Card className="wellness-card">
+                <CardContent className="p-4 sm:p-6">
+                  {selectedService && selectedTimeSlot ? (
+                    <>
                       <div className="space-y-2 text-sm mb-6">
                         <div className="flex justify-between">
                           <span>Service:</span>
@@ -380,10 +396,37 @@ const Booking = () => {
                       >
                         {isLoading ? "Processing..." : "Confirm Booking & Pay"}
                       </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="mb-4">
+                        <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <h4 className="text-lg font-medium mb-2">Ready to Book?</h4>
+                        <p className="text-muted-foreground text-sm">
+                          {!selectedService 
+                            ? "Select a service and time slot to see your booking summary"
+                            : "Choose a time slot to complete your booking"
+                          }
+                        </p>
+                      </div>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Service:</span>
+                          <span>{selectedService ? services.find(s => s.id === selectedService)?.name : "Not selected"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Date & Time:</span>
+                          <span>Not selected</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total:</span>
+                          <span>{selectedService ? services.find(s => s.id === selectedService)?.price : "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             <div className="mt-12 text-center bg-muted/30 rounded-lg p-6 sm:p-8">
