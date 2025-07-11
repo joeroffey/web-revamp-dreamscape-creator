@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Calendar } from "lucide-react";
+import { Clock, Calendar, RefreshCw, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface TimeSlot {
   id: string;
@@ -25,6 +26,8 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const { toast } = useToast();
 
   // Get available dates for the next 14 days
   const getAvailableDates = () => {
@@ -60,6 +63,8 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     if (!date || !serviceType) return;
     
     setLoading(true);
+    setError("");
+    
     try {
       const { data, error } = await supabase
         .from("time_slots")
@@ -68,13 +73,30 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
         .eq("service_type", serviceType)
         .order("slot_time");
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to fetch time slots: ${error.message}`);
+      }
+      
       setTimeSlots(data || []);
     } catch (error) {
       console.error("Error fetching time slots:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to load available times";
+      setError(errorMessage);
       setTimeSlots([]);
+      
+      toast({
+        title: "Error Loading Times",
+        description: "Unable to load available time slots. Please try refreshing.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    if (selectedDate) {
+      fetchTimeSlots(selectedDate);
     }
   };
 
@@ -96,52 +118,64 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     }
   }, []);
 
-  // Real-time updates for time slots
+  // Real-time updates for time slots with better cleanup
   useEffect(() => {
     if (!selectedDate || !serviceType) return;
 
-    const channel = supabase
-      .channel('time-slots-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'time_slots',
-          filter: `slot_date=eq.${selectedDate},service_type=eq.${serviceType}`
-        },
-        () => {
-          // Refetch time slots when changes occur
-          fetchTimeSlots(selectedDate);
-        }
-      )
-      .subscribe();
+    let channel: any = null;
+
+    try {
+      channel = supabase
+        .channel(`time-slots-${selectedDate}-${serviceType}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'time_slots',
+            filter: `slot_date=eq.${selectedDate},service_type=eq.${serviceType}`
+          },
+          () => {
+            // Refetch time slots when changes occur
+            fetchTimeSlots(selectedDate);
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.error("Error setting up real-time subscription:", error);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (error) {
+          console.error("Error cleaning up channel:", error);
+        }
+      }
     };
   }, [selectedDate, serviceType]);
 
   const availableDates = getAvailableDates();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Date Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="wellness-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Calendar className="h-5 w-5" />
             Select Date
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
             {availableDates.map((date) => (
               <Button
                 key={date}
                 variant={selectedDate === date ? "default" : "outline"}
                 onClick={() => setSelectedDate(date)}
-                className="p-3 h-auto flex flex-col"
+                className="p-2 sm:p-3 h-auto flex flex-col text-xs sm:text-sm"
                 size="sm"
               >
                 <span className="text-xs opacity-75">
@@ -158,31 +192,56 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
 
       {/* Time Slot Selection */}
       {selectedDate && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Available Times for {formatDate(selectedDate)}
-            </CardTitle>
+        <Card className="wellness-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="h-5 w-5" />
+                Available Times for {formatDate(selectedDate)}
+              </CardTitle>
+              {error && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Retry
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="text-center text-muted-foreground py-8">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
                 Loading available times...
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <p className="text-destructive mb-4">{error}</p>
+                <Button onClick={handleRefresh} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
               </div>
             ) : timeSlots.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                No available times for this date. Please select another date.
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No available times for this date.</p>
+                <p className="text-sm mt-2">Please select another date.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {timeSlots.map((slot) => (
                   <div key={slot.id} className="relative">
                     <Button
                       variant={selectedSlotId === slot.id ? "default" : "outline"}
                       onClick={() => slot.is_available && onSlotSelect(slot.id, slot.slot_date, slot.slot_time)}
                       disabled={!slot.is_available}
-                      className="w-full p-3 h-auto"
+                      className="w-full p-2 sm:p-3 h-auto text-sm"
                       size="sm"
                     >
                       {formatTime(slot.slot_time)}
@@ -190,9 +249,9 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
                     {!slot.is_available && (
                       <Badge 
                         variant="destructive" 
-                        className="absolute -top-2 -right-2 text-xs px-1.5 py-0.5"
+                        className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 text-xs px-1 sm:px-1.5 py-0.5"
                       >
-                        Booked
+                        Full
                       </Badge>
                     )}
                   </div>
