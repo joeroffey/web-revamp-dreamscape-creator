@@ -1,36 +1,36 @@
 export const PhotoGallery = () => {
   const images = [
     {
-      src: "/lovable-uploads/2f950cd7-4515-4f21-ab0c-9005a8bde6c2.png",
-      alt: "Ice bath therapy session"
+      src: "/lovable-uploads/2286fefd-48ef-446c-a1e3-9ee8968bacbd.png",
+      alt: "Ice bath facility with Revitalise Hub branding"
     },
     {
-      src: "/lovable-uploads/029c3081-4504-4d35-b1af-8c8ec751d983.png", 
-      alt: "Client enjoying ice bath"
+      src: "/lovable-uploads/0dfff09d-022d-4b30-a6d6-dffc870d36c4.png",
+      alt: "Recovery shower area"
     },
     {
-      src: "/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png",
-      alt: "Wellness experience"
+      src: "/lovable-uploads/81a80e52-fdb3-4434-af6a-736586d75f1c.png",
+      alt: "Revitalise Hub entrance wall"
     },
     {
-      src: "/lovable-uploads/4b835fc2-686a-4098-bcd0-3b9519ea6cc0.png",
-      alt: "Recovery session"
+      src: "/lovable-uploads/3a215db5-7a7e-4b25-be51-5ea78060e1b5.png",
+      alt: "Wellness towels and amenities"
     },
     {
-      src: "/lovable-uploads/103c68d2-52d4-4bb6-b77a-2938942d6c71.png",
-      alt: "Founders team"
+      src: "/lovable-uploads/162ed27b-7afc-4f87-aa37-6ca7dd50990e.png",
+      alt: "Client enjoying ice bath therapy"
     },
     {
-      src: "/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png",
-      alt: "Facility exterior view"
+      src: "/lovable-uploads/0c4c3a2b-152f-4e1e-892e-82c619d37291.png",
+      alt: "Ice bath recovery session"
     },
     {
-      src: "/lovable-uploads/c84d053f-63ed-4962-84d3-cec99682fcab.png",
-      alt: "Sauna interior"
+      src: "/lovable-uploads/1ade2762-70a2-4195-b776-a285f0680dd2.png",
+      alt: "Shared ice bath experience"
     },
     {
-      src: "/lovable-uploads/eba50e37-1df6-41e8-8a26-7c4a6591821b.png",
-      alt: "Wellness facility"
+      src: "/lovable-uploads/13ce1fd0-0ae1-4b68-bc23-115c4cad4df5.png",
+      alt: "Infrared sauna session"
     }
   ];
 
