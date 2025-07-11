@@ -86,7 +86,7 @@ export const HeroSection = () => {
         <div 
           className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: `url(/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png)`,
+            backgroundImage: `url(/lovable-uploads/af0943f0-f779-42a3-9fac-5856501d1100.png)`,
             display: (!videoLoaded || videoError) ? 'block' : 'none'
           }}
         />
