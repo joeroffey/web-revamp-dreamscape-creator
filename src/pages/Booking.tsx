@@ -185,8 +185,8 @@ const Booking = () => {
               {/* Hero Image */}
               <div className="mb-12 md:mb-16">
                 <img 
-                  src="/lovable-uploads/200afcba-40b0-4441-8d09-d864997a01e9.png" 
-                  alt="Thermal therapy wellness center" 
+                  src="/lovable-uploads/807b3ccb-e8dc-4577-9b65-0320e1137a91.png" 
+                  alt="Revitalise Hub thermal therapy center interior with ice baths" 
                   className="w-full max-w-4xl mx-auto rounded-lg shadow-lg"
                 />
               </div>
