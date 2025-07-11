@@ -1,26 +1,6 @@
 export const PhotoGallery = () => {
   const images = [
     {
-      src: "/lovable-uploads/2f950cd7-4515-4f21-ab0c-9005a8bde6c2.png",
-      alt: "Ice bath therapy session"
-    },
-    {
-      src: "/lovable-uploads/029c3081-4504-4d35-b1af-8c8ec751d983.png", 
-      alt: "Client enjoying ice bath"
-    },
-    {
-      src: "/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png",
-      alt: "Wellness experience"
-    },
-    {
-      src: "/lovable-uploads/4b835fc2-686a-4098-bcd0-3b9519ea6cc0.png",
-      alt: "Recovery session"
-    },
-    {
-      src: "/lovable-uploads/103c68d2-52d4-4bb6-b77a-2938942d6c71.png",
-      alt: "Founders team"
-    },
-    {
       src: "/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png",
       alt: "Facility exterior view"
     },
@@ -31,6 +11,10 @@ export const PhotoGallery = () => {
     {
       src: "/lovable-uploads/eba50e37-1df6-41e8-8a26-7c4a6591821b.png",
       alt: "Wellness facility"
+    },
+    {
+      src: "/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png",
+      alt: "Additional facility view"
     }
   ];
 
