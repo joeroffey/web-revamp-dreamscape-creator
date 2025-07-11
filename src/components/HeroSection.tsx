@@ -1,52 +1,100 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Play } from "lucide-react";
-import { useState } from "react";
+import { Calendar } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 export const HeroSection = () => {
   const [videoError, setVideoError] = useState(false);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleVideoError = () => {
+    console.log("Video failed to load, showing fallback image");
     setVideoError(true);
   };
 
-  const handleVideoLoad = () => {
-    setIsVideoLoaded(true);
+  const handleVideoLoaded = () => {
+    console.log("Video loaded successfully");
+    setVideoLoaded(true);
   };
+
+  const handleVideoCanPlay = () => {
+    console.log("Video can play, attempting to start");
+    if (videoRef.current) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("Video started playing successfully");
+            setVideoLoaded(true);
+          })
+          .catch((error) => {
+            console.log("Autoplay failed:", error);
+            setVideoLoaded(true);
+          });
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Force video to play when component mounts
+    const timer = setTimeout(() => {
+      if (videoRef.current && !videoError) {
+        videoRef.current.load();
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.log("Initial play attempt failed:", error);
+          });
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [videoError]);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Video */}
       <div className="absolute inset-0 z-0">
-        {!videoError ? (
+        {!videoError && (
           <video 
+            ref={videoRef}
             autoPlay 
             muted 
             loop 
             playsInline
             className="w-full h-full object-cover"
-            poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
             onError={handleVideoError}
-            onLoadedData={handleVideoLoad}
+            onLoadedData={handleVideoLoaded}
+            onCanPlay={handleVideoCanPlay}
+            preload="auto"
+            style={{ 
+              display: videoLoaded ? 'block' : 'none',
+              opacity: videoLoaded ? 1 : 0,
+              transition: 'opacity 1s ease-in-out'
+            }}
           >
             <source 
               src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Website%20video.MP4" 
               type="video/mp4" 
             />
           </video>
-        ) : null}
+        )}
         
-        {/* Fallback image - always show as background */}
+        {/* Fallback background image - only show if video fails */}
         <div 
-          className={`absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat ${!videoError && isVideoLoaded ? 'opacity-0' : 'opacity-100'} transition-opacity duration-1000`}
-          style={{ backgroundImage: `url(/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png)` }}
+          className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: `url(/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png)`,
+            display: (!videoLoaded || videoError) ? 'block' : 'none'
+          }}
         />
         
-        {/* Video Loading Indicator */}
-        {!videoError && !isVideoLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-            <div className="bg-white/10 backdrop-blur-sm rounded-full p-6">
-              <Play className="h-8 w-8 text-white animate-pulse" />
+        {/* Loading spinner */}
+        {!videoLoaded && !videoError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div className="bg-white/10 backdrop-blur-sm rounded-full p-4">
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
         )}
