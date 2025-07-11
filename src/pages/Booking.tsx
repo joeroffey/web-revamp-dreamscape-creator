@@ -181,7 +181,7 @@ const Booking = () => {
             backgroundRepeat: 'no-repeat'
           }}
         >
-          <div className="absolute inset-0 bg-background/80" />
+          <div className="absolute inset-0 bg-background/50" />
           <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
             <div className="text-center mb-12 md:mb-16">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-foreground mb-4 sm:mb-6 tracking-tight">
