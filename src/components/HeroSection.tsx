@@ -63,7 +63,7 @@ export const HeroSection = () => {
             muted 
             loop 
             playsInline
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
             onCanPlay={handleVideoCanPlay}
@@ -71,11 +71,13 @@ export const HeroSection = () => {
             style={{ 
               display: videoLoaded ? 'block' : 'none',
               opacity: videoLoaded ? 1 : 0,
-              transition: 'opacity 1s ease-in-out'
+              transition: 'opacity 1s ease-in-out',
+              objectPosition: 'center top'
             }}
           >
             <source 
-              src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4"  
+              src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4" 
+              type="video/mp4" 
             />
           </video>
         )}
@@ -98,42 +100,29 @@ export const HeroSection = () => {
           </div>
         )}
         
-        <div className="absolute inset-0 bg-black/40" />
+        {/* Reduced dark overlay for better video visibility */}
+        <div className="absolute inset-0 bg-black/20" />
       </div>
 
-      {/* Content */}
+      {/* Content - Only Welcome message */}
       <div className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto">
-        <div className="space-y-4 sm:space-y-6 animate-fade-in">
-          <p className="text-base sm:text-lg md:text-xl text-white/90 font-light tracking-wide">
-            Welcome To
-          </p>
-          
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light text-white tracking-tight leading-tight">
-            REVITALISE HUB
-          </h1>
-          
-          <p className="text-base sm:text-lg md:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed font-light px-4">
-            Experience the transformative power of thermal therapy. Our premium ice baths and sauna 
-            create the perfect environment for recovery, wellness, and mental clarity.
-          </p>
-          
-          <div className="pt-6 sm:pt-8">
-            <Button 
-              size="lg" 
-              className="bg-white text-primary hover:bg-white/90 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-medium rounded-full transition-all duration-300 hover:scale-105"
-              onClick={() => window.location.href = '/booking'}
-            >
-              <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              Book A Session
-            </Button>
+        <div className="space-y-6 animate-fade-in">
+          <div className="space-y-2">
+            <p className="text-xl sm:text-2xl md:text-3xl text-white font-light tracking-wider uppercase drop-shadow-2xl">
+              Welcome To
+            </p>
+            
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light text-white tracking-tight leading-tight drop-shadow-2xl">
+              REVITALISE HUB
+            </h1>
           </div>
         </div>
       </div>
 
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 hidden sm:block">
-        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-bounce" />
+        <div className="w-6 h-10 border-2 border-white/70 rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-white/80 rounded-full mt-2 animate-bounce" />
         </div>
       </div>
     </section>
