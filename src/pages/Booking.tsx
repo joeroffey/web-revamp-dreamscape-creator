@@ -172,24 +172,24 @@ const Booking = () => {
       <Navigation />
       
       <main className="pt-20 sm:pt-24 md:pt-28 lg:pt-32">
-        <section 
-          className="py-12 sm:py-16 md:py-24 bg-background relative"
-          style={{
-            backgroundImage: `url(/lovable-uploads/200afcba-40b0-4441-8d09-d864997a01e9.png)`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        >
-          <div className="absolute inset-0 bg-background/50" />
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+        <section className="py-12 sm:py-16 md:py-24 bg-background">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-12 md:mb-16">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-foreground mb-4 sm:mb-6 tracking-tight">
                 Book Your Session
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light mb-8">
                 Choose from our range of thermal therapy services designed to enhance your wellbeing.
               </p>
+              
+              {/* Hero Image */}
+              <div className="mb-12 md:mb-16">
+                <img 
+                  src="/lovable-uploads/200afcba-40b0-4441-8d09-d864997a01e9.png" 
+                  alt="Thermal therapy wellness center" 
+                  className="w-full max-w-4xl mx-auto rounded-lg shadow-lg"
+                />
+              </div>
             </div>
 
             {/* Service Selection and Time Slots */}
