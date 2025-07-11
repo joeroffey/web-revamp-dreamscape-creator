@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone, Check } from "lucide-react";
+import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone, Check, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,7 @@ const Booking = () => {
     time: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -54,22 +55,77 @@ const Booking = () => {
     }
   ];
 
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.customerName.trim()) {
+      errors.customerName = "Name is required";
+    }
+    
+    if (!formData.customerEmail.trim()) {
+      errors.customerEmail = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.customerEmail)) {
+      errors.customerEmail = "Please enter a valid email address";
+    }
+    
+    if (!selectedService) {
+      errors.service = "Please select a service";
+    }
+    
+    if (!selectedTimeSlot) {
+      errors.timeSlot = "Please select a time slot";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ""
+      });
+    }
   };
 
   const handleTimeSlotSelect = (slotId: string, date: string, time: string) => {
     setSelectedTimeSlot({ id: slotId, date, time });
+    
+    // Clear time slot error
+    if (formErrors.timeSlot) {
+      setFormErrors({
+        ...formErrors,
+        timeSlot: ""
+      });
+    }
+  };
+
+  const handleServiceSelect = (serviceId: string) => {
+    setSelectedService(serviceId);
+    setSelectedTimeSlot(null); // Reset time slot when changing service
+    
+    // Clear service error
+    if (formErrors.service) {
+      setFormErrors({
+        ...formErrors,
+        service: ""
+      });
+    }
   };
 
   const handleBooking = async () => {
-    if (!formData.customerName || !formData.customerEmail || !selectedTimeSlot) {
+    if (!validateForm()) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields and select a time slot.",
+        title: "Please Complete All Required Fields",
+        description: "Check the form for any missing information.",
         variant: "destructive",
       });
       return;
@@ -82,22 +138,28 @@ const Booking = () => {
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
-          timeSlotId: selectedTimeSlot.id,
+          timeSlotId: selectedTimeSlot!.id,
           specialRequests: formData.specialRequests,
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
 
       // Redirect to Stripe checkout
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url; // Use location.href instead of window.open for better mobile support
+      } else {
+        throw new Error("No payment URL received");
       }
     } catch (error) {
       console.error('Booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
       toast({
         title: "Booking Failed",
-        description: "There was an error processing your booking. Please try again.",
+        description: `There was an error processing your booking: ${errorMessage}. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -109,27 +171,27 @@ const Booking = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-20">
-        <section className="py-24 bg-background">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+      <main className="pt-20 sm:pt-24 md:pt-28 lg:pt-32">
+        <section className="py-12 sm:py-16 md:py-24 bg-background">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-12 md:mb-16">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-foreground mb-4 sm:mb-6 tracking-tight">
                 Book Your Session
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
                 Choose from our range of thermal therapy services designed to enhance your wellbeing.
               </p>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-12">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
               {/* Booking Form */}
-              <div>
-                <h3 className="text-2xl font-semibold mb-6">Booking Details</h3>
+              <div className="order-2 lg:order-1">
+                <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Details</h3>
                 <Card className="wellness-card">
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-3">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="space-y-2 sm:space-y-3">
                           <Label htmlFor="customerName" className="flex items-center gap-2">
                             <User className="h-4 w-4" />
                             Full Name *
@@ -140,10 +202,17 @@ const Booking = () => {
                             value={formData.customerName}
                             onChange={handleInputChange}
                             placeholder="Your full name"
+                            className={formErrors.customerName ? "border-destructive" : ""}
                             required
                           />
+                          {formErrors.customerName && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {formErrors.customerName}
+                            </p>
+                          )}
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           <Label htmlFor="customerEmail" className="flex items-center gap-2">
                             <Mail className="h-4 w-4" />
                             Email Address *
@@ -155,12 +224,19 @@ const Booking = () => {
                             value={formData.customerEmail}
                             onChange={handleInputChange}
                             placeholder="your.email@example.com"
+                            className={formErrors.customerEmail ? "border-destructive" : ""}
                             required
                           />
+                          {formErrors.customerEmail && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {formErrors.customerEmail}
+                            </p>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         <Label htmlFor="customerPhone" className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
                           Phone Number
@@ -175,7 +251,7 @@ const Booking = () => {
                         />
                       </div>
 
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         <Label htmlFor="specialRequests">Special Requests</Label>
                         <Textarea
                           id="specialRequests"
@@ -192,41 +268,44 @@ const Booking = () => {
               </div>
 
               {/* Service Selection and Time Slots */}
-              <div>
-                <h3 className="text-2xl font-semibold mb-6">Select Your Service & Time</h3>
+              <div className="order-1 lg:order-2">
+                <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Select Your Service & Time</h3>
                 
                 {/* Service Selection */}
-                <div className="space-y-4 mb-6">
+                <div className="space-y-3 sm:space-y-4 mb-6">
+                  {formErrors.service && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {formErrors.service}
+                    </p>
+                  )}
                   {services.map((service) => (
                     <Card 
                       key={service.id} 
                       className={`wellness-card cursor-pointer transition-all ${
                         selectedService === service.id ? 'ring-2 ring-primary' : ''
-                      }`}
-                      onClick={() => {
-                        setSelectedService(service.id);
-                        setSelectedTimeSlot(null); // Reset time slot when changing service
-                      }}
+                      } ${formErrors.service ? 'border-destructive/50' : ''}`}
+                      onClick={() => handleServiceSelect(service.id)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                            <service.icon className="h-6 w-6 text-primary" />
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <service.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-lg font-semibold">{service.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-semibold text-primary">{service.price}</span>
+                              <h4 className="text-base sm:text-lg font-semibold truncate">{service.name}</h4>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-lg sm:text-xl font-semibold text-primary">{service.price}</span>
                                 {selectedService === service.id && (
-                                  <Check className="h-5 w-5 text-primary" />
+                                  <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                 )}
                               </div>
                             </div>
-                            <p className="text-muted-foreground text-sm mb-2">{service.description}</p>
+                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">{service.description}</p>
                             <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{service.duration}</span>
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="text-xs sm:text-sm">{service.duration}</span>
                             </div>
                           </div>
                         </div>
@@ -238,6 +317,12 @@ const Booking = () => {
                 {/* Time Slot Picker */}
                 {selectedService && (
                   <div className="mb-6">
+                    {formErrors.timeSlot && (
+                      <p className="text-sm text-destructive flex items-center gap-1 mb-3">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.timeSlot}
+                      </p>
+                    )}
                     <TimeSlotPicker
                       serviceType={selectedService}
                       onSlotSelect={handleTimeSlotSelect}
@@ -249,7 +334,7 @@ const Booking = () => {
                 {/* Booking Summary and Confirmation */}
                 {selectedService && selectedTimeSlot && (
                   <Card className="wellness-card">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <h4 className="text-lg font-semibold mb-4">Booking Summary</h4>
                       <div className="space-y-2 text-sm mb-6">
                         <div className="flex justify-between">
@@ -292,15 +377,15 @@ const Booking = () => {
               </div>
             </div>
 
-            <div className="text-center bg-muted/30 rounded-lg p-8">
-              <h3 className="text-xl font-semibold mb-4">Need Help Booking?</h3>
+            <div className="mt-12 text-center bg-muted/30 rounded-lg p-6 sm:p-8">
+              <h3 className="text-lg sm:text-xl font-semibold mb-4">Need Help Booking?</h3>
               <p className="text-muted-foreground mb-6">
                 Contact us directly for assistance with your booking or for group sessions.
               </p>
               <Button 
                 variant="outline" 
                 size="lg"
-                onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
+                onClick={() => window.location.href = '/contact'}
               >
                 Contact Us
               </Button>
