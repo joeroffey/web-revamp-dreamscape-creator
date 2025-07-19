@@ -9,16 +9,16 @@ export const useAdmin = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdminRole = async () => {
-      console.log('useAdmin - checking admin role for user:', user?.id, 'session exists:', !!session);
-      
-      if (!session?.user?.id || !user?.id) {
-        console.log('useAdmin - no session or user, setting admin false');
-        setIsAdmin(false);
-        setLoading(false);
-        return;
-      }
+    console.log('useAdmin - checking admin role for user:', user?.id, 'session exists:', !!session);
+    
+    if (!session?.user?.id || !user?.id) {
+      console.log('useAdmin - no session or user, setting admin false');
+      setIsAdmin(false);
+      setLoading(false);
+      return;
+    }
 
+    const checkAdminRole = async () => {
       try {
         console.log('useAdmin - querying user_roles for user:', user.id);
         
