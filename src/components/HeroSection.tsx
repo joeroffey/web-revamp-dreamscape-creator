@@ -60,6 +60,11 @@ export const HeroSection = () => {
     const isSafariDetected = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
     setIsSafari(isSafariDetected);
     console.log("Safari detected:", isSafariDetected);
+    
+    // Show play button immediately for Safari
+    if (isSafariDetected) {
+      setShowPlayButton(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -128,24 +133,24 @@ export const HeroSection = () => {
         {!videoError && (
           <video 
             ref={videoRef}
-            autoPlay 
+            autoPlay={!isSafari}
             muted 
             loop 
             playsInline
-            {...(isSafari && { 'webkit-playsinline': 'true' })}
             controls={false}
             disablePictureInPicture
             className="w-full h-full object-cover object-top"
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
             onCanPlay={handleVideoCanPlay}
-            preload={isSafari ? "auto" : "metadata"}
+            preload="auto"
             style={{ 
               display: videoLoaded ? 'block' : 'none',
               opacity: videoLoaded ? 1 : 0,
               transition: 'opacity 1s ease-in-out',
               objectPosition: 'center top'
             }}
+            {...(isSafari && { 'webkit-playsinline': true })}
           >
             <source 
               src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4" 
