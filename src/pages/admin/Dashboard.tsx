@@ -1,14 +1,18 @@
+
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Calendar, 
   Gift, 
   CreditCard,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Settings
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -21,6 +25,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalCustomers: 0,
     totalBookings: 0,
@@ -101,25 +106,29 @@ export default function AdminDashboard() {
       title: 'Total Customers',
       value: stats.totalCustomers,
       icon: Users,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
+      action: () => navigate('/admin/customers')
     },
     {
       title: 'Total Bookings',
       value: stats.totalBookings,
       icon: Calendar,
-      color: 'text-green-600'
+      color: 'text-green-600',
+      action: () => navigate('/admin/bookings')
     },
     {
       title: 'Active Gift Cards',
       value: stats.activeGiftCards,
       icon: Gift,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      action: () => navigate('/admin/gift-cards')
     },
     {
       title: 'Active Memberships',
       value: stats.activeMemberships,
       icon: CreditCard,
-      color: 'text-orange-600'
+      color: 'text-orange-600',
+      action: () => navigate('/admin/memberships')
     },
     {
       title: 'Total Revenue',
@@ -155,19 +164,60 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Manage your wellness hub from here</p>
+          </div>
           <div className="flex items-center space-x-2 text-muted-foreground">
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm">Last updated: {new Date().toLocaleString()}</span>
           </div>
         </div>
 
+        {/* Quick Access Navigation */}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Quick Access
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => navigate('/admin/customers')} variant="outline" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Customers
+              </Button>
+              <Button onClick={() => navigate('/admin/bookings')} variant="outline" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                View Bookings
+              </Button>
+              <Button onClick={() => navigate('/admin/gift-cards')} variant="outline" size="sm">
+                <Gift className="h-4 w-4 mr-2" />
+                Gift Cards
+              </Button>
+              <Button onClick={() => navigate('/admin/memberships')} variant="outline" size="sm">  
+                <CreditCard className="h-4 w-4 mr-2" />
+                Memberships
+              </Button>
+              <Button onClick={() => navigate('/admin/settings')} variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index}>
+              <Card 
+                key={index}
+                className={`cursor-pointer transition-all hover:shadow-md ${stat.action ? 'hover:scale-105' : ''}`}
+                onClick={stat.action}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {stat.title}
@@ -176,6 +226,9 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
+                  {stat.action && (
+                    <p className="text-xs text-muted-foreground mt-1">Click to manage</p>
+                  )}
                 </CardContent>
               </Card>
             );

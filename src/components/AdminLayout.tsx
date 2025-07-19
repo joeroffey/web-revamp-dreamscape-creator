@@ -1,3 +1,4 @@
+
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -13,11 +14,15 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { session } = useAuth();
   const { isAdmin, loading } = useAdmin();
 
+  console.log('AdminLayout - session:', !!session, 'isAdmin:', isAdmin, 'loading:', loading);
+
   if (!session) {
+    console.log('AdminLayout - No session, redirecting to auth');
     return <Navigate to="/auth" />;
   }
 
   if (loading) {
+    console.log('AdminLayout - Loading admin status');
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto py-8">
@@ -32,9 +37,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   if (!isAdmin) {
+    console.log('AdminLayout - User is not admin, redirecting to home');
     return <Navigate to="/" />;
   }
 
+  console.log('AdminLayout - Rendering admin layout with navigation');
   return (
     <div className="min-h-screen bg-background">
       <AdminNavigation />
