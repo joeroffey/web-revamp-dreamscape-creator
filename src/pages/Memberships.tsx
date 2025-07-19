@@ -112,7 +112,7 @@ const Memberships = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-20 bg-cream">
+      <main className="pt-20 bg-gallery">
         <section className="py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +13,9 @@
     
     /* Same cream background for main content areas to match navigation */
     --cream-background: 33 28% 73%; /* #CCBBA8 - Light cream background */
+    
+    /* Gallery background - lighter version for main content */
+    --gallery-background: 33 20% 85%; /* Lighter cream for main content areas */
 
     --card: 33 28% 73%;
     --card-foreground: 22 46% 22%;
@@ -198,7 +202,12 @@
     background-color: hsl(var(--cream-background));
   }
   
+  /* Gallery background utility for main content */
+  .bg-gallery {
+    background-color: hsl(var(--gallery-background));
+  }
+  
   /* Main content wrapper */
   .main-content {
-    @apply bg-cream min-h-screen;
+    @apply bg-gallery min-h-screen;
   }

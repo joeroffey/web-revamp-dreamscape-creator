@@ -1,3 +1,4 @@
+
 import { Navigation } from "@/components/Navigation";
 import { HeroSection } from "@/components/HeroSection";
 import { PhotoGallery } from "@/components/PhotoGallery";
@@ -8,7 +9,7 @@ const Home = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="bg-cream">
+      <main className="bg-gallery">
         <HeroSection />
         <PhotoGallery />
       </main>

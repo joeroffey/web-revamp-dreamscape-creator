@@ -1,3 +1,4 @@
+
 import { Navigation } from "@/components/Navigation";
 import { HeroSection } from "@/components/HeroSection";
 import { AboutSection } from "@/components/AboutSection";
@@ -9,7 +10,7 @@ const Index = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main>
+      <main className="bg-gallery">
         <section id="home">
           <HeroSection />
         </section>
