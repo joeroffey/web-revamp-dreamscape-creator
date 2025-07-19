@@ -183,7 +183,11 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+              <Button onClick={() => navigate('/admin/schedule')} variant="outline" size="sm" className="justify-start min-h-[44px]">
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule
+              </Button>
               <Button onClick={() => navigate('/admin/customers')} variant="outline" size="sm" className="justify-start min-h-[44px]">
                 <Users className="h-4 w-4 mr-2" />
                 Manage Customers
