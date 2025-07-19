@@ -120,7 +120,7 @@ const OurHub = () => {
         </section>
 
         {/* Facilities Gallery */}
-        <section className="py-16">
+        <section className="py-16 bg-gallery">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               Our Premium Facilities
@@ -150,7 +150,7 @@ const OurHub = () => {
         </section>
 
         {/* Hub Photo Gallery */}
-        <section className="py-16 bg-muted/20">
+        <section className="py-16 bg-gallery">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               Inside Our Wellness Hub
@@ -177,7 +177,7 @@ const OurHub = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 bg-muted/30">
+        <section className="py-16 bg-gallery">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               What Makes Us Special
@@ -195,7 +195,7 @@ const OurHub = () => {
         </section>
 
         {/* Contact Section */}
-        <section className="py-16">
+        <section className="py-16 bg-gallery">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-light mb-6">
               Ready to Experience Our Hub?
