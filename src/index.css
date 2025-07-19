@@ -7,10 +7,10 @@
 @layer base {
   :root {
     /* Custom color palette - #CCBBA8, #52331F, #967B5E */
-    --background: 0 0% 100%; /* Pure white for navigation */
+    --background: 33 28% 73%; /* #CCBBA8 - Light cream background for navigation and content */
     --foreground: 22 46% 22%; /* #52331F - Dark brown text */
     
-    /* Cream background for main content areas */
+    /* Cream background for main content areas - same as navigation */
     --cream-background: 33 28% 73%; /* #CCBBA8 - Light cream background */
 
     --card: 33 28% 73%;
