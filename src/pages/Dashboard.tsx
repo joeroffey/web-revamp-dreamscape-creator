@@ -38,25 +38,36 @@ const Dashboard = () => {
   const [membership, setMembership] = useState<Membership | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('Dashboard - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
+
   // Redirect admin users to admin dashboard
   useEffect(() => {
+    console.log('Dashboard useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin);
     if (!adminLoading && isAdmin) {
+      console.log('Redirecting admin user to admin dashboard');
       navigate('/admin/dashboard');
       return;
     }
   }, [isAdmin, adminLoading, navigate]);
 
   useEffect(() => {
+    console.log('Dashboard data fetch useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin, 'user:', !!user);
     // Only fetch user data if not admin and user exists
     if (!adminLoading && !isAdmin && user) {
+      console.log('Fetching user data for regular user');
       fetchUserData();
     } else if (!adminLoading && !user) {
+      console.log('No user, stopping loading');
       // If no user, stop loading
+      setLoading(false);
+    } else if (!adminLoading && isAdmin) {
+      console.log('Admin user detected, stopping loading (will redirect)');
       setLoading(false);
     }
   }, [user, isAdmin, adminLoading]);
 
   const fetchUserData = async () => {
+    console.log('fetchUserData called for user:', user?.id);
     try {
       // Fetch user bookings
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -117,7 +128,7 @@ const Dashboard = () => {
   };
 
   // Show loading while checking admin status or fetching data
-  if (adminLoading || loading) {
+  if (adminLoading || (loading && !isAdmin)) {
     return (
       <div className="min-h-screen bg-gallery">
         <Navigation />
@@ -133,6 +144,25 @@ const Dashboard = () => {
   // Don't render if user is admin (they'll be redirected)
   if (isAdmin) {
     return null;
+  }
+
+  // If no user and not loading, redirect to auth
+  if (!user && !adminLoading) {
+    return (
+      <div className="min-h-screen bg-gallery">
+        <Navigation />
+        <main className="pt-20">
+          <div className="max-w-4xl mx-auto px-6 py-24">
+            <div className="text-center">
+              <p className="text-muted-foreground mb-4">Please sign in to view your dashboard.</p>
+              <Button asChild>
+                <a href="/auth">Sign In</a>
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
