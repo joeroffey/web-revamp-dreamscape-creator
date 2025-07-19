@@ -206,15 +206,6 @@ const Booking = () => {
               <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light mb-8">
                 Our signature combined session includes both ice bath and sauna for the ultimate contrast therapy experience.
               </p>
-              
-              {/* Hero Image */}
-              <div className="mb-12 md:mb-16">
-                <img 
-                  src="/lovable-uploads/807b3ccb-e8dc-4577-9b65-0320e1137a91.png" 
-                  alt="Revitalise Hub thermal therapy center interior with ice baths" 
-                  className="w-full max-w-4xl mx-auto rounded-lg shadow-lg"
-                />
-              </div>
             </div>
 
             {/* Service Selection and Time Slots */}
