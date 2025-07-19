@@ -41,10 +41,20 @@ export const Footer = () => {
                 Experience the power of ice and heat for optimal health and recovery.
               </p>
               <div className="flex gap-3">
-                <Button variant="outline" size="icon" className="bg-transparent border-primary-foreground/20 hover:bg-primary-foreground/10">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="bg-transparent border-primary-foreground/20 hover:bg-primary-foreground/10"
+                  onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
+                >
                   <Instagram className="h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="icon" className="bg-transparent border-primary-foreground/20 hover:bg-primary-foreground/10">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="bg-transparent border-primary-foreground/20 hover:bg-primary-foreground/10"
+                  onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
+                >
                   <Facebook className="h-5 w-5" />
                 </Button>
               </div>

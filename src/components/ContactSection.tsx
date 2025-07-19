@@ -86,10 +86,20 @@ export const ContactSection = () => {
             <div className="pt-6">
               <p className="text-muted-foreground mb-4">Follow Us</p>
               <div className="flex justify-center gap-4">
-                <Button variant="outline" size="icon" className="rounded-full">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full"
+                  onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
+                >
                   <Facebook className="h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="icon" className="rounded-full">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full"
+                  onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
+                >
                   <Instagram className="h-5 w-5" />
                 </Button>
               </div>
