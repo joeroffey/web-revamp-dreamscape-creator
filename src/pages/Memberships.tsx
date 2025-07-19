@@ -1,3 +1,4 @@
+
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +20,8 @@ const Memberships = () => {
       sessions: 4,
       period: "month",
       popular: false,
-      discount: 10,
       features: [
         "4 sessions per month",
-        "10% discount on products",
         "Flexible 30-day cancellation",
         "Personal use only"
       ],
@@ -35,13 +34,10 @@ const Memberships = () => {
       sessions: 8,
       period: "month",
       popular: true,
-      discount: 10,
       features: [
         "8 sessions per month",
-        "10% discount on products",
         "Flexible 30-day cancellation",
-        "Personal use only",
-        "Priority booking"
+        "Personal use only"
       ],
       description: "Elevate your wellness journey with twice-weekly contrast therapy sessions."
     },
@@ -52,13 +48,10 @@ const Memberships = () => {
       sessions: 0,
       period: "month",
       popular: false,
-      discount: 15,
       features: [
         "Unlimited sessions",
-        "15% discount on products",
         "30-day cancellation period",
         "Personal use only",
-        "Priority booking",
         "Exclusive member events"
       ],
       description: "Ultimate wellness freedom with unlimited access to contrast therapy sessions."
@@ -188,12 +181,12 @@ const Memberships = () => {
                   <p className="text-sm">30-day cancellation policy on all memberships</p>
                 </div>
                 <div>
-                  <p className="font-medium mb-2">Product Discounts</p>
-                  <p className="text-sm">Exclusive discounts on wellness products and accessories</p>
-                </div>
-                <div>
                   <p className="font-medium mb-2">Personal Use</p>
                   <p className="text-sm">Memberships are non-transferable and for individual use only</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-2">Member Events</p>
+                  <p className="text-sm">Access to exclusive wellness workshops and community events</p>
                 </div>
               </div>
             </div>

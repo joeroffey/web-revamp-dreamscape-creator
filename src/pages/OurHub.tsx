@@ -6,14 +6,14 @@ import { MapPin, Clock, Thermometer, Snowflake, Waves, Users } from "lucide-reac
 const OurHub = () => {
   const facilities = [
     {
-      title: "Ice Bath Chambers",
+      title: "Ice Baths",
       description: "State-of-the-art cold immersion tanks maintained at optimal temperatures for maximum therapeutic benefit.",
       icon: Snowflake,
       image: "/lovable-uploads/e66be255-48c0-42a2-92bb-1f189a14976d.png"
     },
     {
-      title: "Infrared Saunas",
-      description: "Premium infrared sauna pods designed for deep heat therapy and complete relaxation.",
+      title: "Traditional Saunas", 
+      description: "Premium traditional sauna pods designed for deep heat therapy and complete relaxation.",
       icon: Thermometer,
       image: "/lovable-uploads/8e9e8578-24af-421e-9d1c-3b71d4e13523.png"
     },
@@ -24,7 +24,7 @@ const OurHub = () => {
       image: "/lovable-uploads/0f10c721-e834-4cf4-9182-2bd24811ad45.png"
     },
     {
-      title: "FIRA Therapy Equipment",
+      title: "EIRA Therapy Equipment",
       description: "Professional-grade therapy equipment including our signature ice baths for optimal recovery.",
       icon: Waves,
       image: "/lovable-uploads/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
@@ -46,7 +46,7 @@ const OurHub = () => {
 
   const features = [
     "Professional-grade equipment",
-    "Hygienic and sanitized environment",
+    "Hygienic and sanitized environment", 
     "Climate-controlled facility",
     "Expert staff supervision",
     "Premium amenities included",
@@ -101,15 +101,15 @@ const OurHub = () => {
                   </div>
                   <div className="space-y-2 text-muted-foreground">
                     <div className="flex justify-between">
-                      <span>Monday - Friday</span>
-                      <span>9:00 AM - 8:00 PM</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Saturday</span>
-                      <span>9:00 AM - 6:00 PM</span>
+                      <span>Tuesday - Saturday</span>
+                      <span>8:30 AM - 8:00 PM</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Sunday</span>
+                      <span>8:30 AM - 5:30 PM</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Monday</span>
                       <span>Closed</span>
                     </div>
                   </div>

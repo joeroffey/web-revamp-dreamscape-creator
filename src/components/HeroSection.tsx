@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -36,16 +37,25 @@ export const HeroSection = () => {
   };
 
   useEffect(() => {
-    // Force video to play when component mounts
+    // Enhanced Safari compatibility
     const timer = setTimeout(() => {
       if (videoRef.current && !videoError) {
+        // Safari-specific preloading
+        videoRef.current.preload = 'metadata';
         videoRef.current.load();
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            console.log("Initial play attempt failed:", error);
-          });
-        }
+        
+        // Progressive loading for better Safari performance
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.preload = 'auto';
+            const playPromise = videoRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise.catch((error) => {
+                console.log("Initial play attempt failed:", error);
+              });
+            }
+          }
+        }, 500);
       }
     }, 100);
 
@@ -63,11 +73,12 @@ export const HeroSection = () => {
             muted 
             loop 
             playsInline
+            webkit-playsinline="true"
             className="w-full h-full object-cover object-top"
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
             onCanPlay={handleVideoCanPlay}
-            preload="auto"
+            preload="metadata"
             style={{ 
               display: videoLoaded ? 'block' : 'none',
               opacity: videoLoaded ? 1 : 0,

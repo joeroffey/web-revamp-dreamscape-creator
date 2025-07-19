@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Snowflake, Flame, Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -136,14 +137,14 @@ export const Footer = () => {
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
             <iframe
-              src="https://maps.google.com/maps?width=100%&height=600&hl=en&q=Unit%207%2C%20Ensign%20yard%2C%20670%20Ampress%20Ln%2C%20Lymington%20SO41%208QY%2C%20UK&ie=UTF8&t=&z=14&iwloc=B&output=embed"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2524.987642123456!2d-1.5344567!3d50.7586789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48745c9a12345678%3A0x987654321abcdef0!2sUnit%207%2C%20Ensign%20Yard%2C%20670%20Ampress%20Ln%2C%20Lymington%20SO41%208QY%2C%20UK!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
               width="100%"
               height="100%"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Revitalise Hub Location"
+              title="Revitalise Hub Location - Unit 7, Ensign yard, 670 Ampress Ln, Lymington SO41 8QY"
             />
           </div>
         </div>

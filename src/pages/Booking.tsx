@@ -1,3 +1,4 @@
+
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,20 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone, Check, AlertCircle, Users } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Booking = () => {
   const { toast } = useToast();
-  // Auto-select combined service since it's the only option
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{
     id: string;
     date: string;
     time: string;
   } | null>(null);
-  const [availableSpaces, setAvailableSpaces] = useState<number>(5);
+  const [availableSpaces, setAvailableSpaces] = useState<number>(4);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [formData, setFormData] = useState({
@@ -38,8 +38,8 @@ const Booking = () => {
       id: "combined",
       icon: Calendar,
       name: "Combined Session",
-      duration: "50 minutes",
-      price: "£45",
+      duration: "1 hour",
+      price: "£18",
       description: "Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness"
     }
   ];
@@ -92,8 +92,8 @@ const Booking = () => {
   const handleGuestCountChange = (value: string) => {
     const newGuestCount = parseInt(value) || 1;
     
-    // Auto-convert to private if booking 5 people in communal
-    if (formData.bookingType === "communal" && newGuestCount === 5) {
+    // Auto-convert to private if booking 4 people in communal
+    if (formData.bookingType === "communal" && newGuestCount === 4) {
       setFormData(prev => ({ 
         ...prev, 
         guestCount: newGuestCount, 
@@ -101,7 +101,7 @@ const Booking = () => {
       }));
       toast({
         title: "Booking Type Changed",
-        description: "Automatically switched to private booking for 5 guests.",
+        description: "Automatically switched to private booking for 4+ guests.",
       });
     } else {
       setFormData(prev => ({ ...prev, guestCount: newGuestCount }));
@@ -124,11 +124,11 @@ const Booking = () => {
 
   const handleTimeSlotSelect = (slotId: string, date: string, time: string, spaces?: number) => {
     setSelectedTimeSlot({ id: slotId, date, time });
-    setAvailableSpaces(spaces || 5);
+    setAvailableSpaces(spaces || 4);
     
     // Auto-adjust guest count if it exceeds available spaces for communal bookings
-    if (formData.bookingType === "communal" && formData.guestCount > (spaces || 5)) {
-      setFormData(prev => ({ ...prev, guestCount: spaces || 5 }));
+    if (formData.bookingType === "communal" && formData.guestCount > (spaces || 4)) {
+      setFormData(prev => ({ ...prev, guestCount: spaces || 4 }));
     }
     
     // Clear time slot error
@@ -142,10 +142,6 @@ const Booking = () => {
 
   const calculateTotalPrice = () => {
     return formData.bookingType === 'private' ? 70 : (18 * formData.guestCount);
-  };
-
-  const handleServiceSelect = (serviceId: string) => {
-    // Not needed anymore since only combined service is available
   };
 
   const handleBooking = async () => {
@@ -178,7 +174,7 @@ const Booking = () => {
 
       // Redirect to Stripe checkout
       if (data?.url) {
-        window.location.href = data.url; // Use location.href instead of window.open for better mobile support
+        window.location.href = data.url;
       } else {
         throw new Error("No payment URL received");
       }
@@ -240,14 +236,14 @@ const Booking = () => {
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
                               <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-lg sm:text-xl font-semibold text-primary">£45</span>
+                                <span className="text-lg sm:text-xl font-semibold text-primary">£18</span>
                                 <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               </div>
                             </div>
                             <p className="text-muted-foreground text-xs sm:text-sm mb-2">Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness</p>
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="text-xs sm:text-sm">50 minutes</span>
+                              <span className="text-xs sm:text-sm">1 hour</span>
                             </div>
                           </div>
                         </div>
@@ -297,7 +293,7 @@ const Booking = () => {
                           <h3 className="font-semibold">Communal Session</h3>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Share the hub with others (up to 5 people total)
+                          Share the hub with others (up to 4 people total)
                         </p>
                         <div className="mt-2">
                           <Badge variant="secondary">£18 per person</Badge>
@@ -317,7 +313,7 @@ const Booking = () => {
                           <h3 className="font-semibold">Private Session</h3>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Exclusive use of the entire hub for your group
+                          Exclusive use of the entire hub (maximum 7 people)
                         </p>
                         <div className="mt-2">
                           <Badge variant="secondary">£70 flat rate</Badge>
@@ -326,42 +322,35 @@ const Booking = () => {
                     </div>
 
                     {/* Guest Count */}
-                    <div className="space-y-2">
-                      <Label htmlFor="guestCount">Number of Guests</Label>
-                      <Select 
-                        value={formData.guestCount.toString()} 
-                        onValueChange={handleGuestCountChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {formData.bookingType === "communal" 
-                            ? Array.from({ length: Math.min(availableSpaces, 5) }, (_, i) => i + 1).map(num => (
-                                <SelectItem key={num} value={num.toString()}>
-                                  {num} {num === 1 ? "person" : "people"}
-                                </SelectItem>
-                              ))
-                            : Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
-                                <SelectItem key={num} value={num.toString()}>
-                                  {num} {num === 1 ? "person" : "people"}
-                                </SelectItem>
-                              ))
-                          }
-                        </SelectContent>
-                      </Select>
-                      {formErrors.guestCount && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          {formErrors.guestCount}
-                        </p>
-                      )}
-                      {formData.bookingType === "communal" && (
+                    {formData.bookingType === "communal" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="guestCount">Number of Guests</Label>
+                        <Select 
+                          value={formData.guestCount.toString()} 
+                          onValueChange={handleGuestCountChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: Math.min(availableSpaces, 4) }, (_, i) => i + 1).map(num => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num} {num === 1 ? "person" : "people"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formErrors.guestCount && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {formErrors.guestCount}
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           {availableSpaces} spaces available for communal bookings
                         </p>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -450,7 +439,7 @@ const Booking = () => {
               </Card>
             </div>
 
-            {/* Booking Summary and Confirmation - Always Visible */}
+            {/* Booking Summary and Confirmation */}
             <div className="mb-8">
               <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Summary</h3>
               <Card className="wellness-card">
@@ -460,7 +449,7 @@ const Booking = () => {
                       <div className="space-y-2 text-sm mb-6">
                         <div className="flex justify-between">
                           <span>Service:</span>
-                          <span className="font-medium">Combined Session</span>
+                          <span className="font-medium">Combined Session (1 hour)</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Booking Type:</span>
@@ -468,10 +457,12 @@ const Booking = () => {
                             {formData.bookingType === "private" ? "Private" : "Communal"}
                           </Badge>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Guests:</span>
-                          <span className="font-medium">{formData.guestCount} {formData.guestCount === 1 ? "person" : "people"}</span>
-                        </div>
+                        {formData.bookingType === "communal" && (
+                          <div className="flex justify-between">
+                            <span>Guests:</span>
+                            <span className="font-medium">{formData.guestCount} {formData.guestCount === 1 ? "person" : "people"}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span>Date:</span>
                           <span className="font-medium">
@@ -521,15 +512,15 @@ const Booking = () => {
                       <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex justify-between">
                           <span>Service:</span>
-                          <span>Combined Session</span>
+                          <span>Combined Session (1 hour)</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Date & Time:</span>
                           <span>Not selected</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Total:</span>
-                          <span>£45</span>
+                          <span>Price per person:</span>
+                          <span>£18</span>
                         </div>
                       </div>
                     </div>
