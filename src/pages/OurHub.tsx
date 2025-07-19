@@ -83,9 +83,9 @@ const OurHub = () => {
                     <h3 className="text-lg font-semibold">Location</h3>
                   </div>
                   <p className="text-muted-foreground mb-2">
-                    Unit 4, Everton Nurseries<br />
-                    Hordle Lane, Hordle<br />
-                    Lymington, SO41 0FL
+                    Unit 7, Ensign yard<br />
+                    670 Ampress Ln<br />
+                    Lymington SO41 8QY
                   </p>
                   <Badge variant="secondary" className="mt-2">
                     Easy Parking Available
