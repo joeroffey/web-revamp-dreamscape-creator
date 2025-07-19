@@ -141,9 +141,9 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="space-y-6 p-4 md:p-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
             {[...Array(5)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader className="pb-2">
@@ -162,15 +162,15 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground mt-2">Manage your wellness hub from here</p>
           </div>
-          <div className="flex items-center space-x-2 text-muted-foreground">
+          <div className="flex items-center space-x-2 text-muted-foreground text-sm">
             <TrendingUp className="h-4 w-4" />
-            <span className="text-sm">Last updated: {new Date().toLocaleString()}</span>
+            <span>Last updated: {new Date().toLocaleString()}</span>
           </div>
         </div>
 
@@ -183,24 +183,24 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={() => navigate('/admin/customers')} variant="outline" size="sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+              <Button onClick={() => navigate('/admin/customers')} variant="outline" size="sm" className="justify-start min-h-[44px]">
                 <Users className="h-4 w-4 mr-2" />
                 Manage Customers
               </Button>
-              <Button onClick={() => navigate('/admin/bookings')} variant="outline" size="sm">
+              <Button onClick={() => navigate('/admin/bookings')} variant="outline" size="sm" className="justify-start min-h-[44px]">
                 <Calendar className="h-4 w-4 mr-2" />
                 View Bookings
               </Button>
-              <Button onClick={() => navigate('/admin/gift-cards')} variant="outline" size="sm">
+              <Button onClick={() => navigate('/admin/gift-cards')} variant="outline" size="sm" className="justify-start min-h-[44px]">
                 <Gift className="h-4 w-4 mr-2" />
                 Gift Cards
               </Button>
-              <Button onClick={() => navigate('/admin/memberships')} variant="outline" size="sm">  
+              <Button onClick={() => navigate('/admin/memberships')} variant="outline" size="sm" className="justify-start min-h-[44px]">  
                 <CreditCard className="h-4 w-4 mr-2" />
                 Memberships
               </Button>
-              <Button onClick={() => navigate('/admin/settings')} variant="outline" size="sm">
+              <Button onClick={() => navigate('/admin/settings')} variant="outline" size="sm" className="justify-start min-h-[44px]">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
@@ -209,13 +209,13 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card 
                 key={index}
-                className={`cursor-pointer transition-all hover:shadow-md ${stat.action ? 'hover:scale-105' : ''}`}
+                className={`cursor-pointer transition-all hover:shadow-md min-h-[120px] ${stat.action ? 'hover:scale-105' : ''}`}
                 onClick={stat.action}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -225,9 +225,9 @@ export default function AdminDashboard() {
                   <Icon className={`h-4 w-4 ${stat.color}`} />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-xl md:text-2xl font-bold">{stat.value}</div>
                   {stat.action && (
-                    <p className="text-xs text-muted-foreground mt-1">Click to manage</p>
+                    <p className="text-xs text-muted-foreground mt-1">Tap to manage</p>
                   )}
                 </CardContent>
               </Card>
@@ -246,15 +246,15 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-4">
                 {stats.recentBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
+                  <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-3">
+                    <div className="flex-1">
                       <p className="font-medium">{booking.customer_name}</p>
-                      <p className="text-sm text-muted-foreground">{booking.customer_email}</p>
+                      <p className="text-sm text-muted-foreground break-all">{booking.customer_email}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
                       <p className={`text-sm ${
                         booking.payment_status === 'paid' ? 'text-green-600' : 'text-orange-600'

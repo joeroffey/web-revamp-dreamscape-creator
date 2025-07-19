@@ -102,8 +102,8 @@ export default function AdminGiftCards() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">Gift Card Management</h1>
+        <div className="space-y-6 p-4 md:p-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Gift Card Management</h1>
           <div className="grid gap-6">
             {[...Array(5)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -121,24 +121,22 @@ export default function AdminGiftCards() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Gift Card Management</h1>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search gift cards..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-80"
-              />
-            </div>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold">Gift Card Management</h1>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search gift cards..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
         {/* Filter Buttons */}
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { key: 'all', label: 'All Cards' },
             { key: 'active', label: 'Active' },
@@ -150,6 +148,7 @@ export default function AdminGiftCards() {
               variant={filter === filterOption.key ? 'default' : 'outline'}
               onClick={() => setFilter(filterOption.key as any)}
               size="sm"
+              className="min-h-[44px]"
             >
               {filterOption.label}
             </Button>
@@ -157,7 +156,7 @@ export default function AdminGiftCards() {
         </div>
 
         {/* Gift Card Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -225,10 +224,10 @@ export default function AdminGiftCards() {
                   return (
                     <div 
                       key={card.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
+                      className="flex flex-col p-4 border rounded-lg hover:bg-accent transition-colors space-y-3"
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <div className="flex items-center space-x-2">
                             <Gift className="h-4 w-4 text-purple-600" />
                             <span className="font-mono font-medium">{card.gift_code}</span>
@@ -237,48 +236,48 @@ export default function AdminGiftCards() {
                           <span className="font-medium text-lg">{formatCurrency(card.amount)}</span>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3" />
-                            <span>From: {card.purchaser_name} ({card.purchaser_email})</span>
-                          </div>
-                          {card.recipient_name && (
-                            <div className="flex items-center space-x-1">
-                              <Mail className="h-3 w-3" />
-                              <span>To: {card.recipient_name} ({card.recipient_email})</span>
-                            </div>
-                          )}
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Purchased: {new Date(card.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Expires: {new Date(card.expires_at).toLocaleDateString()}</span>
+                        <div className="text-left sm:text-right">
+                          <div className={`text-sm ${
+                            card.payment_status === 'paid' ? 'text-green-600' : 'text-orange-600'
+                          }`}>
+                            Payment: {card.payment_status}
                           </div>
                         </div>
-
-                        {card.message && (
-                          <div className="text-sm">
-                            <span className="font-medium">Message:</span> "{card.message}"
-                          </div>
-                        )}
-
-                        {card.is_redeemed && card.redeemed_at && (
-                          <div className="text-sm text-muted-foreground">
-                            <span className="font-medium">Redeemed:</span> {new Date(card.redeemed_at).toLocaleDateString()}
-                            {card.redeemed_by && <span> by {card.redeemed_by}</span>}
-                          </div>
-                        )}
                       </div>
-
-                      <div className="text-right">
-                        <div className={`text-sm ${
-                          card.payment_status === 'paid' ? 'text-green-600' : 'text-orange-600'
-                        }`}>
-                          Payment: {card.payment_status}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <User className="h-3 w-3 flex-shrink-0" />
+                          <span className="break-all">From: {card.purchaser_name} ({card.purchaser_email})</span>
+                        </div>
+                        {card.recipient_name && (
+                          <div className="flex items-center space-x-1">
+                            <Mail className="h-3 w-3 flex-shrink-0" />
+                            <span className="break-all">To: {card.recipient_name} ({card.recipient_email})</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3 flex-shrink-0" />
+                          <span>Purchased: {new Date(card.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3 flex-shrink-0" />
+                          <span>Expires: {new Date(card.expires_at).toLocaleDateString()}</span>
                         </div>
                       </div>
+
+                      {card.message && (
+                        <div className="text-sm bg-muted p-3 rounded">
+                          <span className="font-medium">Message:</span> "{card.message}"
+                        </div>
+                      )}
+
+                      {card.is_redeemed && card.redeemed_at && (
+                        <div className="text-sm text-muted-foreground bg-green-50 p-3 rounded">
+                          <span className="font-medium">Redeemed:</span> {new Date(card.redeemed_at).toLocaleDateString()}
+                          {card.redeemed_by && <span> by {card.redeemed_by}</span>}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

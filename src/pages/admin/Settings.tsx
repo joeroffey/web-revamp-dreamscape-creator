@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,181 +7,162 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Save, DollarSign, Clock, Settings as SettingsIcon, Plus, Trash2 } from 'lucide-react';
-
-interface PricingConfig {
-  id: string;
-  service_type: string;
-  price_amount: number;
-  duration_minutes: number;
-  description: string;
-  is_active: boolean;
-}
-
-interface SystemSetting {
-  id: string;
-  setting_key: string;
-  setting_value: any;
-  description: string;
-}
+import { Settings2, Clock, DollarSign, Save } from 'lucide-react';
 
 export default function AdminSettings() {
-  const [pricingConfig, setPricingConfig] = useState<PricingConfig[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSetting[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  
+  // Pricing settings
+  const [pricingConfig, setPricingConfig] = useState({
+    iceBath: { price: 3000, duration: 60 },
+    sauna: { price: 2500, duration: 60 },
+    combined: { price: 4500, duration: 90 }
+  });
+
+  // Business hours
+  const [businessHours, setBusinessHours] = useState({
+    monday: { open: '09:00', close: '19:00', closed: false },
+    tuesday: { open: '09:00', close: '19:00', closed: false },
+    wednesday: { open: '09:00', close: '19:00', closed: false },
+    thursday: { open: '09:00', close: '19:00', closed: false },
+    friday: { open: '09:00', close: '19:00', closed: false },
+    saturday: { open: '10:00', close: '18:00', closed: false },
+    sunday: { open: '10:00', close: '18:00', closed: true }
+  });
+
+  // System settings
+  const [systemSettings, setSystemSettings] = useState({
+    businessName: 'Wellness Hub',
+    contactEmail: 'info@wellnesshub.com',
+    contactPhone: '+44 123 456 7890',
+    address: '123 Wellness Street, Health City, HC1 2AB',
+    bookingNotifications: true,
+    autoConfirmBookings: false,
+    maxAdvanceBookingDays: 30
+  });
 
   useEffect(() => {
     fetchSettings();
   }, []);
 
   const fetchSettings = async () => {
+    setLoading(true);
     try {
-      // Fetch pricing configuration
-      const { data: pricing, error: pricingError } = await supabase
+      // Fetch pricing config
+      const { data: pricing } = await supabase
         .from('pricing_config')
         .select('*')
-        .order('service_type');
+        .eq('is_active', true);
 
-      if (pricingError) throw pricingError;
+      if (pricing) {
+        const pricingMap: any = {};
+        pricing.forEach(item => {
+          pricingMap[item.service_type] = {
+            price: item.price_amount,
+            duration: item.duration_minutes
+          };
+        });
+        setPricingConfig(prev => ({ ...prev, ...pricingMap }));
+      }
 
       // Fetch system settings
-      const { data: settings, error: settingsError } = await supabase
+      const { data: settings } = await supabase
         .from('system_settings')
-        .select('*')
-        .order('setting_key');
+        .select('*');
 
-      if (settingsError) throw settingsError;
-
-      setPricingConfig(pricing || []);
-      setSystemSettings(settings || []);
+      if (settings) {
+        const settingsMap: any = {};
+        settings.forEach(setting => {
+          settingsMap[setting.setting_key] = setting.setting_value;
+        });
+        
+        if (settingsMap.business_hours) {
+          setBusinessHours(settingsMap.business_hours);
+        }
+        if (settingsMap.business_info) {
+          setSystemSettings(prev => ({ ...prev, ...settingsMap.business_info }));
+        }
+      }
     } catch (error) {
       console.error('Error fetching settings:', error);
-      toast.error('Failed to load settings');
+      toast({
+        title: "Error",
+        description: "Failed to load settings",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const updatePricing = async (id: string, updates: Partial<PricingConfig>) => {
-    setSaving(true);
+  const saveSettings = async () => {
+    setSaveLoading(true);
     try {
-      const { error } = await supabase
-        .from('pricing_config')
-        .update(updates)
-        .eq('id', id);
+      // Update pricing config
+      for (const [serviceType, config] of Object.entries(pricingConfig)) {
+        await supabase
+          .from('pricing_config')
+          .upsert({
+            service_type: serviceType,
+            price_amount: config.price,
+            duration_minutes: config.duration,
+            is_active: true
+          });
+      }
 
-      if (error) throw error;
-
-      setPricingConfig(prev =>
-        prev.map(item => item.id === id ? { ...item, ...updates } : item)
-      );
-      toast.success('Pricing updated successfully');
-    } catch (error) {
-      console.error('Error updating pricing:', error);
-      toast.error('Failed to update pricing');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateSystemSetting = async (key: string, value: any) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
+      // Update business hours
+      await supabase
         .from('system_settings')
-        .update({ setting_value: value })
-        .eq('setting_key', key);
-
-      if (error) throw error;
-
-      setSystemSettings(prev =>
-        prev.map(setting =>
-          setting.setting_key === key
-            ? { ...setting, setting_value: value }
-            : setting
-        )
-      );
-      toast.success('Setting updated successfully');
-    } catch (error) {
-      console.error('Error updating setting:', error);
-      toast.error('Failed to update setting');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addNewPricingConfig = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('pricing_config')
-        .insert({
-          service_type: 'new_service',
-          price_amount: 5000, // £50.00
-          duration_minutes: 60,
-          description: 'New service description',
-          is_active: false
+        .upsert({
+          setting_key: 'business_hours',
+          setting_value: businessHours,
+          description: 'Business operating hours'
         });
 
-      if (error) throw error;
-      
-      await fetchSettings();
-      toast.success('New pricing configuration added');
+      // Update business info
+      await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'business_info',
+          setting_value: systemSettings,
+          description: 'Business contact information and settings'
+        });
+
+      toast({
+        title: "Settings Saved",
+        description: "All settings have been updated successfully",
+      });
     } catch (error) {
-      console.error('Error adding pricing config:', error);
-      toast.error('Failed to add pricing configuration');
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive",
+      });
     } finally {
-      setSaving(false);
+      setSaveLoading(false);
     }
-  };
-
-  const deletePricingConfig = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this pricing configuration?')) return;
-    
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('pricing_config')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setPricingConfig(prev => prev.filter(item => item.id !== id));
-      toast.success('Pricing configuration deleted');
-    } catch (error) {
-      console.error('Error deleting pricing config:', error);
-      toast.error('Failed to delete pricing configuration');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(amount / 100);
   };
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">Settings</h1>
+        <div className="space-y-6 p-4 md:p-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
           <div className="grid gap-6">
             {[...Array(3)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-6 bg-muted rounded w-32"></div>
+                  <div className="h-6 bg-muted rounded w-48"></div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="h-4 bg-muted rounded w-full"></div>
-                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-4 bg-muted rounded w-32"></div>
+                    <div className="h-10 bg-muted rounded"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -193,284 +175,197 @@ export default function AdminSettings() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <SettingsIcon className="h-4 w-4" />
-            <span className="text-sm">Manage your business configuration</span>
-          </div>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
+          <Button onClick={saveSettings} disabled={saveLoading} className="min-h-[44px]">
+            <Save className="h-4 w-4 mr-2" />
+            {saveLoading ? 'Saving...' : 'Save All Changes'}
+          </Button>
         </div>
 
-        {/* Pricing Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+        <div className="grid gap-6">
+          {/* Pricing Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                <span>Pricing Configuration</span>
-              </div>
-              <Button onClick={addNewPricingConfig} disabled={saving} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Service
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {pricingConfig.map((pricing) => (
-              <div key={pricing.id} className="border rounded-lg p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium capitalize">{pricing.service_type.replace('_', ' ')} Session</h3>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={pricing.is_active}
-                      onCheckedChange={(checked) => updatePricing(pricing.id, { is_active: checked })}
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deletePricingConfig(pricing.id)}
-                      disabled={saving}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                Pricing Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {Object.entries(pricingConfig).map(([serviceType, config]) => (
+                <div key={serviceType} className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border rounded-lg">
+                  <div>
+                    <Label className="font-medium capitalize">
+                      {serviceType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                    </Label>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`service-type-${pricing.id}`}>Service Type</Label>
+                  <div>
+                    <Label htmlFor={`${serviceType}-price`}>Price (pence)</Label>
                     <Input
-                      id={`service-type-${pricing.id}`}
-                      value={pricing.service_type}
-                      onChange={(e) => {
-                        updatePricing(pricing.id, { service_type: e.target.value });
-                      }}
-                      disabled={saving}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`price-${pricing.id}`}>Price (£)</Label>
-                    <Input
-                      id={`price-${pricing.id}`}
+                      id={`${serviceType}-price`}
                       type="number"
-                      step="0.01"
-                      value={pricing.price_amount / 100}
-                      onChange={(e) => {
-                        const newAmount = Math.round(parseFloat(e.target.value) * 100);
-                        updatePricing(pricing.id, { price_amount: newAmount });
-                      }}
-                      disabled={saving}
+                      value={config.price}
+                      onChange={(e) => setPricingConfig(prev => ({
+                        ...prev,
+                        [serviceType]: { ...prev[serviceType], price: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="mt-1"
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`duration-${pricing.id}`}>Duration (minutes)</Label>
+                  <div>
+                    <Label htmlFor={`${serviceType}-duration`}>Duration (minutes)</Label>
                     <Input
-                      id={`duration-${pricing.id}`}
+                      id={`${serviceType}-duration`}
                       type="number"
-                      value={pricing.duration_minutes}
-                      onChange={(e) => {
-                        updatePricing(pricing.id, { duration_minutes: parseInt(e.target.value) });
-                      }}
-                      disabled={saving}
+                      value={config.duration}
+                      onChange={(e) => setPricingConfig(prev => ({
+                        ...prev,
+                        [serviceType]: { ...prev[serviceType], duration: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="mt-1"
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Current Price Display</Label>
-                    <div className="text-lg font-medium text-primary">
-                      {formatCurrency(pricing.price_amount)}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor={`description-${pricing.id}`}>Description</Label>
-                  <Textarea
-                    id={`description-${pricing.id}`}
-                    value={pricing.description || ''}
-                    onChange={(e) => {
-                      updatePricing(pricing.id, { description: e.target.value });
-                    }}
-                    disabled={saving}
-                    rows={2}
-                  />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Business Hours */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5" />
-              <span>Business Hours</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {systemSettings
-              .filter(setting => setting.setting_key === 'business_hours')
-              .map((setting) => {
-                const hours = setting.setting_value as any;
-                const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-                
-                return (
-                  <div key={setting.id} className="space-y-4">
-                    {days.map((day) => (
-                      <div key={day} className="flex items-center space-x-4">
-                        <div className="w-24 capitalize font-medium">{day}</div>
-                        {hours[day]?.closed ? (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-muted-foreground">Closed</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newHours = {
-                                  ...hours,
-                                  [day]: { open: '09:00', close: '17:00' }
-                                };
-                                updateSystemSetting('business_hours', newHours);
-                              }}
-                            >
-                              Open
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <Input
-                              type="time"
-                              value={hours[day]?.open || '09:00'}
-                              onChange={(e) => {
-                                const newHours = {
-                                  ...hours,
-                                  [day]: { ...hours[day], open: e.target.value }
-                                };
-                                updateSystemSetting('business_hours', newHours);
-                              }}
-                              className="w-32"
-                            />
-                            <span>to</span>
-                            <Input
-                              type="time"
-                              value={hours[day]?.close || '17:00'}
-                              onChange={(e) => {
-                                const newHours = {
-                                  ...hours,
-                                  [day]: { ...hours[day], close: e.target.value }
-                                };
-                                updateSystemSetting('business_hours', newHours);
-                              }}
-                              className="w-32"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newHours = {
-                                  ...hours,
-                                  [day]: { closed: true }
-                                };
-                                updateSystemSetting('business_hours', newHours);
-                              }}
-                            >
-                              Close
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-          </CardContent>
-        </Card>
-
-        {/* Gift Card Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Gift Card Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Default Gift Card Amount (£)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="50.00"
-                  onChange={(e) => {
-                    // This could be stored in system settings if needed
-                    console.log('Gift card amount:', e.target.value);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Gift Card Validity (days)</Label>
-                <Input
-                  type="number"
-                  placeholder="365"
-                  onChange={(e) => {
-                    // This could be stored in system settings if needed
-                    console.log('Gift card validity:', e.target.value);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Minimum Gift Card Amount (£)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="10.00"
-                  onChange={(e) => {
-                    // This could be stored in system settings if needed
-                    console.log('Min gift card amount:', e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Configure default gift card settings for purchases
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Other System Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>General Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {systemSettings
-              .filter(setting => setting.setting_key !== 'business_hours')
-              .map((setting) => (
-                <div key={setting.id} className="space-y-2">
-                  <Label htmlFor={setting.setting_key} className="capitalize">
-                    {setting.setting_key.replace('_', ' ')}
-                  </Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      id={setting.setting_key}
-                      type="number"
-                      value={setting.setting_value}
-                      onChange={(e) => {
-                        updateSystemSetting(setting.setting_key, parseInt(e.target.value));
-                      }}
-                      disabled={saving}
-                      className="w-32"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {setting.description}
-                    </span>
                   </div>
                 </div>
               ))}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Business Hours */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Business Hours
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(businessHours).map(([day, hours]) => (
+                <div key={day} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
+                  <Label className="font-medium capitalize">{day}</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={!hours.closed}
+                      onCheckedChange={(checked) => setBusinessHours(prev => ({
+                        ...prev,
+                        [day]: { ...prev[day], closed: !checked }
+                      }))}
+                    />
+                    <span className="text-sm">{hours.closed ? 'Closed' : 'Open'}</span>
+                  </div>
+                  {!hours.closed && (
+                    <>
+                      <Input
+                        type="time"
+                        value={hours.open}
+                        onChange={(e) => setBusinessHours(prev => ({
+                          ...prev,
+                          [day]: { ...prev[day], open: e.target.value }
+                        }))}
+                      />
+                      <Input
+                        type="time"
+                        value={hours.close}
+                        onChange={(e) => setBusinessHours(prev => ({
+                          ...prev,
+                          [day]: { ...prev[day], close: e.target.value }
+                        }))}
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* System Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings2 className="h-5 w-5" />
+                Business Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="businessName">Business Name</Label>
+                  <Input
+                    id="businessName"
+                    value={systemSettings.businessName}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, businessName: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={systemSettings.contactEmail}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contactPhone">Contact Phone</Label>
+                  <Input
+                    id="contactPhone"
+                    value={systemSettings.contactPhone}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="maxBookingDays">Max Advance Booking (days)</Label>
+                  <Input
+                    id="maxBookingDays"
+                    type="number"
+                    value={systemSettings.maxAdvanceBookingDays}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, maxAdvanceBookingDays: parseInt(e.target.value) || 30 }))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="address">Business Address</Label>
+                <Textarea
+                  id="address"
+                  value={systemSettings.address}
+                  onChange={(e) => setSystemSettings(prev => ({ ...prev, address: e.target.value }))}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Booking Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Receive email notifications for new bookings</p>
+                  </div>
+                  <Switch
+                    checked={systemSettings.bookingNotifications}
+                    onCheckedChange={(checked) => setSystemSettings(prev => ({ ...prev, bookingNotifications: checked }))}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Auto-confirm Bookings</Label>
+                    <p className="text-sm text-muted-foreground">Automatically confirm bookings upon payment</p>
+                  </div>
+                  <Switch
+                    checked={systemSettings.autoConfirmBookings}
+                    onCheckedChange={(checked) => setSystemSettings(prev => ({ ...prev, autoConfirmBookings: checked }))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   );

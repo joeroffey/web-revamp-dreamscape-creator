@@ -25,7 +25,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     console.log('AdminLayout - Loading admin status');
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto py-8">
+        <div className="container mx-auto py-8 px-4">
           <Skeleton className="h-8 w-48 mb-8" />
           <div className="grid gap-6">
             <Skeleton className="h-32 w-full" />
@@ -45,7 +45,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className="min-h-screen bg-background">
       <AdminNavigation />
-      <main className="container mx-auto py-8">
+      <main className="container mx-auto">
         {children}
       </main>
     </div>
