@@ -78,7 +78,7 @@ const FitnessRecovery = () => {
             <img 
               src="/lovable-uploads/c6e090ae-1284-4412-996c-21d0b99ffa2c.png" 
               alt="Our Expert Coaching Team"
-              className="w-full h-full object-cover opacity-70"
+              className="w-full h-full object-cover opacity-60"
             />
           </div>
           
