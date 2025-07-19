@@ -13,6 +13,8 @@ interface BookingRequest {
   customerPhone?: string;
   timeSlotId: string;
   specialRequests?: string;
+  bookingType: 'communal' | 'private';
+  guestCount: number;
 }
 
 const serviceConfig = {
@@ -33,11 +35,13 @@ serve(async (req) => {
       customerEmail,
       customerPhone,
       timeSlotId,
-      specialRequests
+      specialRequests,
+      bookingType = 'communal',
+      guestCount = 1
     }: BookingRequest = await req.json();
 
     // Validate required fields
-    if (!customerName || !customerEmail || !timeSlotId) {
+    if (!customerName || !customerEmail || !timeSlotId || !bookingType || guestCount < 1) {
       throw new Error("Missing required booking information");
     }
 
@@ -70,6 +74,33 @@ serve(async (req) => {
       throw new Error("Invalid service type");
     }
 
+    // Check booking conflicts based on type
+    const { data: existingBookings } = await supabase
+      .from("bookings")
+      .select("booking_type, guest_count")
+      .eq("time_slot_id", timeSlotId)
+      .eq("payment_status", "paid");
+
+    const confirmedBookings = existingBookings || [];
+    const communalBookings = confirmedBookings.filter(b => b.booking_type === 'communal');
+    const privateBookings = confirmedBookings.filter(b => b.booking_type === 'private');
+    const totalCommunalGuests = communalBookings.reduce((sum, b) => sum + (b.guest_count || 0), 0);
+    const hasPrivateBooking = privateBookings.length > 0;
+
+    // Validate booking based on type
+    if (bookingType === 'private') {
+      if (hasPrivateBooking || totalCommunalGuests > 0) {
+        throw new Error("Time slot not available for private booking");
+      }
+    } else { // communal
+      if (hasPrivateBooking) {
+        throw new Error("Time slot not available - private booking exists");
+      }
+      if (totalCommunalGuests + guestCount > 5) {
+        throw new Error(`Not enough space - only ${5 - totalCommunalGuests} spaces remaining`);
+      }
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
@@ -78,12 +109,12 @@ serve(async (req) => {
           price_data: {
             currency: "gbp",
             product_data: {
-              name: service.name,
-              description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time}`,
+              name: `${service.name} (${bookingType === 'private' ? 'Private' : 'Communal'})`,
+              description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}`,
             },
             unit_amount: service.price,
           },
-          quantity: 1,
+          quantity: guestCount,
         },
       ],
       mode: "payment",
@@ -94,6 +125,8 @@ serve(async (req) => {
         timeSlotId: timeSlotId,
         customerName,
         customerEmail,
+        bookingType,
+        guestCount: guestCount.toString(),
       }
     });
 
@@ -108,11 +141,13 @@ serve(async (req) => {
         session_date: timeSlot.slot_date,
         session_time: timeSlot.slot_time,
         duration_minutes: service.duration,
-        price_amount: service.price,
+        price_amount: service.price * guestCount,
         stripe_session_id: session.id,
         time_slot_id: timeSlotId,
         special_requests: specialRequests,
         payment_status: "pending",
+        booking_type: bookingType,
+        guest_count: guestCount,
       });
 
     if (bookingError) {

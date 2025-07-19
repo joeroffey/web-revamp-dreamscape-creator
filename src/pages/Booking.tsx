@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone, Check, AlertCircle } from "lucide-react";
+import { Calendar, Clock, Snowflake, Flame, User, Mail, Phone, Check, AlertCircle, Users } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +21,7 @@ const Booking = () => {
     date: string;
     time: string;
   } | null>(null);
+  const [availableSpaces, setAvailableSpaces] = useState<number>(5);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [formData, setFormData] = useState({
@@ -26,6 +29,8 @@ const Booking = () => {
     customerEmail: "",
     customerPhone: "",
     specialRequests: "",
+    bookingType: "communal" as "communal" | "private",
+    guestCount: 1,
   });
 
   const services = [
@@ -56,6 +61,14 @@ const Booking = () => {
       errors.timeSlot = "Please select a time slot";
     }
     
+    if (formData.guestCount < 1) {
+      errors.guestCount = "Guest count must be at least 1";
+    }
+    
+    if (formData.bookingType === "communal" && formData.guestCount > availableSpaces) {
+      errors.guestCount = `Only ${availableSpaces} spaces available for this slot`;
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -76,8 +89,47 @@ const Booking = () => {
     }
   };
 
-  const handleTimeSlotSelect = (slotId: string, date: string, time: string) => {
+  const handleGuestCountChange = (value: string) => {
+    const newGuestCount = parseInt(value) || 1;
+    
+    // Auto-convert to private if booking 5 people in communal
+    if (formData.bookingType === "communal" && newGuestCount === 5) {
+      setFormData(prev => ({ 
+        ...prev, 
+        guestCount: newGuestCount, 
+        bookingType: "private" 
+      }));
+      toast({
+        title: "Booking Type Changed",
+        description: "Automatically switched to private booking for 5 guests.",
+      });
+    } else {
+      setFormData(prev => ({ ...prev, guestCount: newGuestCount }));
+    }
+    
+    // Clear error for this field
+    if (formErrors.guestCount) {
+      setFormErrors(prev => ({ ...prev, guestCount: "" }));
+    }
+  };
+
+  const handleBookingTypeChange = (value: "communal" | "private") => {
+    setFormData(prev => ({ ...prev, bookingType: value }));
+    
+    // Adjust guest count if switching to communal and current count exceeds available spaces
+    if (value === "communal" && formData.guestCount > availableSpaces) {
+      setFormData(prev => ({ ...prev, guestCount: availableSpaces }));
+    }
+  };
+
+  const handleTimeSlotSelect = (slotId: string, date: string, time: string, spaces?: number) => {
     setSelectedTimeSlot({ id: slotId, date, time });
+    setAvailableSpaces(spaces || 5);
+    
+    // Auto-adjust guest count if it exceeds available spaces for communal bookings
+    if (formData.bookingType === "communal" && formData.guestCount > (spaces || 5)) {
+      setFormData(prev => ({ ...prev, guestCount: spaces || 5 }));
+    }
     
     // Clear time slot error
     if (formErrors.timeSlot) {
@@ -111,6 +163,8 @@ const Booking = () => {
           customerPhone: formData.customerPhone,
           timeSlotId: selectedTimeSlot!.id,
           specialRequests: formData.specialRequests,
+          bookingType: formData.bookingType,
+          guestCount: formData.guestCount,
         }
       });
 
@@ -218,9 +272,100 @@ const Booking = () => {
               </div>
             </div>
 
+            {/* Booking Type Selection */}
+            <div className="mb-8 lg:mb-12">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Type</h3>
+              <Card className="wellness-card">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Booking Type Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div 
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          formData.bookingType === "communal" 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                        onClick={() => handleBookingTypeChange("communal")}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <Users className="h-5 w-5" />
+                          <h3 className="font-semibold">Communal Session</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Share the hub with others (up to 5 people total)
+                        </p>
+                        <div className="mt-2">
+                          <Badge variant="secondary">£45 per person</Badge>
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          formData.bookingType === "private" 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                        onClick={() => handleBookingTypeChange("private")}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <User className="h-5 w-5" />
+                          <h3 className="font-semibold">Private Session</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Exclusive use of the entire hub for your group
+                        </p>
+                        <div className="mt-2">
+                          <Badge variant="secondary">£45 per person</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guest Count */}
+                    <div className="space-y-2">
+                      <Label htmlFor="guestCount">Number of Guests</Label>
+                      <Select 
+                        value={formData.guestCount.toString()} 
+                        onValueChange={handleGuestCountChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.bookingType === "communal" 
+                            ? Array.from({ length: Math.min(availableSpaces, 5) }, (_, i) => i + 1).map(num => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num} {num === 1 ? "person" : "people"}
+                                </SelectItem>
+                              ))
+                            : Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num} {num === 1 ? "person" : "people"}
+                                </SelectItem>
+                              ))
+                          }
+                        </SelectContent>
+                      </Select>
+                      {formErrors.guestCount && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {formErrors.guestCount}
+                        </p>
+                      )}
+                      {formData.bookingType === "communal" && (
+                        <p className="text-sm text-muted-foreground">
+                          {availableSpaces} spaces available for communal bookings
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Booking Form */}
             <div className="mb-8 lg:mb-12">
-              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Details</h3>
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Personal Details</h3>
               <Card className="wellness-card">
                 <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4 sm:space-y-6">
@@ -314,6 +459,16 @@ const Booking = () => {
                           <span className="font-medium">Combined Session</span>
                         </div>
                         <div className="flex justify-between">
+                          <span>Booking Type:</span>
+                          <Badge variant={formData.bookingType === "private" ? "default" : "secondary"}>
+                            {formData.bookingType === "private" ? "Private" : "Communal"}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Guests:</span>
+                          <span className="font-medium">{formData.guestCount} {formData.guestCount === 1 ? "person" : "people"}</span>
+                        </div>
+                        <div className="flex justify-between">
                           <span>Date:</span>
                           <span className="font-medium">
                             {new Date(selectedTimeSlot.date).toLocaleDateString('en-GB', {
@@ -328,9 +483,13 @@ const Booking = () => {
                           <span>Time:</span>
                           <span className="font-medium">{selectedTimeSlot.time.slice(0, 5)}</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span>Price per person:</span>
+                          <span>£45</span>
+                        </div>
                         <div className="flex justify-between font-semibold text-primary">
                           <span>Total:</span>
-                          <span>£45</span>
+                          <span>£{45 * formData.guestCount}</span>
                         </div>
                       </div>
                       <Button 

@@ -14,11 +14,19 @@ interface TimeSlot {
   is_available: boolean;
   booked_count: number;
   capacity: number;
+  available_spaces?: number;
+  has_private_booking?: boolean;
+  total_communal_guests?: number;
+  bookings?: Array<{
+    booking_type: string;
+    guest_count: number;
+    payment_status: string;
+  }>;
 }
 
 interface TimeSlotPickerProps {
   serviceType: string;
-  onSlotSelect: (slotId: string, date: string, time: string) => void;
+  onSlotSelect: (slotId: string, date: string, time: string, availableSpaces?: number) => void;
   selectedSlotId?: string;
 }
 
@@ -84,25 +92,24 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     try {
       console.log("Fetching time slots for:", { date, serviceType });
       
-      const { data, error } = await supabase
+      // First, get time slots with booking information
+      const { data: slotsData, error: slotsError } = await supabase
         .from("time_slots")
         .select("*")
         .eq("slot_date", date)
         .eq("service_type", serviceType)
         .order("slot_time");
 
-      console.log("Time slots query result:", { data, error });
-
-      if (error) {
-        throw new Error(`Failed to fetch time slots: ${error.message}`);
+      if (slotsError) {
+        throw new Error(`Failed to fetch time slots: ${slotsError.message}`);
       }
+
+      let slots = slotsData || [];
       
-      setTimeSlots(data || []);
-      
-      if (!data || data.length === 0) {
+      // If no slots exist, generate them
+      if (slots.length === 0) {
         console.log("No time slots found, attempting to generate slots for:", date);
         
-        // Try to generate time slots for this date if none exist
         const { error: generateError } = await supabase.rpc('generate_time_slots', {
           start_date: date,
           end_date: date
@@ -120,11 +127,53 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
             .order("slot_time");
             
           if (!retryError && retryData) {
-            setTimeSlots(retryData);
+            slots = retryData;
             console.log("Generated and fetched time slots:", retryData);
           }
         }
       }
+
+      // Now get booking information for each slot
+      const slotsWithBookings = await Promise.all(
+        slots.map(async (slot) => {
+          const { data: bookings } = await supabase
+            .from("bookings")
+            .select("booking_type, guest_count, payment_status")
+            .eq("time_slot_id", slot.id)
+            .eq("payment_status", "paid");
+
+          const confirmedBookings = bookings || [];
+          const communalBookings = confirmedBookings.filter(b => b.booking_type === 'communal');
+          const privateBookings = confirmedBookings.filter(b => b.booking_type === 'private');
+          
+          const totalCommunalGuests = communalBookings.reduce((sum, b) => sum + (b.guest_count || 0), 0);
+          const hasPrivateBooking = privateBookings.length > 0;
+          
+          let availableSpaces = 0;
+          let isAvailable = false;
+          
+          if (hasPrivateBooking) {
+            availableSpaces = 0;
+            isAvailable = false;
+          } else {
+            availableSpaces = Math.max(0, 5 - totalCommunalGuests);
+            isAvailable = availableSpaces > 0;
+          }
+          
+          return {
+            ...slot,
+            available_spaces: availableSpaces,
+            is_available: isAvailable,
+            has_private_booking: hasPrivateBooking,
+            total_communal_guests: totalCommunalGuests,
+            bookings: confirmedBookings
+          };
+        })
+      );
+      
+      setTimeSlots(slotsWithBookings);
+      console.log("Time slots with availability:", slotsWithBookings);
+      
     } catch (error) {
       console.error("Error fetching time slots:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to load available times";
@@ -290,14 +339,21 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
                     <div key={slot.id} className="relative">
                       <Button
                         variant={selectedSlotId === slot.id ? "default" : "outline"}
-                        onClick={() => !isDisabled && onSlotSelect(slot.id, slot.slot_date, slot.slot_time)}
+                        onClick={() => !isDisabled && onSlotSelect(slot.id, slot.slot_date, slot.slot_time, slot.available_spaces)}
                         disabled={isDisabled}
-                        className={`w-full p-2 sm:p-3 h-auto text-sm ${
+                        className={`w-full p-2 sm:p-3 h-auto text-sm flex flex-col gap-1 ${
                           isPastSlot ? "opacity-40 cursor-not-allowed" : ""
                         }`}
                         size="sm"
                       >
-                        {formatTime(slot.slot_time)}
+                        <span>{formatTime(slot.slot_time)}</span>
+                        {slot.has_private_booking ? (
+                          <span className="text-xs opacity-70">Private</span>
+                        ) : (
+                          <span className="text-xs opacity-70">
+                            {slot.available_spaces || 0}/5 spaces
+                          </span>
+                        )}
                       </Button>
                       {!slot.is_available && !isPastSlot && (
                         <Badge 

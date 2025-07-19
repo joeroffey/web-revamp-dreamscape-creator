@@ -50,11 +50,13 @@ export type Database = {
       bookings: {
         Row: {
           booking_status: string | null
+          booking_type: Database["public"]["Enums"]["booking_type"]
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string | null
           duration_minutes: number
+          guest_count: number
           id: string
           payment_status: string | null
           price_amount: number
@@ -69,11 +71,13 @@ export type Database = {
         }
         Insert: {
           booking_status?: string | null
+          booking_type?: Database["public"]["Enums"]["booking_type"]
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone?: string | null
           duration_minutes: number
+          guest_count?: number
           id?: string
           payment_status?: string | null
           price_amount: number
@@ -88,11 +92,13 @@ export type Database = {
         }
         Update: {
           booking_status?: string | null
+          booking_type?: Database["public"]["Enums"]["booking_type"]
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
           duration_minutes?: number
+          guest_count?: number
           id?: string
           payment_status?: string | null
           price_amount?: number
@@ -365,6 +371,10 @@ export type Database = {
         Args: { start_date: string; end_date: string }
         Returns: undefined
       }
+      get_available_communal_spaces: {
+        Args: { p_time_slot_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -375,6 +385,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      booking_type: "communal" | "private"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -503,6 +514,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      booking_type: ["communal", "private"],
     },
   },
 } as const
