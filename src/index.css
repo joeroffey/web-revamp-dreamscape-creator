@@ -3,6 +3,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safari-specific video autoplay improvements */
+@supports (-webkit-appearance: none) {
+  video {
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+  }
+  
+  /* Force hardware acceleration for Safari */
+  video[webkit-playsinline] {
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Ensure video covers the full container on Safari */
+video {
+  object-fit: cover;
+  object-position: center top;
+  width: 100%;
+  height: 100%;
+}
+
+/* Safari-specific video container */
+.safari-video-container {
+  position: relative;
+  overflow: hidden;
+  -webkit-transform: translateZ(0);
+}
+
+/* Safari video autoplay fallback */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  video[autoplay] {
+    -webkit-transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+  }
+}
+
 /* Revitalise Hub - Clean, minimal spa design */
 
 @layer base {
