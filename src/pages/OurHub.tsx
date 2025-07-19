@@ -9,25 +9,38 @@ const OurHub = () => {
       title: "Ice Bath Chambers",
       description: "State-of-the-art cold immersion tanks maintained at optimal temperatures for maximum therapeutic benefit.",
       icon: Snowflake,
-      image: "/lovable-uploads/029c3081-4504-4d35-b1af-8c8ec751d983.png"
+      image: "/lovable-uploads/e66be255-48c0-42a2-92bb-1f189a14976d.png"
     },
     {
       title: "Infrared Saunas",
       description: "Premium infrared sauna pods designed for deep heat therapy and complete relaxation.",
       icon: Thermometer,
-      image: "/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png"
+      image: "/lovable-uploads/8e9e8578-24af-421e-9d1c-3b71d4e13523.png"
     },
     {
       title: "Recovery Lounge",
       description: "Comfortable relaxation area for post-session recovery with refreshments and amenities.",
       icon: Users,
-      image: "/lovable-uploads/103c68d2-52d4-4bb6-b77a-2938942d6c71.png"
+      image: "/lovable-uploads/0f10c721-e834-4cf4-9182-2bd24811ad45.png"
     },
     {
-      title: "Changing Facilities",
-      description: "Clean, modern changing rooms with lockers, towels, and all necessary amenities.",
-      icon: Users,
-      image: "/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
+      title: "FIRA Therapy Equipment",
+      description: "Professional-grade therapy equipment including our signature ice baths for optimal recovery.",
+      icon: Waves,
+      image: "/lovable-uploads/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
+    }
+  ];
+
+  const hubPhotos = [
+    {
+      image: "/lovable-uploads/a1951f84-7cc0-4290-9dac-77ef88835423.png",
+      title: "Exterior Seating Area",
+      description: "Relaxing outdoor space with comfortable seating for pre and post-session relaxation."
+    },
+    {
+      image: "/lovable-uploads/a0772681-f82b-42df-9102-6fb502dc820a.png",
+      title: "Facility Entrance",
+      description: "Our welcoming entrance with clear signage for contrast therapy services."
     }
   ];
 
@@ -129,6 +142,33 @@ const OurHub = () => {
                       <h3 className="text-lg font-semibold">{facility.title}</h3>
                     </div>
                     <p className="text-muted-foreground">{facility.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Hub Photo Gallery */}
+        <section className="py-16 bg-muted/20">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
+              Inside Our Wellness Hub
+            </h2>
+            
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              {hubPhotos.map((photo, index) => (
+                <Card key={index} className="wellness-card overflow-hidden">
+                  <div className="aspect-video bg-muted overflow-hidden">
+                    <img 
+                      src={photo.image} 
+                      alt={photo.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{photo.title}</h3>
+                    <p className="text-muted-foreground">{photo.description}</p>
                   </CardContent>
                 </Card>
               ))}
