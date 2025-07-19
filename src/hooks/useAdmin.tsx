@@ -20,7 +20,6 @@ export const useAdmin = () => {
       }
 
       try {
-        setLoading(true);
         console.log('useAdmin - querying user_roles for user:', user.id);
         
         const { data, error } = await supabase
@@ -48,14 +47,8 @@ export const useAdmin = () => {
       }
     };
 
-    // Only check if we have a user and session, and avoid re-checking unnecessarily
-    if (session?.user?.id && user?.id && loading) {
-      checkAdminRole();
-    } else if (!session?.user?.id || !user?.id) {
-      setIsAdmin(false);
-      setLoading(false);
-    }
-  }, [session?.user?.id, user?.id, loading]);
+    checkAdminRole();
+  }, [session?.user?.id, user?.id]);
 
   console.log('useAdmin - returning:', { isAdmin, loading });
   return { isAdmin, loading };
