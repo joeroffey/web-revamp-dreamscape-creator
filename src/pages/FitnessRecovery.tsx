@@ -215,7 +215,9 @@ const FitnessRecovery = () => {
                         <img 
                           src={coach.images[0]} 
                           alt={coach.name}
-                          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+                            coach.id === 'amy' ? 'object-[center_20%]' : 'object-center'
+                          }`}
                         />
                       </div>
                       <div className="p-6">
@@ -269,7 +271,9 @@ const FitnessRecovery = () => {
                     <img 
                       src={selectedCoach.images[selectedImageIndex]} 
                       alt={selectedCoach.name}
-                      className="w-full h-full object-cover object-center"
+                      className={`w-full h-full object-cover ${
+                        selectedCoach.id === 'amy' ? 'object-[center_20%]' : 'object-center'
+                      }`}
                     />
                   </div>
                   {selectedCoach.images.length > 1 && (
