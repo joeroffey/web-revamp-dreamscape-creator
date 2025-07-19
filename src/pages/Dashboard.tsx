@@ -128,13 +128,13 @@ const Dashboard = () => {
   };
 
   // Show loading while checking admin status or fetching data
-  if (adminLoading || (loading && !isAdmin)) {
+  if (adminLoading || (loading && !isAdmin && user)) {
     return (
       <div className="min-h-screen bg-gallery">
         <Navigation />
         <main className="pt-20">
           <div className="max-w-4xl mx-auto px-6 py-24">
-            <div className="text-center">Loading...</div>
+            <div className="text-center">Loading your dashboard...</div>
           </div>
         </main>
       </div>
