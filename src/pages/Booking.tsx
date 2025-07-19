@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Booking = () => {
   const { toast } = useToast();
-  const [selectedService, setSelectedService] = useState<string>("");
+  // Auto-select combined service since it's the only option
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{
     id: string;
     date: string;
@@ -30,28 +30,12 @@ const Booking = () => {
 
   const services = [
     {
-      id: "ice_bath",
-      icon: Snowflake,
-      name: "Ice Bath Session",
-      duration: "20 minutes",
-      price: "£30",
-      description: "Cold water immersion therapy for recovery and mental clarity"
-    },
-    {
-      id: "sauna",
-      icon: Flame,
-      name: "Sauna Session",
-      duration: "30 minutes",
-      price: "£25",
-      description: "Heat therapy session in our spacious 8-person sauna"
-    },
-    {
       id: "combined",
       icon: Calendar,
       name: "Combined Session",
       duration: "50 minutes",
       price: "£45",
-      description: "Full thermal therapy experience with both ice bath and sauna"
+      description: "Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness"
     }
   ];
 
@@ -66,10 +50,6 @@ const Booking = () => {
       errors.customerEmail = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.customerEmail)) {
       errors.customerEmail = "Please enter a valid email address";
-    }
-    
-    if (!selectedService) {
-      errors.service = "Please select a service";
     }
     
     if (!selectedTimeSlot) {
@@ -109,16 +89,7 @@ const Booking = () => {
   };
 
   const handleServiceSelect = (serviceId: string) => {
-    setSelectedService(serviceId);
-    setSelectedTimeSlot(null); // Reset time slot when changing service
-    
-    // Clear service error
-    if (formErrors.service) {
-      setFormErrors({
-        ...formErrors,
-        service: ""
-      });
-    }
+    // Not needed anymore since only combined service is available
   };
 
   const handleBooking = async () => {
@@ -179,7 +150,7 @@ const Booking = () => {
                 Book Your Session
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light mb-8">
-                Choose from our range of thermal therapy services designed to enhance your wellbeing.
+                Our signature combined session includes both ice bath and sauna for the ultimate contrast therapy experience.
               </p>
               
               {/* Hero Image */}
@@ -194,79 +165,55 @@ const Booking = () => {
 
             {/* Service Selection and Time Slots */}
             <div className="mb-8 lg:mb-12">
-              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Select Your Service & Time</h3>
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Select Your Time</h3>
               
               <div className="grid lg:grid-cols-2 gap-8">
-                {/* Service Selection */}
+                {/* Service Information */}
                 <div>
-                  <h4 className="text-lg font-medium mb-4">Choose Your Service</h4>
+                  <h4 className="text-lg font-medium mb-4">Your Session</h4>
                   <div className="space-y-3 sm:space-y-4">
-                    {formErrors.service && (
-                      <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {formErrors.service}
-                      </p>
-                    )}
-                    {services.map((service) => (
-                      <Card 
-                        key={service.id} 
-                        className={`wellness-card cursor-pointer transition-all ${
-                          selectedService === service.id ? 'ring-2 ring-primary' : ''
-                        } ${formErrors.service ? 'border-destructive/50' : ''}`}
-                        onClick={() => handleServiceSelect(service.id)}
-                      >
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-start gap-3 sm:gap-4">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                              <service.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                    <Card className="wellness-card border-2 border-primary">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-lg sm:text-xl font-semibold text-primary">£45</span>
+                                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="text-base sm:text-lg font-semibold truncate">{service.name}</h4>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className="text-lg sm:text-xl font-semibold text-primary">{service.price}</span>
-                                  {selectedService === service.id && (
-                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                                  )}
-                                </div>
-                              </div>
-                              <p className="text-muted-foreground text-xs sm:text-sm mb-2">{service.description}</p>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                                <span className="text-xs sm:text-sm">{service.duration}</span>
-                              </div>
+                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness</p>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="text-xs sm:text-sm">50 minutes</span>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
 
                 {/* Time Slot Picker */}
                 <div>
                   <h4 className="text-lg font-medium mb-4">Select Your Time</h4>
-                  {selectedService ? (
-                    <div>
-                      {formErrors.timeSlot && (
-                        <p className="text-sm text-destructive flex items-center gap-1 mb-3">
-                          <AlertCircle className="h-3 w-3" />
-                          {formErrors.timeSlot}
-                        </p>
-                      )}
-                      <TimeSlotPicker
-                        serviceType={selectedService}
-                        onSlotSelect={handleTimeSlotSelect}
-                        selectedSlotId={selectedTimeSlot?.id}
-                      />
-                    </div>
-                  ) : (
-                    <Card className="wellness-card">
-                      <CardContent className="p-6 text-center">
-                        <p className="text-muted-foreground">Please select a service first to view available time slots</p>
-                      </CardContent>
-                    </Card>
-                  )}
+                  <div>
+                    {formErrors.timeSlot && (
+                      <p className="text-sm text-destructive flex items-center gap-1 mb-3">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.timeSlot}
+                      </p>
+                    )}
+                    <TimeSlotPicker
+                      serviceType="combined"
+                      onSlotSelect={handleTimeSlotSelect}
+                      selectedSlotId={selectedTimeSlot?.id}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -359,14 +306,12 @@ const Booking = () => {
               <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Booking Summary</h3>
               <Card className="wellness-card">
                 <CardContent className="p-4 sm:p-6">
-                  {selectedService && selectedTimeSlot ? (
+                  {selectedTimeSlot ? (
                     <>
                       <div className="space-y-2 text-sm mb-6">
                         <div className="flex justify-between">
                           <span>Service:</span>
-                          <span className="font-medium">
-                            {services.find(s => s.id === selectedService)?.name}
-                          </span>
+                          <span className="font-medium">Combined Session</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Date:</span>
@@ -385,7 +330,7 @@ const Booking = () => {
                         </div>
                         <div className="flex justify-between font-semibold text-primary">
                           <span>Total:</span>
-                          <span>{services.find(s => s.id === selectedService)?.price}</span>
+                          <span>£45</span>
                         </div>
                       </div>
                       <Button 
@@ -403,16 +348,13 @@ const Booking = () => {
                         <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                         <h4 className="text-lg font-medium mb-2">Ready to Book?</h4>
                         <p className="text-muted-foreground text-sm">
-                          {!selectedService 
-                            ? "Select a service and time slot to see your booking summary"
-                            : "Choose a time slot to complete your booking"
-                          }
+                          Choose a time slot to complete your booking
                         </p>
                       </div>
                       <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex justify-between">
                           <span>Service:</span>
-                          <span>{selectedService ? services.find(s => s.id === selectedService)?.name : "Not selected"}</span>
+                          <span>Combined Session</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Date & Time:</span>
@@ -420,7 +362,7 @@ const Booking = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>Total:</span>
-                          <span>{selectedService ? services.find(s => s.id === selectedService)?.price : "—"}</span>
+                          <span>£45</span>
                         </div>
                       </div>
                     </div>
