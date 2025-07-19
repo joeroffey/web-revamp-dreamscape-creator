@@ -1,3 +1,4 @@
+
 export const PhotoGallery = () => {
   const images = [
     {
@@ -35,7 +36,7 @@ export const PhotoGallery = () => {
   ];
 
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="py-16 bg-gallery">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((image, index) => (
