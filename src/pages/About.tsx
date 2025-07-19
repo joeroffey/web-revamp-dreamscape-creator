@@ -7,7 +7,7 @@ const About = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-20">
+      <main className="pt-20 bg-cream">
         <AboutSection />
       </main>
       

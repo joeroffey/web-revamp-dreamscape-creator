@@ -109,10 +109,10 @@ const Memberships = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-20">
+      <main className="pt-20 bg-cream">
         <section className="py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">

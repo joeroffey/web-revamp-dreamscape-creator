@@ -7,8 +7,11 @@
 @layer base {
   :root {
     /* Custom color palette - #CCBBA8, #52331F, #967B5E */
-    --background: 33 28% 73%; /* #CCBBA8 - Light cream background */
+    --background: 0 0% 100%; /* Pure white for navigation */
     --foreground: 22 46% 22%; /* #52331F - Dark brown text */
+    
+    /* Cream background for main content areas */
+    --cream-background: 33 28% 73%; /* #CCBBA8 - Light cream background */
 
     --card: 33 28% 73%;
     --card-foreground: 22 46% 22%;
@@ -188,4 +191,14 @@
     @apply wellness-button text-white shadow-[var(--shadow-button)] hover:opacity-90;
     background: var(--gradient-heat);
   }
-}
+  }
+  
+  /* Cream background utility */
+  .bg-cream {
+    background-color: hsl(var(--cream-background));
+  }
+  
+  /* Main content wrapper */
+  .main-content {
+    @apply bg-cream min-h-screen;
+  }

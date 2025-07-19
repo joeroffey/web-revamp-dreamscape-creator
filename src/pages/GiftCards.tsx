@@ -106,8 +106,8 @@ const GiftCards = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-20">
-        <section className="py-24 bg-background">
+      <main className="pt-20 bg-cream">
+        <section className="py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
