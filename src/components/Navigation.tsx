@@ -50,12 +50,12 @@ export const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+          <div className="hidden lg:flex items-center space-x-4 xl:space-x-6 2xl:space-x-8">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
               >
                 {item.name}
               </Link>
