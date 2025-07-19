@@ -119,7 +119,24 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Google Maps Banner */}
+        <div className="border-t border-primary-foreground/20 py-8">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-center">Find Us</h3>
+          </div>
+          <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
+            <iframe
+              src="https://maps.google.com/maps?width=100%&height=600&hl=en&q=Unit%207%2C%20Ensign%20yard%2C%20670%20Ampress%20Ln%2C%20Lymington%20SO41%208QY%2C%20UK&ie=UTF8&t=&z=14&iwloc=B&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Revitalise Hub Location"
+            />
+          </div>
+        </div>
         <div className="border-t border-primary-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-primary-foreground/70 text-sm">
