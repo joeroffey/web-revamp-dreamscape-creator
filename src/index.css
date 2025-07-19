@@ -6,31 +6,38 @@
 
 @layer base {
   :root {
-    /* Neutral palette inspired by natural wellness spaces */
-    --background: 30 15% 96%;
-    --foreground: 30 8% 15%;
+    /* Custom color palette - #CCBBA8, #52331F, #967B5E */
+    --background: 33 28% 73%; /* #CCBBA8 - Light cream background */
+    --foreground: 22 46% 22%; /* #52331F - Dark brown text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 30 8% 15%;
+    --card: 33 28% 73%;
+    --card-foreground: 22 46% 22%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 25 25% 15%;
+    --popover: 33 28% 73%;
+    --popover-foreground: 22 46% 22%;
 
-    /* Primary - Warm brown to match logo */
-    --primary: 35 25% 45%;
-    --primary-foreground: 0 0% 98%;
+    /* Primary - Dark brown */
+    --primary: 22 46% 22%; /* #52331F */
+    --primary-foreground: 33 28% 73%; /* #CCBBA8 */
+    --primary-glow: 22 23% 49%; /* #967B5E */
 
-    /* Secondary - Warm cream tones */
-    --secondary: 30 20% 90%;
-    --secondary-foreground: 30 8% 20%;
+    /* Secondary - Light cream */
+    --secondary: 33 28% 73%; /* #CCBBA8 */
+    --secondary-foreground: 22 46% 22%; /* #52331F */
 
-    /* Accent - Subtle sage green */
-    --accent: 120 15% 70%;
-    --accent-foreground: 30 8% 20%;
+    /* Accent - Medium brown */
+    --accent: 22 23% 49%; /* #967B5E */
+    --accent-foreground: 33 28% 73%; /* #CCBBA8 */
+    --accent-light: 22 23% 59%;
 
-    /* Muted - Clean neutrals */
-    --muted: 30 10% 94%;
-    --muted-foreground: 30 8% 50%;
+    /* Muted - Lighter versions */
+    --muted: 33 20% 85%;
+    --muted-foreground: 22 23% 49%; /* #967B5E */
+
+    /* Wellness color extensions */
+    --wellness-ice: 195 50% 65%;
+    --wellness-heat: 22 46% 22%; /* Using primary dark brown */
+    --wellness-calm: 22 23% 49%; /* Using accent medium brown */
     
     /* Gradients for premium feel */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
@@ -50,9 +57,9 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 20 15% 88%;
-    --input: 20 15% 88%;
-    --ring: 150 30% 25%;
+    --border: 22 23% 59%;
+    --input: 33 20% 85%;
+    --ring: 22 46% 22%;
 
     --radius: 1rem;
 
@@ -126,6 +133,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
