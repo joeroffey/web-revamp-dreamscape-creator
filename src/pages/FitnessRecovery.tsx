@@ -84,10 +84,18 @@ const FitnessRecovery = () => {
               <div className="text-4xl md:text-5xl font-bold text-primary mb-8">
                 £370
               </div>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12">
                 Whether you're looking to build strength, boost energy, improve recovery, or completely transform your body, 
                 this all-in-one package combines elite fitness coaching with powerful recovery tools – all in one place.
               </p>
+              
+              <div className="max-w-4xl mx-auto">
+                <img 
+                  src="/lovable-uploads/c6e090ae-1284-4412-996c-21d0b99ffa2c.png" 
+                  alt="Our Expert Coaching Team"
+                  className="w-full h-auto rounded-lg shadow-lg"
+                />
+              </div>
             </div>
           </div>
         </section>
