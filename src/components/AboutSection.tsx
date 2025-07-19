@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Award, Users, MapPin, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const AboutSection = () => {
+  const navigate = useNavigate();
+  
   const stats = [
     {
       icon: Users,
@@ -55,7 +58,7 @@ export const AboutSection = () => {
             <Button 
               size="lg" 
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-4 text-lg font-medium rounded-full"
-              onClick={() => window.open('https://revitalisehub.co.uk/contact', '_blank')}
+              onClick={() => navigate('/booking')}
             >
               Book A Session
             </Button>
