@@ -269,7 +269,7 @@ const FitnessRecovery = () => {
                     <img 
                       src={selectedCoach.images[selectedImageIndex]} 
                       alt={selectedCoach.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                     />
                   </div>
                   {selectedCoach.images.length > 1 && (
