@@ -31,7 +31,7 @@ export const AboutSection = () => {
   ];
 
   return (
-    <section className="py-24 bg-background">
+    <section className="py-24 bg-gallery">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-light text-foreground mb-8 tracking-tight">

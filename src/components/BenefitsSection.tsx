@@ -71,7 +71,7 @@ export const BenefitsSection = () => {
   ];
 
   return (
-    <section id="benefits" className="py-24 bg-wellness-calm/30">
+    <section id="benefits" className="py-24 bg-gallery">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16 animate-fade-in">
