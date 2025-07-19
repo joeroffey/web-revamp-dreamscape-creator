@@ -19,7 +19,7 @@ export const Footer = () => {
   ];
 
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <footer className="text-primary" style={{ backgroundColor: 'hsl(var(--footer-background))' }}>
       <div className="max-w-7xl mx-auto px-6">
         {/* Main Footer Content */}
         <div className="py-16">

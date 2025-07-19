@@ -16,6 +16,9 @@
     
     /* Gallery background - lighter version for main content */
     --gallery-background: 33 20% 85%; /* Lighter cream for main content areas */
+    
+    /* Footer background - slightly lighter beige than navigation */
+    --footer-background: 33 25% 78%; /* Slightly lighter than navigation background */
 
     --card: 33 28% 73%;
     --card-foreground: 22 46% 22%;
