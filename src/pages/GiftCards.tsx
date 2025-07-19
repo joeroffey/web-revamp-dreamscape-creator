@@ -123,88 +123,7 @@ const GiftCards = () => {
 
             <div className="max-w-6xl mx-auto">
               <div className="grid lg:grid-cols-2 gap-12">
-                {/* Gift Card Form */}
-                <div>
-                  <h3 className="text-2xl font-semibold mb-6">Gift Card Details</h3>
-                  <Card className="wellness-card">
-                    <CardContent className="p-6">
-                      <div className="space-y-6">
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <Label htmlFor="purchaserName" className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              Your Name *
-                            </Label>
-                            <Input
-                              id="purchaserName"
-                              name="purchaserName"
-                              value={formData.purchaserName}
-                              onChange={handleInputChange}
-                              placeholder="Your full name"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-3">
-                            <Label htmlFor="purchaserEmail" className="flex items-center gap-2">
-                              <Mail className="h-4 w-4" />
-                              Your Email *
-                            </Label>
-                            <Input
-                              id="purchaserEmail"
-                              name="purchaserEmail"
-                              type="email"
-                              value={formData.purchaserEmail}
-                              onChange={handleInputChange}
-                              placeholder="your.email@example.com"
-                              required
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <Label htmlFor="recipientName" className="flex items-center gap-2">
-                              <Gift className="h-4 w-4" />
-                              Recipient Name
-                            </Label>
-                            <Input
-                              id="recipientName"
-                              name="recipientName"
-                              value={formData.recipientName}
-                              onChange={handleInputChange}
-                              placeholder="Gift recipient's name"
-                            />
-                          </div>
-                          <div className="space-y-3">
-                            <Label htmlFor="recipientEmail">Recipient Email</Label>
-                            <Input
-                              id="recipientEmail"
-                              name="recipientEmail"
-                              type="email"
-                              value={formData.recipientEmail}
-                              onChange={handleInputChange}
-                              placeholder="recipient@example.com"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <Label htmlFor="message">Personal Message</Label>
-                          <Textarea
-                            id="message"
-                            name="message"
-                            value={formData.message}
-                            onChange={handleInputChange}
-                            placeholder="Add a personal message to your gift card..."
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Amount Selection */}
+                {/* Amount Selection - Now First */}
                 <div>
                   <h3 className="text-2xl font-semibold mb-6">Choose Amount</h3>
                   
@@ -263,21 +182,121 @@ const GiftCards = () => {
                         <span className="text-3xl font-semibold text-primary">
                           £{getCurrentAmount() || '0'}
                         </span>
+                        <p className="text-sm text-muted-foreground mt-1">Selected Amount</p>
                       </div>
-                      <Button 
-                        size="lg" 
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                        onClick={handlePurchase}
-                        disabled={isLoading || !getCurrentAmount()}
-                      >
-                        {isLoading ? "Processing..." : `Purchase Gift Card`}
-                      </Button>
+                      {getCurrentAmount() > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          ✓ Great choice! Now fill in your details on the right to purchase.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Gift Card Form - Now Second */}
+                <div>
+                  <h3 className="text-2xl font-semibold mb-6">Gift Card Details</h3>
+                  
+                  {getCurrentAmount() === 0 && (
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg text-center">
+                      <p className="text-muted-foreground">👈 Please select a gift card amount first</p>
+                    </div>
+                  )}
+                  
+                  <Card className={`wellness-card ${getCurrentAmount() === 0 ? 'opacity-50' : ''}`}>
+                    <CardContent className="p-6">
+                      <div className="space-y-6">
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <Label htmlFor="purchaserName" className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Your Name *
+                            </Label>
+                            <Input
+                              id="purchaserName"
+                              name="purchaserName"
+                              value={formData.purchaserName}
+                              onChange={handleInputChange}
+                              placeholder="Your full name"
+                              required
+                              disabled={getCurrentAmount() === 0}
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <Label htmlFor="purchaserEmail" className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              Your Email *
+                            </Label>
+                            <Input
+                              id="purchaserEmail"
+                              name="purchaserEmail"
+                              type="email"
+                              value={formData.purchaserEmail}
+                              onChange={handleInputChange}
+                              placeholder="your.email@example.com"
+                              required
+                              disabled={getCurrentAmount() === 0}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <Label htmlFor="recipientName" className="flex items-center gap-2">
+                              <Gift className="h-4 w-4" />
+                              Recipient Name
+                            </Label>
+                            <Input
+                              id="recipientName"
+                              name="recipientName"
+                              value={formData.recipientName}
+                              onChange={handleInputChange}
+                              placeholder="Gift recipient's name"
+                              disabled={getCurrentAmount() === 0}
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <Label htmlFor="recipientEmail">Recipient Email</Label>
+                            <Input
+                              id="recipientEmail"
+                              name="recipientEmail"
+                              type="email"
+                              value={formData.recipientEmail}
+                              onChange={handleInputChange}
+                              placeholder="recipient@example.com"
+                              disabled={getCurrentAmount() === 0}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label htmlFor="message">Personal Message</Label>
+                          <Textarea
+                            id="message"
+                            name="message"
+                            value={formData.message}
+                            onChange={handleInputChange}
+                            placeholder="Add a personal message to your gift card..."
+                            rows={3}
+                            disabled={getCurrentAmount() === 0}
+                          />
+                        </div>
+                        
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                          onClick={handlePurchase}
+                          disabled={isLoading || !getCurrentAmount() || !formData.purchaserName || !formData.purchaserEmail}
+                        >
+                          {isLoading ? "Processing..." : `Purchase £${getCurrentAmount()} Gift Card`}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
               </div>
 
-              <div className="bg-muted/30 rounded-lg p-8 text-center">
+              <div className="mt-12 bg-muted/30 rounded-lg p-8 text-center">
                 <Heart className="h-8 w-8 text-primary mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-4">How It Works</h3>
                 <div className="grid md:grid-cols-3 gap-6 text-muted-foreground">
@@ -286,8 +305,8 @@ const GiftCards = () => {
                     <p className="text-sm">Select from preset amounts or enter a custom value</p>
                   </div>
                   <div>
-                    <p className="font-medium mb-2">2. Purchase</p>
-                    <p className="text-sm">Complete your purchase securely online</p>
+                    <p className="font-medium mb-2">2. Enter Details</p>
+                    <p className="text-sm">Fill in your information and optional recipient details</p>
                   </div>
                   <div>
                     <p className="font-medium mb-2">3. Receive</p>
