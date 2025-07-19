@@ -120,7 +120,7 @@ const OurHub = () => {
         </section>
 
         {/* Facilities Gallery */}
-        <section className="py-16 bg-gallery">
+        <section className="py-16">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               Our Premium Facilities
@@ -177,7 +177,7 @@ const OurHub = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 bg-gallery">
+        <section className="py-16">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               What Makes Us Special
