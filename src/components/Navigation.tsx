@@ -127,9 +127,6 @@ export const Navigation = () => {
               <div className="pt-4 space-y-3">
                 {user ? (
                   <>
-                    <div className="text-sm text-muted-foreground px-3">
-                      {user.email}
-                    </div>
                     <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
                       <Button variant="outline" className="w-full rounded-full">
                         <Settings className="h-4 w-4 mr-2" />
