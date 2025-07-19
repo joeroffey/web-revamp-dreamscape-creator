@@ -59,7 +59,7 @@ const OurHub = () => {
       
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-24 bg-gradient-to-b from-primary/5 to-background">
+        <section className="py-24 bg-background">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -120,7 +120,7 @@ const OurHub = () => {
         </section>
 
         {/* Facilities Gallery */}
-        <section className="py-16">
+        <section className="py-16 bg-gallery">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               Our Premium Facilities
@@ -150,7 +150,7 @@ const OurHub = () => {
         </section>
 
         {/* Hub Photo Gallery */}
-        <section className="py-16 bg-gallery">
+        <section className="py-16">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               Inside Our Wellness Hub
@@ -177,7 +177,7 @@ const OurHub = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-16">
+        <section className="py-16 bg-gallery">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
               What Makes Us Special
@@ -195,7 +195,7 @@ const OurHub = () => {
         </section>
 
         {/* Contact Section */}
-        <section className="py-16 bg-gallery">
+        <section className="py-16">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-light mb-6">
               Ready to Experience Our Hub?
