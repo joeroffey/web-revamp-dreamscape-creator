@@ -44,7 +44,7 @@ export const Navigation = () => {
             <img 
               src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-14 sm:h-18 md:h-22 lg:h-28 xl:h-32 w-auto transition-all duration-300 hover:scale-105"
+              className="h-16 sm:h-20 md:h-24 lg:h-32 xl:h-36 w-auto transition-all duration-300 hover:scale-105"
             />
           </Link>
 
