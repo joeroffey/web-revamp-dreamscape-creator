@@ -19,7 +19,7 @@ export const Footer = () => {
   ];
 
   return (
-    <footer className="text-primary" style={{ backgroundColor: 'hsl(var(--footer-background))' }}>
+    <footer className="text-foreground" style={{ backgroundColor: 'hsl(var(--footer-background))' }}>
       <div className="max-w-7xl mx-auto px-6">
         {/* Main Footer Content */}
         <div className="py-16">
@@ -33,10 +33,10 @@ export const Footer = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-bold">Revitalise</span>
-                  <span className="text-sm text-primary-foreground/70 -mt-1">Hub</span>
+                  <span className="text-sm text-foreground/70 -mt-1">Hub</span>
                 </div>
               </Link>
-              <p className="text-primary-foreground/80 mb-6 leading-relaxed">
+              <p className="text-foreground/80 mb-6 leading-relaxed">
                 Your premier destination for thermal therapy and wellness. 
                 Experience the power of ice and heat for optimal health and recovery.
               </p>
@@ -44,7 +44,7 @@ export const Footer = () => {
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="bg-transparent border-primary-foreground/20 hover:bg-primary-foreground/10"
+                  className="bg-transparent border-foreground/20 hover:bg-foreground/10"
                   onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
                 >
                   <Instagram className="h-5 w-5" />
@@ -52,7 +52,7 @@ export const Footer = () => {
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="bg-transparent border-primary-foreground/20 hover:bg-primary-foreground/10"
+                  className="bg-transparent border-foreground/20 hover:bg-foreground/10"
                   onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
                 >
                   <Facebook className="h-5 w-5" />
@@ -68,7 +68,7 @@ export const Footer = () => {
                   <li key={link.name}>
                     <a 
                       href={link.href}
-                      className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                      className="text-foreground/80 hover:text-foreground transition-colors"
                     >
                       {link.name}
                     </a>
@@ -85,7 +85,7 @@ export const Footer = () => {
                   <li key={service.name}>
                     <a 
                       href={service.href}
-                      className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                      className="text-foreground/80 hover:text-foreground transition-colors"
                     >
                       {service.name}
                     </a>
@@ -99,27 +99,27 @@ export const Footer = () => {
               <h3 className="text-lg font-semibold mb-6">Contact</h3>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary-foreground/70 mt-0.5 flex-shrink-0" />
-                  <span className="text-primary-foreground/80 text-sm">
+                  <MapPin className="h-5 w-5 text-foreground/70 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground/80 text-sm">
                     Unit 7, Ensign yard<br />
                     670 Ampress Ln<br />
                     Lymington SO41 8QY
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-primary-foreground/70 flex-shrink-0" />
+                  <Phone className="h-5 w-5 text-foreground/70 flex-shrink-0" />
                   <a 
                     href="tel:01590698691"
-                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                    className="text-foreground/80 hover:text-foreground transition-colors text-sm"
                   >
                     01590 698 691 / 0754 696 5111
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-primary-foreground/70 flex-shrink-0" />
+                  <Mail className="h-5 w-5 text-foreground/70 flex-shrink-0" />
                   <a 
                     href="mailto:info@revitalisehub.co.uk"
-                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                    className="text-foreground/80 hover:text-foreground transition-colors text-sm"
                   >
                     info@revitalisehub.co.uk
                   </a>
@@ -130,7 +130,7 @@ export const Footer = () => {
         </div>
 
         {/* Google Maps Banner */}
-        <div className="border-t border-primary-foreground/20 py-8">
+        <div className="border-t border-foreground/20 py-8">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-center">Find Us</h3>
           </div>
@@ -147,19 +147,19 @@ export const Footer = () => {
             />
           </div>
         </div>
-        <div className="border-t border-primary-foreground/20 py-8">
+        <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-primary-foreground/70 text-sm">
+            <p className="text-foreground/70 text-sm">
               © 2024 Revitalise Hub. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <Link to="/privacy-policy" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <Link to="/privacy-policy" className="text-foreground/70 hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/terms-conditions" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <Link to="/terms-conditions" className="text-foreground/70 hover:text-foreground transition-colors">
                 Terms & Conditions
               </Link>
-              <a href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <a href="#" className="text-foreground/70 hover:text-foreground transition-colors">
                 Cookie Policy
               </a>
             </div>
