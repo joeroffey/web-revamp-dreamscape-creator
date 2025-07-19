@@ -25,6 +25,7 @@ export const Navigation = () => {
     { name: "About", href: "/about" },
     { name: "Our Hub", href: "/our-hub" },
     { name: "Memberships", href: "/memberships" },
+    { name: "Fitness & Recovery", href: "/fitness-recovery" },
     { name: "Contact", href: "/contact" },
     { name: "Booking", href: "/booking" },
     { name: "Gift Cards", href: "/gift-cards" },

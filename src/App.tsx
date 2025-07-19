@@ -17,6 +17,7 @@ import BookingSuccess from "./pages/BookingSuccess";
 import GiftCardSuccess from "./pages/GiftCardSuccess";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import FitnessRecovery from "./pages/FitnessRecovery";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminBookings from "./pages/admin/Bookings";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/booking" element={<Booking />} />
             <Route path="/gift-cards" element={<GiftCards />} />
             <Route path="/memberships" element={<Memberships />} />
+            <Route path="/fitness-recovery" element={<FitnessRecovery />} />
             <Route path="/our-hub" element={<OurHub />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
