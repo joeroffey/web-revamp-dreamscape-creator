@@ -66,6 +66,8 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     setError("");
     
     try {
+      console.log("Fetching time slots for:", { date, serviceType });
+      
       const { data, error } = await supabase
         .from("time_slots")
         .select("*")
@@ -73,11 +75,40 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
         .eq("service_type", serviceType)
         .order("slot_time");
 
+      console.log("Time slots query result:", { data, error });
+
       if (error) {
         throw new Error(`Failed to fetch time slots: ${error.message}`);
       }
       
       setTimeSlots(data || []);
+      
+      if (!data || data.length === 0) {
+        console.log("No time slots found, attempting to generate slots for:", date);
+        
+        // Try to generate time slots for this date if none exist
+        const { error: generateError } = await supabase.rpc('generate_time_slots', {
+          start_date: date,
+          end_date: date
+        });
+        
+        if (generateError) {
+          console.error("Error generating time slots:", generateError);
+        } else {
+          // Retry fetching after generation
+          const { data: retryData, error: retryError } = await supabase
+            .from("time_slots")
+            .select("*")
+            .eq("slot_date", date)
+            .eq("service_type", serviceType)
+            .order("slot_time");
+            
+          if (!retryError && retryData) {
+            setTimeSlots(retryData);
+            console.log("Generated and fetched time slots:", retryData);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error fetching time slots:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to load available times";
