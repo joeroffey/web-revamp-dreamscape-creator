@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ const Dashboard = () => {
 
   // Redirect admin users to admin dashboard
   useEffect(() => {
-    console.log('Dashboard useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin);
+    console.log('Dashboard redirect useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin);
     if (!adminLoading && isAdmin) {
       console.log('Redirecting admin user to admin dashboard');
       navigate('/admin/dashboard');
@@ -52,23 +53,28 @@ const Dashboard = () => {
 
   useEffect(() => {
     console.log('Dashboard data fetch useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin, 'user:', !!user);
-    // Only fetch user data if not admin and user exists
-    if (!adminLoading && !isAdmin && user) {
-      console.log('Fetching user data for regular user');
-      fetchUserData();
-    } else if (!adminLoading && !user) {
-      console.log('No user, stopping loading');
-      // If no user, stop loading
-      setLoading(false);
-    } else if (!adminLoading && isAdmin) {
-      console.log('Admin user detected, stopping loading (will redirect)');
-      setLoading(false);
+    
+    // Handle loading state immediately based on admin check
+    if (!adminLoading) {
+      if (isAdmin) {
+        console.log('Admin user detected, stopping loading (will redirect)');
+        setLoading(false);
+        return;
+      } else if (user) {
+        console.log('Regular user detected, fetching data');
+        fetchUserData();
+      } else {
+        console.log('No user detected, stopping loading');
+        setLoading(false);
+      }
     }
   }, [user, isAdmin, adminLoading]);
 
   const fetchUserData = async () => {
     console.log('fetchUserData called for user:', user?.id);
     try {
+      setLoading(true);
+      
       // Fetch user bookings
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
@@ -127,14 +133,16 @@ const Dashboard = () => {
     }
   };
 
-  // Show loading while checking admin status or fetching data
-  if (adminLoading || (loading && !isAdmin && user)) {
+  // Show loading only while checking admin status or loading user data for regular users
+  if (adminLoading || (loading && !isAdmin)) {
     return (
       <div className="min-h-screen bg-gallery">
         <Navigation />
         <main className="pt-20">
           <div className="max-w-4xl mx-auto px-6 py-24">
-            <div className="text-center">Loading your dashboard...</div>
+            <div className="text-center">
+              {adminLoading ? "Checking access..." : "Loading your dashboard..."}
+            </div>
           </div>
         </main>
       </div>
@@ -146,8 +154,8 @@ const Dashboard = () => {
     return null;
   }
 
-  // If no user and not loading, redirect to auth
-  if (!user && !adminLoading) {
+  // If no user and not loading, show sign in prompt
+  if (!user) {
     return (
       <div className="min-h-screen bg-gallery">
         <Navigation />
