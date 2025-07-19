@@ -29,9 +29,15 @@ const Auth = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Auth page - checking session:', !!session);
+        if (session?.user) {
+          console.log('Auth page - user found, redirecting to home');
+          window.location.href = "/";
+        }
+      } catch (error) {
+        console.error('Auth page - error checking session:', error);
       }
     };
     checkAuth();
