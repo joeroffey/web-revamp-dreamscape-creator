@@ -8,9 +8,16 @@ interface BookingData {
   session_date: string;
   session_time: string;
   customer_name: string;
-  guest_count: number;
+  customer_email: string;
+  customer_phone?: string;
   booking_type: string;
+  guest_count: number;
   payment_status: string;
+  booking_status: string;
+  price_amount: number;
+  special_requests?: string;
+  time_slot_id: string;
+  service_type: string;
 }
 
 interface ScheduleCalendarViewProps {

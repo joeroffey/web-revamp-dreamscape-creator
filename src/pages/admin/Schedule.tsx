@@ -18,6 +18,7 @@ interface BookingData {
   session_time: string;
   customer_name: string;
   customer_email: string;
+  customer_phone?: string;
   booking_type: string;
   guest_count: number;
   payment_status: string;
@@ -25,6 +26,7 @@ interface BookingData {
   price_amount: number;
   special_requests?: string;
   time_slot_id: string;
+  service_type: string;
 }
 
 export default function AdminSchedule() {
