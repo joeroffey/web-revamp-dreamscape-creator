@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, User, CreditCard, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Booking {
   id: string;
@@ -29,19 +31,30 @@ interface Membership {
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [membership, setMembership] = useState<Membership | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Redirect admin users to admin dashboard
   useEffect(() => {
-    if (user) {
+    if (!adminLoading && isAdmin) {
+      navigate('/admin/dashboard');
+      return;
+    }
+  }, [isAdmin, adminLoading, navigate]);
+
+  useEffect(() => {
+    // Only fetch user data if not admin and user exists
+    if (!adminLoading && !isAdmin && user) {
       fetchUserData();
-    } else {
+    } else if (!adminLoading && !user) {
       // If no user, stop loading
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isAdmin, adminLoading]);
 
   const fetchUserData = async () => {
     try {
@@ -103,7 +116,8 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) {
+  // Show loading while checking admin status or fetching data
+  if (adminLoading || loading) {
     return (
       <div className="min-h-screen bg-gallery">
         <Navigation />
@@ -114,6 +128,11 @@ const Dashboard = () => {
         </main>
       </div>
     );
+  }
+
+  // Don't render if user is admin (they'll be redirected)
+  if (isAdmin) {
+    return null;
   }
 
   return (

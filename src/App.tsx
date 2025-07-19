@@ -48,6 +48,7 @@ const App = () => (
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/customers" element={<AdminCustomers />} />
             <Route path="/admin/gift-cards" element={<AdminGiftCards />} />
             <Route path="/admin/memberships" element={<AdminMemberships />} />
