@@ -18,6 +18,10 @@ import GiftCardSuccess from "./pages/GiftCardSuccess";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminCustomers from "./pages/admin/Customers";
+import AdminGiftCards from "./pages/admin/GiftCards";
+import AdminSettings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +46,10 @@ const App = () => (
             <Route path="/gift-card-success" element={<GiftCardSuccess />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/customers" element={<AdminCustomers />} />
+            <Route path="/admin/gift-cards" element={<AdminGiftCards />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
