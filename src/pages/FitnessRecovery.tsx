@@ -72,30 +72,29 @@ const FitnessRecovery = () => {
       
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
+        <section className="relative py-20 overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
               src="/lovable-uploads/c6e090ae-1284-4412-996c-21d0b99ffa2c.png" 
               alt="Our Expert Coaching Team"
-              className="w-full h-full object-cover opacity-20"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-background/80"></div>
           </div>
           
           {/* Content */}
           <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
                 Fitness & Recovery Package
               </h1>
-              <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-muted-foreground">
+              <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-white/90 drop-shadow-lg">
                 8 Weeks to Your Best Self
               </h2>
-              <div className="text-4xl md:text-5xl font-bold text-primary mb-8">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-8 drop-shadow-lg">
                 £370
               </div>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg md:text-xl text-white/95 max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
                 Whether you're looking to build strength, boost energy, improve recovery, or completely transform your body, 
                 this all-in-one package combines elite fitness coaching with powerful recovery tools – all in one place.
               </p>
