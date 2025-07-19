@@ -59,6 +59,22 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     return timeString.slice(0, 5); // Remove seconds
   };
 
+  const isSlotInPast = (slotDate: string, slotTime: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Only check for past times if the slot is today
+    if (slotDate !== today) {
+      return false;
+    }
+    
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    const [hours, minutes] = slotTime.split(':').map(Number);
+    const slotTimeInMinutes = hours * 60 + minutes;
+    
+    return slotTimeInMinutes <= currentTime;
+  };
+
   const fetchTimeSlots = async (date: string) => {
     if (!date || !serviceType) return;
     
@@ -266,27 +282,42 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {timeSlots.map((slot) => (
-                  <div key={slot.id} className="relative">
-                    <Button
-                      variant={selectedSlotId === slot.id ? "default" : "outline"}
-                      onClick={() => slot.is_available && onSlotSelect(slot.id, slot.slot_date, slot.slot_time)}
-                      disabled={!slot.is_available}
-                      className="w-full p-2 sm:p-3 h-auto text-sm"
-                      size="sm"
-                    >
-                      {formatTime(slot.slot_time)}
-                    </Button>
-                    {!slot.is_available && (
-                      <Badge 
-                        variant="destructive" 
-                        className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 text-xs px-1 sm:px-1.5 py-0.5"
+                {timeSlots.map((slot) => {
+                  const isPastSlot = isSlotInPast(slot.slot_date, slot.slot_time);
+                  const isDisabled = !slot.is_available || isPastSlot;
+                  
+                  return (
+                    <div key={slot.id} className="relative">
+                      <Button
+                        variant={selectedSlotId === slot.id ? "default" : "outline"}
+                        onClick={() => !isDisabled && onSlotSelect(slot.id, slot.slot_date, slot.slot_time)}
+                        disabled={isDisabled}
+                        className={`w-full p-2 sm:p-3 h-auto text-sm ${
+                          isPastSlot ? "opacity-40 cursor-not-allowed" : ""
+                        }`}
+                        size="sm"
                       >
-                        Full
-                      </Badge>
-                    )}
-                  </div>
-                ))}
+                        {formatTime(slot.slot_time)}
+                      </Button>
+                      {!slot.is_available && !isPastSlot && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 text-xs px-1 sm:px-1.5 py-0.5"
+                        >
+                          Full
+                        </Badge>
+                      )}
+                      {isPastSlot && (
+                        <Badge 
+                          variant="secondary" 
+                          className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 text-xs px-1 sm:px-1.5 py-0.5 opacity-60"
+                        >
+                          Past
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>
