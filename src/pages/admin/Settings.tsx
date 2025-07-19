@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, DollarSign, Clock, Settings as SettingsIcon } from 'lucide-react';
+import { Save, DollarSign, Clock, Settings as SettingsIcon, Plus, Trash2 } from 'lucide-react';
 
 interface PricingConfig {
   id: string;
@@ -112,6 +112,53 @@ export default function AdminSettings() {
     }
   };
 
+  const addNewPricingConfig = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('pricing_config')
+        .insert({
+          service_type: 'new_service',
+          price_amount: 5000, // £50.00
+          duration_minutes: 60,
+          description: 'New service description',
+          is_active: false
+        });
+
+      if (error) throw error;
+      
+      await fetchSettings();
+      toast.success('New pricing configuration added');
+    } catch (error) {
+      console.error('Error adding pricing config:', error);
+      toast.error('Failed to add pricing configuration');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deletePricingConfig = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this pricing configuration?')) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('pricing_config')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setPricingConfig(prev => prev.filter(item => item.id !== id));
+      toast.success('Pricing configuration deleted');
+    } catch (error) {
+      console.error('Error deleting pricing config:', error);
+      toast.error('Failed to delete pricing configuration');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
@@ -158,9 +205,15 @@ export default function AdminSettings() {
         {/* Pricing Configuration */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5" />
-              <span>Pricing Configuration</span>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <DollarSign className="h-5 w-5" />
+                <span>Pricing Configuration</span>
+              </div>
+              <Button onClick={addNewPricingConfig} disabled={saving} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Service
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -168,13 +221,35 @@ export default function AdminSettings() {
               <div key={pricing.id} className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium capitalize">{pricing.service_type.replace('_', ' ')} Session</h3>
-                  <Switch
-                    checked={pricing.is_active}
-                    onCheckedChange={(checked) => updatePricing(pricing.id, { is_active: checked })}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={pricing.is_active}
+                      onCheckedChange={(checked) => updatePricing(pricing.id, { is_active: checked })}
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deletePricingConfig(pricing.id)}
+                      disabled={saving}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`service-type-${pricing.id}`}>Service Type</Label>
+                    <Input
+                      id={`service-type-${pricing.id}`}
+                      value={pricing.service_type}
+                      onChange={(e) => {
+                        updatePricing(pricing.id, { service_type: e.target.value });
+                      }}
+                      disabled={saving}
+                    />
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor={`price-${pricing.id}`}>Price (£)</Label>
                     <Input
@@ -312,6 +387,55 @@ export default function AdminSettings() {
                   </div>
                 );
               })}
+          </CardContent>
+        </Card>
+
+        {/* Gift Card Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Gift Card Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Default Gift Card Amount (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="50.00"
+                  onChange={(e) => {
+                    // This could be stored in system settings if needed
+                    console.log('Gift card amount:', e.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gift Card Validity (days)</Label>
+                <Input
+                  type="number"
+                  placeholder="365"
+                  onChange={(e) => {
+                    // This could be stored in system settings if needed
+                    console.log('Gift card validity:', e.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Minimum Gift Card Amount (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="10.00"
+                  onChange={(e) => {
+                    // This could be stored in system settings if needed
+                    console.log('Min gift card amount:', e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Configure default gift card settings for purchases
+            </p>
           </CardContent>
         </Card>
 

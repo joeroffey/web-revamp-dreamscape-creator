@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Mail, Phone, Calendar, Gift, CreditCard } from 'lucide-react';
+import { Search, Mail, Phone, Calendar, Gift, CreditCard, Eye, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Customer {
   id: string;
@@ -17,6 +18,9 @@ interface Customer {
   active_gift_cards: number;
   active_memberships: number;
   email?: string;
+  bookings?: any[];
+  gift_cards?: any[];
+  memberships?: any[];
 }
 
 export default function AdminCustomers() {
@@ -24,6 +28,7 @@ export default function AdminCustomers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerDetailOpen, setCustomerDetailOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -69,7 +74,10 @@ export default function AdminCustomers() {
             total_bookings: totalBookings,
             total_spent: totalSpent,
             active_gift_cards: giftCards?.length || 0,
-            active_memberships: memberships?.length || 0
+            active_memberships: memberships?.length || 0,
+            bookings: bookings || [],
+            gift_cards: giftCards || [],
+            memberships: memberships || []
           };
         })
       );
@@ -198,8 +206,7 @@ export default function AdminCustomers() {
                 {filteredCustomers.map((customer) => (
                   <div 
                     key={customer.id} 
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-                    onClick={() => setSelectedCustomer(customer)}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center space-x-3">
@@ -250,12 +257,154 @@ export default function AdminCustomers() {
                         )}
                       </div>
                     </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setCustomerDetailOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Customer Detail Modal */}
+        <Dialog open={customerDetailOpen} onOpenChange={setCustomerDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Customer Details: {selectedCustomer?.full_name || 'No name'}</span>
+                <Button variant="ghost" size="sm" onClick={() => setCustomerDetailOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedCustomer && (
+              <div className="space-y-6">
+                {/* Customer Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Contact Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div><strong>Name:</strong> {selectedCustomer.full_name || 'Not provided'}</div>
+                      <div><strong>Email:</strong> {selectedCustomer.email || 'Not provided'}</div>
+                      <div><strong>Phone:</strong> {selectedCustomer.phone || 'Not provided'}</div>
+                      <div><strong>Member since:</strong> {new Date(selectedCustomer.created_at).toLocaleDateString()}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Statistics</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div><strong>Total Bookings:</strong> {selectedCustomer.total_bookings}</div>
+                      <div><strong>Total Spent:</strong> {formatCurrency(selectedCustomer.total_spent)}</div>
+                      <div><strong>Active Gift Cards:</strong> {selectedCustomer.active_gift_cards}</div>
+                      <div><strong>Active Memberships:</strong> {selectedCustomer.active_memberships}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Booking History */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Booking History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedCustomer.bookings && selectedCustomer.bookings.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedCustomer.bookings.map((booking: any) => (
+                          <div key={booking.id} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <span className="font-medium">{booking.service_type}</span>
+                              <span className="text-muted-foreground ml-2">
+                                {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <div>{formatCurrency(booking.price_amount)}</div>
+                              <Badge variant={booking.payment_status === 'paid' ? 'default' : 'secondary'}>
+                                {booking.payment_status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No bookings found</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Gift Cards */}
+                {selectedCustomer.gift_cards && selectedCustomer.gift_cards.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Gift Cards</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {selectedCustomer.gift_cards.map((card: any) => (
+                          <div key={card.id} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <span className="font-mono">{card.gift_code}</span>
+                              <span className="text-muted-foreground ml-2">
+                                {formatCurrency(card.amount)}
+                              </span>
+                            </div>
+                            <Badge variant={card.is_redeemed ? 'secondary' : 'default'}>
+                              {card.is_redeemed ? 'Redeemed' : 'Active'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Memberships */}
+                {selectedCustomer.memberships && selectedCustomer.memberships.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Memberships</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {selectedCustomer.memberships.map((membership: any) => (
+                          <div key={membership.id} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <span className="font-medium">{membership.membership_type}</span>
+                              <span className="text-muted-foreground ml-2">
+                                {membership.sessions_remaining} sessions remaining
+                              </span>
+                            </div>
+                            <Badge variant={membership.status === 'active' ? 'default' : 'secondary'}>
+                              {membership.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
