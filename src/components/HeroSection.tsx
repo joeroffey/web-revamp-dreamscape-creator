@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from "react";
 export const HeroSection = () => {
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
+  const [showPlayButton, setShowPlayButton] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleVideoError = () => {
@@ -27,40 +29,97 @@ export const HeroSection = () => {
           .then(() => {
             console.log("Video started playing successfully");
             setVideoLoaded(true);
+            setShowPlayButton(false);
           })
           .catch((error) => {
             console.log("Autoplay failed:", error);
             setVideoLoaded(true);
+            if (isSafari) {
+              setShowPlayButton(true);
+            }
           });
       }
     }
   };
 
+  const handlePlayClick = () => {
+    if (videoRef.current) {
+      videoRef.current.play()
+        .then(() => {
+          setShowPlayButton(false);
+        })
+        .catch((error) => {
+          console.log("Manual play failed:", error);
+        });
+    }
+  };
+
   useEffect(() => {
-    // Enhanced Safari compatibility
-    const timer = setTimeout(() => {
-      if (videoRef.current && !videoError) {
-        // Safari-specific preloading
-        videoRef.current.preload = 'metadata';
-        videoRef.current.load();
-        
-        // Progressive loading for better Safari performance
-        setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.preload = 'auto';
-            const playPromise = videoRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise.catch((error) => {
-                console.log("Initial play attempt failed:", error);
-              });
+    // Detect Safari
+    const userAgent = navigator.userAgent;
+    const isSafariDetected = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+    setIsSafari(isSafariDetected);
+    console.log("Safari detected:", isSafariDetected);
+  }, []);
+
+  useEffect(() => {
+    // Enhanced Safari compatibility with intersection observer
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && videoRef.current && !videoError) {
+            console.log("Video in view, starting Safari-compatible loading");
+            
+            if (isSafari) {
+              // Safari-specific loading sequence
+              videoRef.current.preload = 'auto';
+              videoRef.current.load();
+              
+              setTimeout(() => {
+                if (videoRef.current) {
+                  const playPromise = videoRef.current.play();
+                  if (playPromise !== undefined) {
+                    playPromise.catch((error) => {
+                      console.log("Safari autoplay blocked:", error);
+                      setShowPlayButton(true);
+                    });
+                  }
+                }
+              }, 300);
+            } else {
+              // Standard loading for other browsers
+              videoRef.current.preload = 'metadata';
+              videoRef.current.load();
+              
+              setTimeout(() => {
+                if (videoRef.current) {
+                  videoRef.current.preload = 'auto';
+                  const playPromise = videoRef.current.play();
+                  if (playPromise !== undefined) {
+                    playPromise.catch((error) => {
+                      console.log("Initial play attempt failed:", error);
+                    });
+                  }
+                }
+              }, 500);
             }
           }
-        }, 500);
-      }
-    }, 100);
+        });
+      },
+      { threshold: 0.5 }
+    );
 
-    return () => clearTimeout(timer);
-  }, [videoError]);
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      observer.observe(videoElement);
+    }
+
+    return () => {
+      if (videoElement) {
+        observer.unobserve(videoElement);
+      }
+    };
+  }, [videoError, isSafari]);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -73,12 +132,14 @@ export const HeroSection = () => {
             muted 
             loop 
             playsInline
-            webkit-playsinline="true"
+            {...(isSafari && { 'webkit-playsinline': 'true' })}
+            controls={false}
+            disablePictureInPicture
             className="w-full h-full object-cover object-top"
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
             onCanPlay={handleVideoCanPlay}
-            preload="metadata"
+            preload={isSafari ? "auto" : "metadata"}
             style={{ 
               display: videoLoaded ? 'block' : 'none',
               opacity: videoLoaded ? 1 : 0,
@@ -91,6 +152,19 @@ export const HeroSection = () => {
               type="video/mp4" 
             />
           </video>
+        )}
+        
+        {/* Safari Play Button Overlay */}
+        {showPlayButton && isSafari && (
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <button
+              onClick={handlePlayClick}
+              className="bg-white/20 backdrop-blur-sm rounded-full p-6 hover:bg-white/30 transition-colors duration-300 group"
+              aria-label="Play video"
+            >
+              <div className="w-0 h-0 border-l-[24px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-2 group-hover:scale-110 transition-transform duration-200" />
+            </button>
+          </div>
         )}
         
         {/* Fallback background image - only show if video fails */}
