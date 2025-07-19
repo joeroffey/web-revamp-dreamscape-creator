@@ -37,6 +37,9 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchUserData();
+    } else {
+      // If no user, stop loading
+      setLoading(false);
     }
   }, [user]);
 
