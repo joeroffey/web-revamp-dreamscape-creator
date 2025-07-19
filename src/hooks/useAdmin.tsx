@@ -7,25 +7,36 @@ export const useAdmin = () => {
   const { session, user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [lastCheckedUserId, setLastCheckedUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('useAdmin - checking admin role for user:', user?.id, 'session exists:', !!session);
+    const userId = user?.id;
+    console.log('useAdmin - checking admin role for user:', userId, 'session exists:', !!session);
     
-    if (!session?.user?.id || !user?.id) {
+    // If no user or session, set admin to false immediately
+    if (!session?.user?.id || !userId) {
       console.log('useAdmin - no session or user, setting admin false');
       setIsAdmin(false);
       setLoading(false);
+      setLastCheckedUserId(null);
+      return;
+    }
+
+    // If we already checked this user recently, don't check again
+    if (lastCheckedUserId === userId && !loading) {
+      console.log('useAdmin - already checked this user, skipping');
       return;
     }
 
     const checkAdminRole = async () => {
       try {
-        console.log('useAdmin - querying user_roles for user:', user.id);
+        setLoading(true);
+        console.log('useAdmin - querying user_roles for user:', userId);
         
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('role', 'admin')
           .single();
 
@@ -39,6 +50,8 @@ export const useAdmin = () => {
           console.log('useAdmin - user has admin role:', hasAdminRole);
           setIsAdmin(hasAdminRole);
         }
+        
+        setLastCheckedUserId(userId);
       } catch (error) {
         console.error('useAdmin - Exception checking admin role:', error);
         setIsAdmin(false);
