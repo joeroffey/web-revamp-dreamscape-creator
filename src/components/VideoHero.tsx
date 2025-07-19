@@ -48,15 +48,39 @@ export const VideoHero = ({
           id="hero-video"
           className="w-full h-full object-cover"
           poster={posterImage}
-          muted={isMuted}
+          autoPlay
+          muted
           loop
           playsInline
+          webkit-playsinline="true"
           onLoadedData={() => {
+            console.log('Video loaded successfully');
             const video = document.getElementById('hero-video') as HTMLVideoElement;
-            if (video && isPlaying) {
-              video.play();
+            if (video) {
+              video.play().then(() => {
+                console.log('Video started playing successfully');
+                setIsPlaying(true);
+              }).catch((error) => {
+                console.error('Video autoplay failed:', error);
+                setIsPlaying(false);
+              });
             }
           }}
+          onCanPlay={() => {
+            console.log('Video can play, attempting to start');
+            const video = document.getElementById('hero-video') as HTMLVideoElement;
+            if (video && video.paused) {
+              video.play().then(() => {
+                console.log('Video started playing successfully');
+                setIsPlaying(true);
+              }).catch((error) => {
+                console.error('Video play failed:', error);
+                setIsPlaying(false);
+              });
+            }
+          }}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
         >
           <source src={videoUrl} type="video/mp4" />
           {/* Fallback for browsers that don't support video */}
