@@ -18,9 +18,9 @@ interface BookingRequest {
 }
 
 const serviceConfig = {
-  ice_bath: { name: "Ice Bath Session", duration: 20, price: 3000 }, // £30.00
-  sauna: { name: "Sauna Session", duration: 30, price: 2500 }, // £25.00
-  combined: { name: "Combined Session", duration: 50, price: 4500 }, // £45.00
+  ice_bath: { name: "Ice Bath Session", duration: 20, price: 1800 }, // £18.00
+  sauna: { name: "Sauna Session", duration: 30, price: 1800 }, // £18.00
+  combined: { name: "Combined Session", duration: 50, price: 1800 }, // £18.00 per person communal
 };
 
 serve(async (req) => {
@@ -112,9 +112,9 @@ serve(async (req) => {
               name: `${service.name} (${bookingType === 'private' ? 'Private' : 'Communal'})`,
               description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}`,
             },
-            unit_amount: service.price,
+            unit_amount: bookingType === 'private' ? 7000 : service.price, // £70 for private, £18 per person for communal
           },
-          quantity: guestCount,
+          quantity: bookingType === 'private' ? 1 : guestCount, // Flat rate for private, per person for communal
         },
       ],
       mode: "payment",
@@ -141,7 +141,7 @@ serve(async (req) => {
         session_date: timeSlot.slot_date,
         session_time: timeSlot.slot_time,
         duration_minutes: service.duration,
-        price_amount: service.price * guestCount,
+        price_amount: bookingType === 'private' ? 7000 : (service.price * guestCount),
         stripe_session_id: session.id,
         time_slot_id: timeSlotId,
         special_requests: specialRequests,

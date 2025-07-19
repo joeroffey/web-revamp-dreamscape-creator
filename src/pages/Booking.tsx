@@ -140,6 +140,10 @@ const Booking = () => {
     }
   };
 
+  const calculateTotalPrice = () => {
+    return formData.bookingType === 'private' ? 70 : (18 * formData.guestCount);
+  };
+
   const handleServiceSelect = (serviceId: string) => {
     // Not needed anymore since only combined service is available
   };
@@ -296,7 +300,7 @@ const Booking = () => {
                           Share the hub with others (up to 5 people total)
                         </p>
                         <div className="mt-2">
-                          <Badge variant="secondary">£45 per person</Badge>
+                          <Badge variant="secondary">£18 per person</Badge>
                         </div>
                       </div>
                       
@@ -316,7 +320,7 @@ const Booking = () => {
                           Exclusive use of the entire hub for your group
                         </p>
                         <div className="mt-2">
-                          <Badge variant="secondary">£45 per person</Badge>
+                          <Badge variant="secondary">£70 flat rate</Badge>
                         </div>
                       </div>
                     </div>
@@ -484,12 +488,16 @@ const Booking = () => {
                           <span className="font-medium">{selectedTimeSlot.time.slice(0, 5)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Price per person:</span>
-                          <span>£45</span>
+                          <span>Price:</span>
+                          <span>
+                            {formData.bookingType === 'private' 
+                              ? '£70 flat rate' 
+                              : `£18 × ${formData.guestCount} people`}
+                          </span>
                         </div>
                         <div className="flex justify-between font-semibold text-primary">
                           <span>Total:</span>
-                          <span>£{45 * formData.guestCount}</span>
+                          <span>£{calculateTotalPrice()}</span>
                         </div>
                       </div>
                       <Button 
