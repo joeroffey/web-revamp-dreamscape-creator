@@ -19,6 +19,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
+import AdminBookings from "./pages/admin/Bookings";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminGiftCards from "./pages/admin/GiftCards";
 import AdminMemberships from "./pages/admin/Memberships";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/admin/customers" element={<AdminCustomers />} />
             <Route path="/admin/gift-cards" element={<AdminGiftCards />} />
             <Route path="/admin/memberships" element={<AdminMemberships />} />
