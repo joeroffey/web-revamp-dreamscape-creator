@@ -59,7 +59,7 @@ const OurHub = () => {
       
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-white">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
