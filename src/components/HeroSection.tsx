@@ -2,23 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useSafariAutoplay } from "@/hooks/useSafariAutoplay";
-import { SafariVideo } from "@/components/SafariVideo";
 
 export const HeroSection = () => {
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
   const [showPlayButton, setShowPlayButton] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
-  const { isSafari, userInteracted, attemptAutoplay, addUserInteractionListeners } = useSafariAutoplay();
-
-  // Debug logging
-  useEffect(() => {
-    console.log("HeroSection: Safari detected:", isSafari);
-    console.log("HeroSection: User interacted:", userInteracted);
-    console.log("HeroSection: User agent:", navigator.userAgent);
-  }, [isSafari, userInteracted]);
 
   const handleVideoError = () => {
     console.log("Video failed to load, showing fallback image");
@@ -53,11 +43,9 @@ export const HeroSection = () => {
   };
 
   const handlePlayClick = () => {
-    console.log("Manual play button clicked");
     if (videoRef.current) {
       videoRef.current.play()
         .then(() => {
-          console.log("Manual play successful");
           setShowPlayButton(false);
         })
         .catch((error) => {
@@ -67,74 +55,64 @@ export const HeroSection = () => {
   };
 
   useEffect(() => {
-    // Add user interaction listeners for Safari
-    if (isSafari) {
-      console.log("Adding Safari user interaction listeners");
-      addUserInteractionListeners();
-    }
-  }, [isSafari, addUserInteractionListeners]);
+    // Detect Safari
+    const userAgent = navigator.userAgent;
+    const isSafariDetected = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+    setIsSafari(isSafariDetected);
+    console.log("Safari detected:", isSafariDetected);
+  }, []);
 
   useEffect(() => {
-    if (!videoRef.current) return;
-
-    const video = videoRef.current;
-    
-    // Set all possible Safari-compatible attributes
-    video.muted = true;
-    video.playsInline = true;
-    video.setAttribute('webkit-playsinline', 'true');
-    video.setAttribute('playsinline', 'true');
-    video.setAttribute('webkit-video-playable-inline', 'true');
-    video.setAttribute('webkit-video-playable-inline-auto-pause', 'false');
-    video.defaultMuted = true;
-    video.preload = 'auto';
-    
-    // Safari-specific autoplay strategy
-    if (isSafari) {
-      const attemptSafariAutoplay = async () => {
-        console.log("Attempting Safari autoplay, userInteracted:", userInteracted);
-        const canAutoplay = await attemptAutoplay();
-        if (canAutoplay && video.readyState >= 2) { // HAVE_CURRENT_DATA
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log("Safari video autoplay successful");
-                setVideoLoaded(true);
-                setShowPlayButton(false);
-              })
-              .catch((error) => {
-                console.log("Safari autoplay failed:", error);
-                setVideoLoaded(true);
-                setShowPlayButton(true);
-              });
-          }
-        } else if (!canAutoplay) {
-          console.log("Safari: Waiting for user interaction before autoplay");
-          setVideoLoaded(true);
-          setShowPlayButton(true);
+    // Aggressive Safari autoplay strategy
+    if (isSafari && videoRef.current) {
+      const video = videoRef.current;
+      
+      // Set properties for maximum Safari compatibility
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('playsinline', 'true');
+      video.defaultMuted = true;
+      
+      // Force load and attempt immediate play
+      video.load();
+      
+      const attemptPlay = () => {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("Safari video autoplay successful");
+              setVideoLoaded(true);
+              setShowPlayButton(false);
+            })
+            .catch((error) => {
+              console.log("Safari autoplay failed, will retry:", error);
+              // Retry after a short delay
+              setTimeout(() => {
+                video.play().catch(() => {
+                  console.log("Safari autoplay retry failed");
+                  setShowPlayButton(true);
+                });
+              }, 1000);
+            });
         }
       };
-
-      // Multiple event listeners for Safari
-      const events = ['loadeddata', 'canplay', 'canplaythrough', 'loadedmetadata'];
-      events.forEach(event => {
-        video.addEventListener(event, attemptSafariAutoplay);
-      });
-
-      // If user has interacted, try to play immediately
-      if (userInteracted) {
-        console.log("User has interacted, attempting immediate autoplay");
-        attemptSafariAutoplay();
+      
+      // Multiple trigger points for Safari
+      video.addEventListener('loadeddata', attemptPlay);
+      video.addEventListener('canplay', attemptPlay);
+      video.addEventListener('canplaythrough', attemptPlay);
+      
+      // Immediate attempt
+      if (video.readyState >= 3) {
+        attemptPlay();
       }
-
-      // Force load the video
-      video.load();
-
+      
       return () => {
-        events.forEach(event => {
-          video.removeEventListener(event, attemptSafariAutoplay);
-        });
+        video.removeEventListener('loadeddata', attemptPlay);
+        video.removeEventListener('canplay', attemptPlay);
+        video.removeEventListener('canplaythrough', attemptPlay);
       };
     }
     
@@ -175,57 +153,52 @@ export const HeroSection = () => {
         }
       };
     }
-  }, [isSafari, videoError, userInteracted, attemptAutoplay]);
+  }, [isSafari, videoError]);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Video */}
-      <div className="absolute inset-0 z-0 safari-video-container">
+      <div className="absolute inset-0 z-0">
         {!videoError && (
-          <>
-            {/* Use SafariVideo component for Safari */}
-            {isSafari ? (
-              <SafariVideo
-                src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4"
-                poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
-                className="w-full h-full object-cover object-top"
-                onLoad={handleVideoLoaded}
-                onError={handleVideoError}
-                showPlayButton={showPlayButton}
-                onPlayButtonClick={handlePlayClick}
-              />
-            ) : (
-              /* Standard video for non-Safari browsers */
-              <video 
-                ref={videoRef}
-                autoPlay 
-                muted 
-                loop 
-                playsInline
-                controls={false}
-                disablePictureInPicture
-                className="w-full h-full object-cover object-top"
-                onError={handleVideoError}
-                onLoadedData={handleVideoLoaded}
-                onCanPlay={handleVideoCanPlay}
-                preload="auto"
-                style={{ 
-                  display: videoLoaded ? 'block' : 'none',
-                  opacity: videoLoaded ? 1 : 0,
-                  transition: 'opacity 1s ease-in-out',
-                  objectPosition: 'center top'
-                }}
-                webkit-playsinline="true"
-                webkit-video-playable-inline="true"
-                webkit-video-playable-inline-auto-pause="false"
-              >
-                <source 
-                  src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4" 
-                  type="video/mp4" 
-                />
-              </video>
-            )}
-          </>
+          <video 
+            ref={videoRef}
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+            controls={false}
+            disablePictureInPicture
+            className="w-full h-full object-cover object-top"
+            onError={handleVideoError}
+            onLoadedData={handleVideoLoaded}
+            onCanPlay={handleVideoCanPlay}
+            preload="auto"
+            style={{ 
+              display: videoLoaded ? 'block' : 'none',
+              opacity: videoLoaded ? 1 : 0,
+              transition: 'opacity 1s ease-in-out',
+              objectPosition: 'center top'
+            }}
+            {...(isSafari && { 'webkit-playsinline': true })}
+          >
+            <source 
+              src="https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/Websitevideo.MP4" 
+              type="video/mp4" 
+            />
+          </video>
+        )}
+        
+        {/* Safari Play Button Overlay */}
+        {showPlayButton && isSafari && (
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <button
+              onClick={handlePlayClick}
+              className="bg-white/20 backdrop-blur-sm rounded-full p-6 hover:bg-white/30 transition-colors duration-300 group"
+              aria-label="Play video"
+            >
+              <div className="w-0 h-0 border-l-[24px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-2 group-hover:scale-110 transition-transform duration-200" />
+            </button>
+          </div>
         )}
         
         {/* Fallback background image - only show if video fails */}
@@ -237,8 +210,8 @@ export const HeroSection = () => {
           }}
         />
         
-        {/* Loading spinner - only for non-Safari browsers */}
-        {!videoLoaded && !videoError && !isSafari && (
+        {/* Loading spinner */}
+        {!videoLoaded && !videoError && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
             <div className="bg-white/10 backdrop-blur-sm rounded-full p-4">
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
