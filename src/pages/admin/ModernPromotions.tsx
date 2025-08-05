@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,64 +11,73 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Percent, Search, Eye, Filter, Plus, Calendar, DollarSign, Users, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+interface DiscountCode {
+  id: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  description: string | null;
+  is_active: boolean;
+  current_uses: number;
+  max_uses: number | null;
+  valid_from: string;
+  valid_until: string;
+  min_amount: number | null;
+  created_at: string;
+}
 
 export default function ModernPromotions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedPromotion, setSelectedPromotion] = useState<any>(null);
+  const [selectedPromotion, setSelectedPromotion] = useState<DiscountCode | null>(null);
   const [showPromotionDetails, setShowPromotionDetails] = useState(false);
+  const [promotions, setPromotions] = useState<DiscountCode[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockPromotions = [
-    {
-      id: "1",
-      code: "SUMMER2024",
-      type: "percentage",
-      value: 20,
-      description: "Summer wellness special",
-      status: "active",
-      usage_count: 45,
-      usage_limit: 100,
-      start_date: "2024-07-01",
-      end_date: "2024-08-31",
-      min_amount: 2000,
-      created_at: "2024-06-15"
-    },
-    {
-      id: "2",
-      code: "NEWCUSTOMER",
-      type: "fixed",
-      value: 1000,
-      description: "New customer welcome offer",
-      status: "active",
-      usage_count: 23,
-      usage_limit: null,
-      start_date: "2024-01-01",
-      end_date: "2024-12-31",
-      min_amount: 0,
-      created_at: "2024-01-01"
-    },
-    {
-      id: "3",
-      code: "SPRING15",
-      type: "percentage",
-      value: 15,
-      description: "Spring refresh discount",
-      status: "expired",
-      usage_count: 78,
-      usage_limit: 100,
-      start_date: "2024-03-01",
-      end_date: "2024-05-31",
-      min_amount: 1500,
-      created_at: "2024-02-15"
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
+  const fetchPromotions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPromotions((data as unknown as DiscountCode[]) || []);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+      setPromotions([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredPromotions = mockPromotions.filter(promotion => {
-    const matchesSearch = promotion.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promotion.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const getPromotionStatus = (promotion: DiscountCode) => {
+    if (!promotion.is_active) return 'inactive';
     
-    const matchesStatus = statusFilter === "all" || promotion.status === statusFilter;
+    const now = new Date();
+    const validFrom = new Date(promotion.valid_from);
+    const validUntil = new Date(promotion.valid_until);
+    
+    if (now < validFrom) return 'scheduled';
+    if (now > validUntil) return 'expired';
+    if (promotion.max_uses && promotion.current_uses >= promotion.max_uses) return 'exhausted';
+    
+    return 'active';
+  };
+
+  const filteredPromotions = promotions.filter(promotion => {
+    const matchesSearch = promotion.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (promotion.description && promotion.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const promotionStatus = getPromotionStatus(promotion);
+    const matchesStatus = statusFilter === "all" || promotionStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -80,22 +89,20 @@ export default function ModernPromotions() {
     }).format(amount / 100);
   };
 
-  const formatDiscount = (promotion: any) => {
-    if (promotion.type === 'percentage') {
-      return `${promotion.value}% off`;
-    } else {
-      return `${formatCurrency(promotion.value)} off`;
+  const formatDiscount = (type: string, value: number) => {
+    if (type === 'percentage') {
+      return `${value}% off`;
     }
+    return formatCurrency(value);
   };
 
-  const activePromotions = mockPromotions.filter(p => p.status === 'active').length;
-  const totalUsage = mockPromotions.reduce((sum, p) => sum + p.usage_count, 0);
-  const totalSavings = mockPromotions.reduce((sum, p) => {
-    if (p.type === 'percentage') {
-      return sum + (p.usage_count * 2000 * (p.value / 100));
-    } else {
-      return sum + (p.usage_count * p.value);
+  const totalUsage = promotions.reduce((sum, promo) => sum + promo.current_uses, 0);
+  const activePromotions = promotions.filter(p => getPromotionStatus(p) === 'active').length;
+  const totalSavings = promotions.reduce((sum, promo) => {
+    if (promo.discount_type === 'percentage') {
+      return sum + (promo.current_uses * 1000);
     }
+    return sum + (promo.current_uses * promo.discount_value);
   }, 0);
 
   return (
@@ -120,12 +127,11 @@ export default function ModernPromotions() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-100 flex items-center gap-2">
-                <Percent className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium text-purple-100">
                 Active Promotions
               </CardTitle>
             </CardHeader>
@@ -134,12 +140,11 @@ export default function ModernPromotions() {
               <p className="text-xs text-purple-100 mt-1">Currently running</p>
             </CardContent>
           </Card>
-
+          
           <Card className="bg-gradient-to-br from-green-500 to-green-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-100 flex items-center gap-2">
-                <Users className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium text-green-100">
                 Total Usage
               </CardTitle>
             </CardHeader>
@@ -148,13 +153,12 @@ export default function ModernPromotions() {
               <p className="text-xs text-green-100 mt-1">Times redeemed</p>
             </CardContent>
           </Card>
-
+          
           <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-100 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Customer Savings
+              <CardTitle className="text-sm font-medium text-blue-100">
+                Total Savings
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -162,35 +166,34 @@ export default function ModernPromotions() {
               <p className="text-xs text-blue-100 mt-1">Total saved</p>
             </CardContent>
           </Card>
-
+          
           <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-orange-100 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium text-orange-100">
                 Conversion Rate
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">12.5%</div>
+              <div className="text-3xl font-bold">{promotions.length > 0 ? ((activePromotions / promotions.length) * 100).toFixed(1) : 0}%</div>
               <p className="text-xs text-orange-100 mt-1">Promotion usage</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search promotions by code or description..."
+              placeholder="Search promotions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-0 shadow-md bg-white/80 backdrop-blur-sm"
+              className="pl-10 bg-white/80 backdrop-blur-sm border-gray-200 focus:border-purple-300 focus:ring-purple-200"
             />
           </div>
           
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 border-0 shadow-md bg-white/80 backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-48 bg-white/80 backdrop-blur-sm border-gray-200">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -199,7 +202,7 @@ export default function ModernPromotions() {
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="scheduled">Scheduled</SelectItem>
               <SelectItem value="expired">Expired</SelectItem>
-              <SelectItem value="disabled">Disabled</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -209,7 +212,21 @@ export default function ModernPromotions() {
             <CardTitle>Promotions ({filteredPromotions.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredPromotions.length === 0 ? (
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse p-6 border border-gray-100 rounded-xl">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-48"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredPromotions.length === 0 ? (
               <div className="text-center py-16">
                 <div className="h-16 w-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Percent className="h-8 w-8 text-gray-400" />
@@ -219,151 +236,73 @@ export default function ModernPromotions() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredPromotions.map((promotion) => (
-                  <div key={promotion.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-purple-200 bg-white/60 backdrop-blur-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        <Percent className="h-5 w-5" />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{promotion.code}</h3>
-                          <Badge variant={
-                            promotion.status === 'active' ? 'default' :
-                            promotion.status === 'scheduled' ? 'secondary' :
-                            promotion.status === 'expired' ? 'outline' : 'destructive'
-                          }>
-                            {promotion.status}
-                          </Badge>
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                            {formatDiscount(promotion)}
-                          </Badge>
+                {filteredPromotions.map((promotion) => {
+                  const promotionStatus = getPromotionStatus(promotion);
+                  return (
+                    <div key={promotion.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-purple-200 bg-white/60 backdrop-blur-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          <Percent className="h-5 w-5" />
                         </div>
                         
-                        <div className="flex items-center text-sm text-gray-600 gap-6">
-                          <div>{promotion.description}</div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 text-blue-500" />
-                            {format(new Date(promotion.start_date), "MMM d")} - {format(new Date(promotion.end_date), "MMM d, yyyy")}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg">{promotion.code}</h3>
+                            <Badge variant={
+                              promotionStatus === 'active' ? 'default' :
+                              promotionStatus === 'scheduled' ? 'secondary' :
+                              promotionStatus === 'expired' ? 'outline' : 'destructive'
+                            }>
+                              {promotionStatus}
+                            </Badge>
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              {formatDiscount(promotion.discount_type, promotion.discount_value)}
+                            </Badge>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center text-sm text-gray-600 gap-6 mt-2">
-                          <div>
-                            <strong>Usage:</strong> {promotion.usage_count}
-                            {promotion.usage_limit && ` / ${promotion.usage_limit}`}
-                          </div>
-                          {promotion.min_amount > 0 && (
-                            <div>
-                              <strong>Min amount:</strong> {formatCurrency(promotion.min_amount)}
+                          
+                          <div className="flex items-center text-sm text-gray-600 gap-6">
+                            <div>{promotion.description || 'No description'}</div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 text-blue-500" />
+                              {format(new Date(promotion.valid_from), "MMM d")} - {format(new Date(promotion.valid_until), "MMM d, yyyy")}
                             </div>
-                          )}
+                          </div>
+                          
+                          <div className="flex items-center text-sm text-gray-500 mt-2 gap-4">
+                            <div>Usage: {promotion.current_uses}{promotion.max_uses ? ` / ${promotion.max_uses}` : ''}</div>
+                            {promotion.min_amount && <div>Min amount: {formatCurrency(promotion.min_amount)}</div>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-purple-600 mb-1">
-                        {promotion.usage_count}
-                      </div>
-                      <div className="text-sm text-gray-500 mb-3">
-                        times used
-                      </div>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedPromotion(promotion);
-                          setShowPromotionDetails(true);
-                        }}
-                        className="hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Details
-                      </Button>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-purple-600 mb-1">
+                          {promotion.current_uses}
+                        </div>
+                        <div className="text-sm text-gray-500 mb-3">
+                          times used
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPromotion(promotion);
+                            setShowPromotionDetails(true);
+                          }}
+                          className="hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
-
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Promotion</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="code">Promotion Code</Label>
-                  <Input id="code" placeholder="e.g. SUMMER2024" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type">Discount Type</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="fixed">Fixed Amount</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Brief description of the promotion" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="value">Discount Value</Label>
-                  <Input id="value" type="number" placeholder="20" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="min_amount">Minimum Amount</Label>
-                  <Input id="min_amount" type="number" placeholder="0" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input id="start_date" type="date" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date</Label>
-                  <Input id="end_date" type="date" />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="usage_limit">Usage Limit (optional)</Label>
-                <Input id="usage_limit" type="number" placeholder="Leave empty for unlimited" />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch id="active" />
-                <Label htmlFor="active">Active immediately</Label>
-              </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  Cancel
-                </Button>
-                <Button>
-                  Create Promotion
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={showPromotionDetails} onOpenChange={setShowPromotionDetails}>
           <DialogContent className="max-w-2xl">
@@ -371,42 +310,76 @@ export default function ModernPromotions() {
               <DialogTitle>Promotion Details</DialogTitle>
             </DialogHeader>
             {selectedPromotion && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Promotion Information</h3>
-                    <div className="space-y-1 text-sm">
-                      <div><strong>Code:</strong> {selectedPromotion.code}</div>
-                      <div><strong>Type:</strong> {selectedPromotion.type}</div>
-                      <div><strong>Discount:</strong> {formatDiscount(selectedPromotion)}</div>
-                      <div><strong>Status:</strong> {selectedPromotion.status}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Usage Statistics</h3>
-                    <div className="space-y-1 text-sm">
-                      <div><strong>Times Used:</strong> {selectedPromotion.usage_count}</div>
-                      <div><strong>Usage Limit:</strong> {selectedPromotion.usage_limit || "Unlimited"}</div>
-                      <div><strong>Min Amount:</strong> {selectedPromotion.min_amount > 0 ? formatCurrency(selectedPromotion.min_amount) : "None"}</div>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2">Promotion Details</h3>
+                  <div className="space-y-1 text-sm">
+                    <div><strong>Code:</strong> {selectedPromotion.code}</div>
+                    <div><strong>Type:</strong> {selectedPromotion.discount_type}</div>
+                    <div><strong>Value:</strong> {formatDiscount(selectedPromotion.discount_type, selectedPromotion.discount_value)}</div>
+                    <div><strong>Status:</strong> {getPromotionStatus(selectedPromotion)}</div>
+                    <div><strong>Description:</strong> {selectedPromotion.description || 'No description'}</div>
                   </div>
                 </div>
-                
                 <div>
-                  <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-sm bg-gray-50 p-3 rounded">{selectedPromotion.description}</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-2">Validity Period</h3>
-                  <div className="text-sm">
-                    <strong>Start:</strong> {format(new Date(selectedPromotion.start_date), "MMMM d, yyyy")}
-                    <br />
-                    <strong>End:</strong> {format(new Date(selectedPromotion.end_date), "MMMM d, yyyy")}
+                  <h3 className="font-semibold mb-2">Usage & Validity</h3>
+                  <div className="space-y-1 text-sm">
+                    <div><strong>Usage Count:</strong> {selectedPromotion.current_uses}</div>
+                    <div><strong>Usage Limit:</strong> {selectedPromotion.max_uses || 'Unlimited'}</div>
+                    <div><strong>Valid From:</strong> {format(new Date(selectedPromotion.valid_from), "MMM d, yyyy")}</div>
+                    <div><strong>Valid Until:</strong> {format(new Date(selectedPromotion.valid_until), "MMM d, yyyy")}</div>
+                    <div><strong>Min Amount:</strong> {selectedPromotion.min_amount ? formatCurrency(selectedPromotion.min_amount) : 'None'}</div>
                   </div>
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Promotion</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="code">Promotion Code</Label>
+                  <Input id="code" placeholder="e.g., SUMMER2024" />
+                </div>
+                <div>
+                  <Label htmlFor="type">Discount Type</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage</SelectItem>
+                      <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" placeholder="Describe this promotion..." />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch id="active" />
+                <Label htmlFor="active">Active</Label>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setShowCreateDialog(false)}>
+                  Create Promotion
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

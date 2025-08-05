@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,46 +8,70 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Gift, Search, Eye, Filter, DollarSign, Calendar, TrendingUp, Star } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+interface GiftCard {
+  id: string;
+  gift_code: string;
+  amount: number;
+  is_redeemed: boolean;
+  redeemed_at: string | null;
+  expires_at: string;
+  purchaser_name: string;
+  purchaser_email: string;
+  recipient_name: string | null;
+  recipient_email: string | null;
+  message: string | null;
+  payment_status: string;
+  created_at: string;
+  redeemed_by: string | null;
+}
 
 export default function ModernGiftCardManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedGiftCard, setSelectedGiftCard] = useState<any>(null);
+  const [selectedGiftCard, setSelectedGiftCard] = useState<GiftCard | null>(null);
   const [showGiftCardDetails, setShowGiftCardDetails] = useState(false);
+  const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockGiftCards = [
-    {
-      id: "1",
-      code: "GIFT2024001",
-      amount: 5000,
-      balance: 5000,
-      status: "active",
-      purchaser_email: "john@example.com",
-      recipient_email: "sarah@example.com",
-      created_at: "2024-08-01",
-      expires_at: "2025-08-01",
-      message: "Happy Birthday!"
-    },
-    {
-      id: "2",
-      code: "GIFT2024002",
-      amount: 10000,
-      balance: 2500,
-      status: "partially_used",
-      purchaser_email: "mike@example.com",
-      recipient_email: "lisa@example.com",
-      created_at: "2024-07-15",
-      expires_at: "2025-07-15",
-      message: "Enjoy your wellness journey!"
+  useEffect(() => {
+    fetchGiftCards();
+  }, []);
+
+  const fetchGiftCards = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('gift_cards')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setGiftCards(data || []);
+    } catch (error) {
+      console.error('Error fetching gift cards:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredGiftCards = mockGiftCards.filter(giftCard => {
-    const matchesSearch = giftCard.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      giftCard.purchaser_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      giftCard.recipient_email.toLowerCase().includes(searchTerm.toLowerCase());
+  const getCardStatus = (card: GiftCard) => {
+    if (card.is_redeemed) return 'fully_used';
     
-    const matchesStatus = statusFilter === "all" || giftCard.status === statusFilter;
+    const now = new Date();
+    const expiresAt = new Date(card.expires_at);
+    if (expiresAt < now) return 'expired';
+    
+    return 'active';
+  };
+
+  const filteredGiftCards = giftCards.filter(giftCard => {
+    const matchesSearch = giftCard.gift_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      giftCard.purchaser_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (giftCard.recipient_email && giftCard.recipient_email.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const cardStatus = getCardStatus(giftCard);
+    const matchesStatus = statusFilter === "all" || cardStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -59,10 +83,10 @@ export default function ModernGiftCardManagement() {
     }).format(amount / 100);
   };
 
-  const totalValue = mockGiftCards.reduce((sum, gc) => sum + gc.amount, 0);
-  const totalBalance = mockGiftCards.reduce((sum, gc) => sum + gc.balance, 0);
-  const activeCards = mockGiftCards.filter(gc => gc.status === 'active').length;
-  const usedValue = totalValue - totalBalance;
+  const totalValue = giftCards.reduce((sum, gc) => sum + gc.amount, 0);
+  const activeCards = giftCards.filter(gc => !gc.is_redeemed && new Date(gc.expires_at) >= new Date()).length;
+  const redeemedValue = giftCards.filter(gc => gc.is_redeemed).reduce((sum, gc) => sum + gc.amount, 0);
+  const totalCards = giftCards.length;
 
   return (
     <AdminLayout>
@@ -91,7 +115,7 @@ export default function ModernGiftCardManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{mockGiftCards.length}</div>
+              <div className="text-3xl font-bold">{totalCards}</div>
               <p className="text-xs text-pink-100 mt-1">All gift cards</p>
             </CardContent>
           </Card>
@@ -133,7 +157,7 @@ export default function ModernGiftCardManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{formatCurrency(usedValue)}</div>
+              <div className="text-3xl font-bold">{formatCurrency(redeemedValue)}</div>
               <p className="text-xs text-purple-100 mt-1">Total redeemed</p>
             </CardContent>
           </Card>
@@ -170,7 +194,21 @@ export default function ModernGiftCardManagement() {
             <CardTitle>Gift Cards ({filteredGiftCards.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredGiftCards.length === 0 ? (
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse p-6 border border-gray-100 rounded-xl">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-48"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredGiftCards.length === 0 ? (
               <div className="text-center py-16">
                 <div className="h-16 w-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Gift className="h-8 w-8 text-gray-400" />
@@ -180,68 +218,70 @@ export default function ModernGiftCardManagement() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredGiftCards.map((giftCard) => (
-                  <div key={giftCard.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-pink-200 bg-white/60 backdrop-blur-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        <Gift className="h-5 w-5" />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{giftCard.code}</h3>
-                          <Badge variant={
-                            giftCard.status === 'active' ? 'default' :
-                            giftCard.status === 'partially_used' ? 'secondary' :
-                            giftCard.status === 'fully_used' ? 'outline' : 'destructive'
-                          }>
-                            {giftCard.status.replace('_', ' ')}
-                          </Badge>
+                {filteredGiftCards.map((giftCard) => {
+                  const cardStatus = getCardStatus(giftCard);
+                  return (
+                    <div key={giftCard.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-pink-200 bg-white/60 backdrop-blur-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          <Gift className="h-5 w-5" />
                         </div>
                         
-                        <div className="flex items-center text-sm text-gray-600 gap-6">
-                          <div>From: {giftCard.purchaser_email}</div>
-                          <div>To: {giftCard.recipient_email}</div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 text-blue-500" />
-                            {format(new Date(giftCard.created_at), "MMM d, yyyy")}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg">{giftCard.gift_code}</h3>
+                            <Badge variant={
+                              cardStatus === 'active' ? 'default' :
+                              cardStatus === 'fully_used' ? 'outline' : 'destructive'
+                            }>
+                              {cardStatus.replace('_', ' ')}
+                            </Badge>
                           </div>
+                          
+                          <div className="flex items-center text-sm text-gray-600 gap-6">
+                            <div>From: {giftCard.purchaser_email}</div>
+                            {giftCard.recipient_email && <div>To: {giftCard.recipient_email}</div>}
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 text-blue-500" />
+                              {format(new Date(giftCard.created_at), "MMM d, yyyy")}
+                            </div>
+                          </div>
+                          
+                          {giftCard.message && (
+                            <div className="text-sm text-gray-600 mt-2 italic">
+                              "{giftCard.message}"
+                            </div>
+                          )}
                         </div>
-                        
-                        {giftCard.message && (
-                          <div className="text-sm text-gray-600 mt-2 italic">
-                            "{giftCard.message}"
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600 mb-1">
-                        {formatCurrency(giftCard.balance)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        of {formatCurrency(giftCard.amount)}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-3">
-                        Expires: {format(new Date(giftCard.expires_at), "MMM d, yyyy")}
                       </div>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedGiftCard(giftCard);
-                          setShowGiftCardDetails(true);
-                        }}
-                        className="hover:bg-pink-50 hover:text-pink-700 hover:border-pink-200"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Details
-                      </Button>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-green-600 mb-1">
+                          {giftCard.is_redeemed ? formatCurrency(0) : formatCurrency(giftCard.amount)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          of {formatCurrency(giftCard.amount)}
+                        </div>
+                        <div className="text-xs text-gray-500 mb-3">
+                          Expires: {format(new Date(giftCard.expires_at), "MMM d, yyyy")}
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedGiftCard(giftCard);
+                            setShowGiftCardDetails(true);
+                          }}
+                          className="hover:bg-pink-50 hover:text-pink-700 hover:border-pink-200"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -258,17 +298,17 @@ export default function ModernGiftCardManagement() {
                   <div>
                     <h3 className="font-semibold mb-2">Gift Card Information</h3>
                     <div className="space-y-1 text-sm">
-                      <div><strong>Code:</strong> {selectedGiftCard.code}</div>
+                      <div><strong>Code:</strong> {selectedGiftCard.gift_code}</div>
                       <div><strong>Original Amount:</strong> {formatCurrency(selectedGiftCard.amount)}</div>
-                      <div><strong>Current Balance:</strong> {formatCurrency(selectedGiftCard.balance)}</div>
-                      <div><strong>Status:</strong> {selectedGiftCard.status.replace('_', ' ')}</div>
+                      <div><strong>Current Balance:</strong> {selectedGiftCard.is_redeemed ? formatCurrency(0) : formatCurrency(selectedGiftCard.amount)}</div>
+                      <div><strong>Status:</strong> {getCardStatus(selectedGiftCard).replace('_', ' ')}</div>
                     </div>
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2">Purchase Details</h3>
                     <div className="space-y-1 text-sm">
-                      <div><strong>Purchased by:</strong> {selectedGiftCard.purchaser_email}</div>
-                      <div><strong>Recipient:</strong> {selectedGiftCard.recipient_email}</div>
+                      <div><strong>Purchased by:</strong> {selectedGiftCard.purchaser_name} ({selectedGiftCard.purchaser_email})</div>
+                      {selectedGiftCard.recipient_email && <div><strong>Recipient:</strong> {selectedGiftCard.recipient_name} ({selectedGiftCard.recipient_email})</div>}
                       <div><strong>Purchase Date:</strong> {format(new Date(selectedGiftCard.created_at), "MMM d, yyyy")}</div>
                       <div><strong>Expires:</strong> {format(new Date(selectedGiftCard.expires_at), "MMM d, yyyy")}</div>
                     </div>

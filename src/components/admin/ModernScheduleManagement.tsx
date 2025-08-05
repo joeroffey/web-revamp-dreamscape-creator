@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,22 @@ import { DailyScheduleView } from "@/components/admin/DailyScheduleView";
 import { CreateBookingDialog } from "@/components/admin/CreateBookingDialog";
 import { CalendarDays, List, Plus, Clock, Users, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+interface BookingData {
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  service_type: string;
+  session_date: string;
+  session_time: string;
+  booking_status: string;
+  payment_status: string;
+  price_amount: number;
+  guest_count: number;
+  special_requests: string | null;
+}
 
 export default function ModernScheduleManagement() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -15,37 +31,29 @@ export default function ModernScheduleManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showWaitlistDialog, setShowWaitlistDialog] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
+  const [bookings, setBookings] = useState<BookingData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockBookings = [
-    {
-      id: "1",
-      customer_name: "John Smith",
-      customer_email: "john@example.com",
-      customer_phone: "07123456789",
-      service_type: "ice_bath",
-      session_date: format(selectedDate, "yyyy-MM-dd"),
-      session_time: "10:00",
-      booking_status: "confirmed",
-      payment_status: "paid",
-      price_amount: 3000,
-      guest_count: 1,
-      special_requests: "First time visitor"
-    },
-    {
-      id: "2",
-      customer_name: "Sarah Johnson",
-      customer_email: "sarah@example.com",
-      customer_phone: "07987654321",
-      service_type: "sauna",
-      session_date: format(selectedDate, "yyyy-MM-dd"),
-      session_time: "14:00",
-      booking_status: "completed",
-      payment_status: "paid",
-      price_amount: 2500,
-      guest_count: 2,
-      special_requests: null
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('session_date', { ascending: true })
+        .order('session_time', { ascending: true });
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -57,14 +65,14 @@ export default function ModernScheduleManagement() {
   };
 
   const handleRefresh = () => {
-    console.log("Refreshing schedule data...");
+    fetchBookings();
   };
 
-  const todayBookings = mockBookings.filter(b => 
+  const todayBookings = bookings.filter(b => 
     b.session_date === format(new Date(), "yyyy-MM-dd")
   );
 
-  const selectedDateBookings = mockBookings.filter(b => 
+  const selectedDateBookings = bookings.filter(b => 
     b.session_date === format(selectedDate, "yyyy-MM-dd")
   );
 
@@ -198,19 +206,32 @@ export default function ModernScheduleManagement() {
                     
                     <div className="space-y-2">
                       <h4 className="font-medium">Recent Bookings</h4>
-                      {mockBookings.slice(0, 3).map((booking) => (
-                        <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <div className="font-medium">{booking.customer_name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {booking.service_type} • {booking.session_time}
+                      {loading ? (
+                        <div className="space-y-2">
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="animate-pulse p-3 border rounded-lg">
+                              <div className="h-4 bg-gray-200 rounded w-32 mb-1"></div>
+                              <div className="h-3 bg-gray-200 rounded w-24"></div>
                             </div>
-                          </div>
-                          <Badge variant="outline">
-                            {booking.booking_status}
-                          </Badge>
+                          ))}
                         </div>
-                      ))}
+                      ) : bookings.slice(0, 3).length > 0 ? (
+                        bookings.slice(0, 3).map((booking) => (
+                          <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <div className="font-medium">{booking.customer_name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {booking.service_type} • {booking.session_time}
+                              </div>
+                            </div>
+                            <Badge variant="outline">
+                              {booking.booking_status}
+                            </Badge>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground">No recent bookings</div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -218,7 +239,7 @@ export default function ModernScheduleManagement() {
             ) : (
               <DailyScheduleView
                 selectedDate={selectedDate}
-                bookings={selectedDateBookings}
+                bookings={selectedDateBookings as any}
                 onRefresh={handleRefresh}
               />
             )}

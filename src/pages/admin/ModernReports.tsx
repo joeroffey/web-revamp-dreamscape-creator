@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,36 +6,83 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, TrendingUp, DollarSign, Users, Calendar, Download, Filter } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ReportsData {
+  totalRevenue: number;
+  totalCustomers: number;
+  totalBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  customerRetention: number;
+  recentRevenue: Array<{ date: string; amount: number }>;
+}
 
 export default function ModernReports() {
   const [dateRange, setDateRange] = useState("30days");
   const [reportType, setReportType] = useState("revenue");
+  const [reportsData, setReportsData] = useState<ReportsData>({
+    totalRevenue: 0,
+    totalCustomers: 0,
+    totalBookings: 0,
+    completedBookings: 0,
+    cancelledBookings: 0,
+    customerRetention: 0,
+    recentRevenue: []
+  });
+  const [loading, setLoading] = useState(true);
 
-  const mockRevenueData = {
-    total: 45670,
-    growth: 15.3,
-    daily: [
-      { date: "2024-08-01", amount: 1200 },
-      { date: "2024-08-02", amount: 1450 },
-      { date: "2024-08-03", amount: 980 },
-      { date: "2024-08-04", amount: 1680 },
-      { date: "2024-08-05", amount: 1320 }
-    ]
-  };
+  useEffect(() => {
+    fetchReportsData();
+  }, [dateRange]);
 
-  const mockCustomerData = {
-    total: 247,
-    new: 23,
-    returning: 89,
-    retention: 78.5
-  };
+  const fetchReportsData = async () => {
+    try {
+      const { count: customersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
 
-  const mockBookingData = {
-    total: 1834,
-    completed: 1654,
-    cancelled: 89,
-    noShow: 91,
-    completionRate: 90.2
+      const { count: bookingsCount } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true });
+
+      const { data: allBookings } = await supabase
+        .from('bookings')
+        .select('price_amount, session_date, payment_status');
+
+      const { count: completedCount } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('booking_status', 'completed');
+
+      const { count: cancelledCount } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('booking_status', 'cancelled');
+
+      const totalRevenue = allBookings?.reduce((sum, booking) => sum + booking.price_amount, 0) || 0;
+
+      const recentRevenue = allBookings?.slice(-5).map(booking => ({
+        date: booking.session_date,
+        amount: booking.price_amount / 100
+      })) || [];
+
+      const completionRate = bookingsCount ? ((completedCount || 0) / bookingsCount) * 100 : 0;
+
+      setReportsData({
+        totalRevenue,
+        totalCustomers: customersCount || 0,
+        totalBookings: bookingsCount || 0,
+        completedBookings: completedCount || 0,
+        cancelledBookings: cancelledCount || 0,
+        customerRetention: completionRate,
+        recentRevenue
+      });
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -104,10 +151,10 @@ export default function ModernReports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-1">{formatCurrency(mockRevenueData.total)}</div>
+              <div className="text-3xl font-bold mb-1">{formatCurrency(reportsData.totalRevenue)}</div>
               <div className="flex items-center gap-1 text-xs text-green-100">
                 <TrendingUp className="h-3 w-3" />
-                +{mockRevenueData.growth}% vs previous period
+                Total revenue from paid bookings
               </div>
             </CardContent>
           </Card>
@@ -121,9 +168,9 @@ export default function ModernReports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-1">{mockCustomerData.total}</div>
+              <div className="text-3xl font-bold mb-1">{reportsData.totalCustomers}</div>
               <div className="flex items-center gap-1 text-xs text-blue-100">
-                <span>{mockCustomerData.new} new this period</span>
+                <span>Total registered customers</span>
               </div>
             </CardContent>
           </Card>
@@ -137,9 +184,9 @@ export default function ModernReports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-1">{mockBookingData.total}</div>
+              <div className="text-3xl font-bold mb-1">{reportsData.totalBookings}</div>
               <div className="flex items-center gap-1 text-xs text-purple-100">
-                <span>{mockBookingData.completionRate}% completion rate</span>
+                <span>{reportsData.customerRetention.toFixed(1)}% completion rate</span>
               </div>
             </CardContent>
           </Card>
@@ -153,7 +200,7 @@ export default function ModernReports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-1">{mockCustomerData.retention}%</div>
+              <div className="text-3xl font-bold mb-1">{reportsData.customerRetention.toFixed(1)}%</div>
               <div className="flex items-center gap-1 text-xs text-orange-100">
                 <span>Returning customers</span>
               </div>
@@ -177,12 +224,14 @@ export default function ModernReports() {
                 
                 <div className="space-y-2">
                   <h4 className="font-medium">Recent Daily Revenue</h4>
-                  {mockRevenueData.daily.map((day) => (
-                    <div key={day.date} className="flex items-center justify-between p-2 border rounded">
+                  {reportsData.recentRevenue.length > 0 ? reportsData.recentRevenue.map((day, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 border rounded">
                       <span className="text-sm">{format(new Date(day.date), "MMM d")}</span>
                       <span className="font-medium">{formatCurrency(day.amount)}</span>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-sm text-muted-foreground">No recent revenue data available</div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -196,11 +245,11 @@ export default function ModernReports() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{mockBookingData.completed}</div>
+                    <div className="text-2xl font-bold text-green-600">{reportsData.completedBookings}</div>
                     <div className="text-sm text-green-700">Completed</div>
                   </div>
                   <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">{mockBookingData.cancelled}</div>
+                    <div className="text-2xl font-bold text-red-600">{reportsData.cancelledBookings}</div>
                     <div className="text-sm text-red-700">Cancelled</div>
                   </div>
                 </div>
@@ -247,25 +296,36 @@ export default function ModernReports() {
             <CardTitle>Customer Insights</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">{mockCustomerData.new}</div>
-                <div className="text-sm text-gray-600">New Customers</div>
-                <div className="text-xs text-gray-500 mt-1">This period</div>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="text-center animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-16 mx-auto mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
+                  </div>
+                ))}
               </div>
-              
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 mb-2">{mockCustomerData.returning}</div>
-                <div className="text-sm text-gray-600">Returning Customers</div>
-                <div className="text-xs text-gray-500 mt-1">This period</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">{reportsData.totalCustomers}</div>
+                  <div className="text-sm text-gray-600">Total Customers</div>
+                  <div className="text-xs text-gray-500 mt-1">All time</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600 mb-2">{reportsData.completedBookings}</div>
+                  <div className="text-sm text-gray-600">Completed Bookings</div>
+                  <div className="text-xs text-gray-500 mt-1">All time</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-purple-600 mb-2">{reportsData.customerRetention.toFixed(1)}%</div>
+                  <div className="text-sm text-gray-600">Completion Rate</div>
+                  <div className="text-xs text-gray-500 mt-1">Overall</div>
+                </div>
               </div>
-              
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-2">{mockCustomerData.retention}%</div>
-                <div className="text-sm text-gray-600">Retention Rate</div>
-                <div className="text-xs text-gray-500 mt-1">Overall</div>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
