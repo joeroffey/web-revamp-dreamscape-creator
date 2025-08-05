@@ -20,12 +20,21 @@ import TermsConditions from "./pages/TermsConditions";
 import FitnessRecovery from "./pages/FitnessRecovery";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
+import ModernDashboard from "./components/admin/ModernDashboard";
 import AdminBookings from "./pages/admin/Bookings";
+import ModernBookingManagement from "./components/admin/ModernBookingManagement";
 import AdminCustomers from "./pages/admin/Customers";
+import ModernCustomerManagement from "./components/admin/ModernCustomerManagement";
 import AdminGiftCards from "./pages/admin/GiftCards";
+import ModernGiftCardManagement from "./components/admin/ModernGiftCardManagement";
 import AdminMemberships from "./pages/admin/Memberships";
+import AdminReports from "./pages/admin/Reports";
+import ModernReports from "./pages/admin/ModernReports";
+import AdminPromotions from "./pages/admin/Promotions";
+import ModernPromotions from "./pages/admin/ModernPromotions";
 import AdminSettings from "./pages/admin/Settings";
 import AdminSchedule from "./pages/admin/Schedule";
+import ModernScheduleManagement from "./components/admin/ModernScheduleManagement";
 
 const queryClient = new QueryClient();
 
@@ -53,11 +62,13 @@ const App = () => (
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/schedule" element={<AdminSchedule />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
-            <Route path="/admin/customers" element={<AdminCustomers />} />
-            <Route path="/admin/gift-cards" element={<AdminGiftCards />} />
+            <Route path="/admin/schedule" element={<ModernScheduleManagement />} />
+            <Route path="/admin/bookings" element={<ModernBookingManagement />} />
+            <Route path="/admin/customers" element={<ModernCustomerManagement />} />
+            <Route path="/admin/gift-cards" element={<ModernGiftCardManagement />} />
             <Route path="/admin/memberships" element={<AdminMemberships />} />
+            <Route path="/admin/reports" element={<ModernReports />} />
+            <Route path="/admin/promotions" element={<ModernPromotions />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

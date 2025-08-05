@@ -36,7 +36,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !loading) {
     console.log('AdminLayout - User is not admin, redirecting to home');
     return <Navigate to="/" />;
   }
