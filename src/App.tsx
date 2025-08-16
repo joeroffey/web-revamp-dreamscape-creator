@@ -17,6 +17,7 @@ import BookingSuccess from "./pages/BookingSuccess";
 import GiftCardSuccess from "./pages/GiftCardSuccess";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import CookiePolicy from "./pages/CookiePolicy";
 import FitnessRecovery from "./pages/FitnessRecovery";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/gift-card-success" element={<GiftCardSuccess />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/schedule" element={<ModernScheduleManagement />} />

@@ -4,6 +4,10 @@ import { Snowflake, Flame, Instagram, Facebook, Mail, Phone, MapPin } from "luci
 import { Link } from "react-router-dom";
 
 export const Footer = () => {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const quickLinks = [
     { name: "Home", href: "#home" },
     { name: "Services", href: "#services" },
@@ -154,15 +158,27 @@ export const Footer = () => {
               © 2024 Revitalise Hub. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <Link to="/privacy-policy" className="text-foreground/70 hover:text-foreground transition-colors">
+              <Link 
+                to="/privacy-policy" 
+                className="text-foreground/70 hover:text-foreground transition-colors"
+                onClick={scrollToTop}
+              >
                 Privacy Policy
               </Link>
-              <Link to="/terms-conditions" className="text-foreground/70 hover:text-foreground transition-colors">
+              <Link 
+                to="/terms-conditions" 
+                className="text-foreground/70 hover:text-foreground transition-colors"
+                onClick={scrollToTop}
+              >
                 Terms & Conditions
               </Link>
-              <a href="#" className="text-foreground/70 hover:text-foreground transition-colors">
+              <Link 
+                to="/cookie-policy" 
+                className="text-foreground/70 hover:text-foreground transition-colors"
+                onClick={scrollToTop}
+              >
                 Cookie Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>
