@@ -34,17 +34,36 @@ export default function Promotions() {
   const { data: promotions, isLoading } = useQuery({
     queryKey: ["promotions"],
     queryFn: async () => {
-      // Discount codes table doesn't exist yet, return mock data
-      console.log("Promotions table not implemented yet");
-      return [];
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
     },
   });
 
   const createPromotionMutation = useMutation({
     mutationFn: async (promotion: any) => {
-      // Discount codes table doesn't exist yet, log for now
-      console.log("Would create promotion:", promotion);
-      return { id: "mock-id", ...promotion };
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .insert({
+          code: promotion.code.toUpperCase(),
+          description: promotion.description,
+          discount_type: promotion.discount_type,
+          discount_value: parseFloat(promotion.discount_value),
+          min_amount: promotion.min_amount ? parseFloat(promotion.min_amount) : 0,
+          max_uses: promotion.max_uses ? parseInt(promotion.max_uses) : null,
+          valid_from: promotion.valid_from || new Date().toISOString(),
+          valid_until: promotion.valid_until || null,
+          is_active: promotion.is_active
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
@@ -58,9 +77,25 @@ export default function Promotions() {
 
   const updatePromotionMutation = useMutation({
     mutationFn: async ({ id, promotion }: { id: string, promotion: any }) => {
-      // Discount codes table doesn't exist yet, log for now
-      console.log("Would update promotion:", id, promotion);
-      return { id, ...promotion };
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .update({
+          code: promotion.code.toUpperCase(),
+          description: promotion.description,
+          discount_type: promotion.discount_type,
+          discount_value: parseFloat(promotion.discount_value),
+          min_amount: promotion.min_amount ? parseFloat(promotion.min_amount) : 0,
+          max_uses: promotion.max_uses ? parseInt(promotion.max_uses) : null,
+          valid_from: promotion.valid_from,
+          valid_until: promotion.valid_until || null,
+          is_active: promotion.is_active
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
@@ -74,8 +109,12 @@ export default function Promotions() {
 
   const deletePromotionMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Discount codes table doesn't exist yet, log for now
-      console.log("Would delete promotion:", id);
+      const { error } = await supabase
+        .from("discount_codes")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotions"] });
@@ -201,7 +240,7 @@ export default function Promotions() {
           <CardContent>
             <div className="text-2xl font-bold">
               {promotions && promotions.length > 0 
-                ? `${(promotions.reduce((sum: number, p: any) => sum + (p.discount_value || 0), 0) / promotions.length).toFixed(1)}%`
+                ? `${(promotions.reduce((sum: number, p: any) => sum + (p.discount_value || 0), 0) / promotions.length).toFixed(1)}${promotions[0]?.discount_type === 'percentage' ? '%' : ''}`
                 : "0%"
               }
             </div>
@@ -228,10 +267,10 @@ export default function Promotions() {
                         <h3 className="font-semibold text-lg">{promotion.code}</h3>
                         <Badge variant={status.color as any}>{status.status}</Badge>
                         <Badge variant="outline">
-                          {(promotion.discount_type || 'percentage') === 'percentage' ? (
-                            <><Percent className="h-3 w-3 mr-1" />{promotion.discount_value || 0}%</>
+                          {promotion.discount_type === 'percentage' ? (
+                            <><Percent className="h-3 w-3 mr-1" />{promotion.discount_value}%</>
                           ) : (
-                            <><DollarSign className="h-3 w-3 mr-1" />£{promotion.discount_value || 0}</>
+                            <><DollarSign className="h-3 w-3 mr-1" />£{promotion.discount_value}</>
                           )}
                         </Badge>
                       </div>
@@ -241,8 +280,8 @@ export default function Promotions() {
                       )}
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {(promotion.min_amount || 0) > 0 && (
-                          <span>Min: £{promotion.min_amount || 0}</span>
+                        {promotion.min_amount > 0 && (
+                          <span>Min: £{promotion.min_amount}</span>
                         )}
                         {promotion.max_uses && (
                           <span>Uses: {promotion.current_uses || 0}/{promotion.max_uses}</span>

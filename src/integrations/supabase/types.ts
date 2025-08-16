@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -120,6 +120,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_amount: number | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_amount?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_amount?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
       }
       gift_cards: {
         Row: {
@@ -364,11 +412,11 @@ export type Database = {
     }
     Functions: {
       confirm_booking: {
-        Args: { p_time_slot_id: string; p_stripe_session_id: string }
+        Args: { p_stripe_session_id: string; p_time_slot_id: string }
         Returns: boolean
       }
       generate_time_slots: {
-        Args: { start_date: string; end_date: string }
+        Args: { end_date: string; start_date: string }
         Returns: undefined
       }
       get_available_communal_spaces: {
@@ -377,8 +425,8 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
