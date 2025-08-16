@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Percent, Search, Eye, Filter, Plus, Calendar, DollarSign, Users, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ModernPromotions() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,57 +20,45 @@ export default function ModernPromotions() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState<any>(null);
   const [showPromotionDetails, setShowPromotionDetails] = useState(false);
+  const [promotions, setPromotions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const mockPromotions = [
-    {
-      id: "1",
-      code: "SUMMER2024",
-      type: "percentage",
-      value: 20,
-      description: "Summer wellness special",
-      status: "active",
-      usage_count: 45,
-      usage_limit: 100,
-      start_date: "2024-07-01",
-      end_date: "2024-08-31",
-      min_amount: 2000,
-      created_at: "2024-06-15"
-    },
-    {
-      id: "2",
-      code: "NEWCUSTOMER",
-      type: "fixed",
-      value: 1000,
-      description: "New customer welcome offer",
-      status: "active",
-      usage_count: 23,
-      usage_limit: null,
-      start_date: "2024-01-01",
-      end_date: "2024-12-31",
-      min_amount: 0,
-      created_at: "2024-01-01"
-    },
-    {
-      id: "3",
-      code: "SPRING15",
-      type: "percentage",
-      value: 15,
-      description: "Spring refresh discount",
-      status: "expired",
-      usage_count: 78,
-      usage_limit: 100,
-      start_date: "2024-03-01",
-      end_date: "2024-05-31",
-      min_amount: 1500,
-      created_at: "2024-02-15"
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
+  const fetchPromotions = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPromotions(data || []);
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load promotions",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredPromotions = mockPromotions.filter(promotion => {
+  const filteredPromotions = promotions.filter(promotion => {
     const matchesSearch = promotion.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promotion.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (promotion.description && promotion.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = statusFilter === "all" || promotion.status === statusFilter;
+    const now = new Date();
+    const isExpired = promotion.valid_until && new Date(promotion.valid_until) < now;
+    const status = promotion.is_active && !isExpired ? 'active' : isExpired ? 'expired' : 'disabled';
+    
+    const matchesStatus = statusFilter === "all" || status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -81,22 +71,45 @@ export default function ModernPromotions() {
   };
 
   const formatDiscount = (promotion: any) => {
-    if (promotion.type === 'percentage') {
-      return `${promotion.value}% off`;
+    if (promotion.discount_type === 'percentage') {
+      return `${promotion.discount_value}% off`;
     } else {
-      return `${formatCurrency(promotion.value)} off`;
+      return `£${(promotion.discount_value / 100).toFixed(2)} off`;
     }
   };
 
-  const activePromotions = mockPromotions.filter(p => p.status === 'active').length;
-  const totalUsage = mockPromotions.reduce((sum, p) => sum + p.usage_count, 0);
-  const totalSavings = mockPromotions.reduce((sum, p) => {
-    if (p.type === 'percentage') {
-      return sum + (p.usage_count * 2000 * (p.value / 100));
+  const now = new Date();
+  const activePromotions = promotions.filter(p => 
+    p.is_active && (!p.valid_until || new Date(p.valid_until) >= now)
+  ).length;
+  const totalUsage = promotions.reduce((sum, p) => sum + (p.current_uses || 0), 0);
+  const totalSavings = promotions.reduce((sum, p) => {
+    const uses = p.current_uses || 0;
+    if (p.discount_type === 'percentage') {
+      return sum + (uses * 3000 * (p.discount_value / 100)); // Estimate based on average booking
     } else {
-      return sum + (p.usage_count * p.value);
+      return sum + (uses * p.discount_value);
     }
   }, 0);
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-purple-50 min-h-screen">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+            </div>
+            <div className="h-96 bg-muted rounded"></div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -230,11 +243,11 @@ export default function ModernPromotions() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold text-lg">{promotion.code}</h3>
                           <Badge variant={
-                            promotion.status === 'active' ? 'default' :
-                            promotion.status === 'scheduled' ? 'secondary' :
-                            promotion.status === 'expired' ? 'outline' : 'destructive'
+                            promotion.is_active && (!promotion.valid_until || new Date(promotion.valid_until) >= now) ? 'default' :
+                            promotion.valid_until && new Date(promotion.valid_until) < now ? 'outline' : 'destructive'
                           }>
-                            {promotion.status}
+                            {promotion.is_active && (!promotion.valid_until || new Date(promotion.valid_until) >= now) ? 'active' :
+                             promotion.valid_until && new Date(promotion.valid_until) < now ? 'expired' : 'disabled'}
                           </Badge>
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                             {formatDiscount(promotion)}
@@ -242,21 +255,23 @@ export default function ModernPromotions() {
                         </div>
                         
                         <div className="flex items-center text-sm text-gray-600 gap-6">
-                          <div>{promotion.description}</div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 text-blue-500" />
-                            {format(new Date(promotion.start_date), "MMM d")} - {format(new Date(promotion.end_date), "MMM d, yyyy")}
-                          </div>
+                          <div>{promotion.description || 'No description'}</div>
+                          {promotion.valid_from && promotion.valid_until && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 text-blue-500" />
+                              {format(new Date(promotion.valid_from), "MMM d")} - {format(new Date(promotion.valid_until), "MMM d, yyyy")}
+                            </div>
+                          )}
                         </div>
                         
                         <div className="flex items-center text-sm text-gray-600 gap-6 mt-2">
                           <div>
-                            <strong>Usage:</strong> {promotion.usage_count}
-                            {promotion.usage_limit && ` / ${promotion.usage_limit}`}
+                            <strong>Usage:</strong> {promotion.current_uses || 0}
+                            {promotion.max_uses && ` / ${promotion.max_uses}`}
                           </div>
-                          {promotion.min_amount > 0 && (
+                          {promotion.min_amount && promotion.min_amount > 0 && (
                             <div>
-                              <strong>Min amount:</strong> {formatCurrency(promotion.min_amount)}
+                              <strong>Min amount:</strong> £{(promotion.min_amount / 100).toFixed(2)}
                             </div>
                           )}
                         </div>
@@ -265,7 +280,7 @@ export default function ModernPromotions() {
                     
                     <div className="text-right">
                       <div className="text-2xl font-bold text-purple-600 mb-1">
-                        {promotion.usage_count}
+                        {promotion.current_uses || 0}
                       </div>
                       <div className="text-sm text-gray-500 mb-3">
                         times used
@@ -377,17 +392,17 @@ export default function ModernPromotions() {
                     <h3 className="font-semibold mb-2">Promotion Information</h3>
                     <div className="space-y-1 text-sm">
                       <div><strong>Code:</strong> {selectedPromotion.code}</div>
-                      <div><strong>Type:</strong> {selectedPromotion.type}</div>
+                      <div><strong>Type:</strong> {selectedPromotion.discount_type}</div>
                       <div><strong>Discount:</strong> {formatDiscount(selectedPromotion)}</div>
-                      <div><strong>Status:</strong> {selectedPromotion.status}</div>
+                      <div><strong>Status:</strong> {selectedPromotion.is_active ? 'Active' : 'Inactive'}</div>
                     </div>
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2">Usage Statistics</h3>
                     <div className="space-y-1 text-sm">
-                      <div><strong>Times Used:</strong> {selectedPromotion.usage_count}</div>
-                      <div><strong>Usage Limit:</strong> {selectedPromotion.usage_limit || "Unlimited"}</div>
-                      <div><strong>Min Amount:</strong> {selectedPromotion.min_amount > 0 ? formatCurrency(selectedPromotion.min_amount) : "None"}</div>
+                      <div><strong>Times Used:</strong> {selectedPromotion.current_uses || 0}</div>
+                      <div><strong>Usage Limit:</strong> {selectedPromotion.max_uses || "Unlimited"}</div>
+                      <div><strong>Min Amount:</strong> {selectedPromotion.min_amount > 0 ? `£${(selectedPromotion.min_amount / 100).toFixed(2)}` : "None"}</div>
                     </div>
                   </div>
                 </div>
@@ -400,9 +415,18 @@ export default function ModernPromotions() {
                 <div>
                   <h3 className="font-semibold mb-2">Validity Period</h3>
                   <div className="text-sm">
-                    <strong>Start:</strong> {format(new Date(selectedPromotion.start_date), "MMMM d, yyyy")}
-                    <br />
-                    <strong>End:</strong> {format(new Date(selectedPromotion.end_date), "MMMM d, yyyy")}
+                    {selectedPromotion.valid_from && (
+                      <>
+                        <strong>Start:</strong> {format(new Date(selectedPromotion.valid_from), "MMMM d, yyyy")}
+                        <br />
+                      </>
+                    )}
+                    {selectedPromotion.valid_until && (
+                      <>
+                        <strong>End:</strong> {format(new Date(selectedPromotion.valid_until), "MMMM d, yyyy")}
+                      </>
+                    )}
+                    {!selectedPromotion.valid_from && !selectedPromotion.valid_until && "No validity period set"}
                   </div>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { DailyScheduleView } from "@/components/admin/DailyScheduleView";
 import { CreateBookingDialog } from "@/components/admin/CreateBookingDialog";
 import { CalendarDays, List, Plus, Clock, Users, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ModernScheduleManagement() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -15,39 +17,37 @@ export default function ModernScheduleManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showWaitlistDialog, setShowWaitlistDialog] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const mockBookings = [
-    {
-      id: "1",
-      customer_name: "John Smith",
-      customer_email: "john@example.com",
-      customer_phone: "07123456789",
-      service_type: "ice_bath",
-      session_date: format(selectedDate, "yyyy-MM-dd"),
-      session_time: "10:00",
-      booking_status: "confirmed",
-      payment_status: "paid",
-      price_amount: 3000,
-      guest_count: 1,
-      special_requests: "First time visitor",
-      booking_type: "communal"
-    },
-    {
-      id: "2",
-      customer_name: "Sarah Johnson",
-      customer_email: "sarah@example.com",
-      customer_phone: "07987654321",
-      service_type: "sauna",
-      session_date: format(selectedDate, "yyyy-MM-dd"),
-      session_time: "14:00",
-      booking_status: "completed",
-      payment_status: "paid",
-      price_amount: 2500,
-      guest_count: 2,
-      special_requests: null,
-      booking_type: "private"
+  useEffect(() => {
+    fetchBookings();
+  }, [selectedDate]);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("payment_status", "paid")
+        .order("session_date", { ascending: true })
+        .order("session_time", { ascending: true });
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load bookings",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -59,16 +59,37 @@ export default function ModernScheduleManagement() {
   };
 
   const handleRefresh = () => {
-    console.log("Refreshing schedule data...");
+    fetchBookings();
   };
 
-  const todayBookings = mockBookings.filter(b => 
+  const todayBookings = bookings.filter(b => 
     b.session_date === format(new Date(), "yyyy-MM-dd")
   );
 
-  const selectedDateBookings = mockBookings.filter(b => 
+  const selectedDateBookings = bookings.filter(b => 
     b.session_date === format(selectedDate, "yyyy-MM-dd")
   );
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="h-96 bg-muted rounded"></div>
+              <div className="lg:col-span-2 h-96 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -200,7 +221,7 @@ export default function ModernScheduleManagement() {
                     
                     <div className="space-y-2">
                       <h4 className="font-medium">Recent Bookings</h4>
-                      {mockBookings.slice(0, 3).map((booking) => (
+                      {bookings.slice(0, 3).map((booking) => (
                         <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <div className="font-medium">{booking.customer_name}</div>
