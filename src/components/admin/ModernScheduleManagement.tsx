@@ -29,7 +29,8 @@ export default function ModernScheduleManagement() {
       payment_status: "paid",
       price_amount: 3000,
       guest_count: 1,
-      special_requests: "First time visitor"
+      special_requests: "First time visitor",
+      booking_type: "communal"
     },
     {
       id: "2",
@@ -43,7 +44,8 @@ export default function ModernScheduleManagement() {
       payment_status: "paid",
       price_amount: 2500,
       guest_count: 2,
-      special_requests: null
+      special_requests: null,
+      booking_type: "private"
     }
   ];
 
