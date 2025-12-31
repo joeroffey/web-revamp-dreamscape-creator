@@ -19,6 +19,13 @@ interface EnhancedCreateBookingDialogProps {
   selectedTime?: string;
 }
 
+interface DerivedCustomer {
+  id: string;
+  full_name: string | null;
+  email: string;
+  phone: string | null;
+}
+
 export function EnhancedCreateBookingDialog({ 
   open, 
   onOpenChange, 
@@ -27,13 +34,13 @@ export function EnhancedCreateBookingDialog({
 }: EnhancedCreateBookingDialogProps) {
   const [step, setStep] = useState(1);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<DerivedCustomer | null>(null);
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     customer_name: "",
     customer_email: "",
     customer_phone: "",
-    booking_type: "communal",
+    booking_type: "communal" as "communal" | "private",
     service_type: "",
     session_date: "",
     session_time: "",
@@ -46,21 +53,34 @@ export function EnhancedCreateBookingDialog({
 
   const queryClient = useQueryClient();
 
+  // Derive customers from existing bookings instead of a separate customers table
   const { data: existingCustomers } = useQuery({
     queryKey: ["customer-search", customerSearch],
     queryFn: async () => {
       if (!customerSearch.trim()) return [];
       
-      // CRM uses public.customers (separate from auth users). This keeps Admin operations working
-      // even for guest bookings.
       const { data, error } = await supabase
-        .from("customers")
-        .select("id, full_name, email, phone, tags")
-        .or(`full_name.ilike.%${customerSearch}%,email.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
-        .limit(10);
+        .from("bookings")
+        .select("customer_name, customer_email, customer_phone")
+        .or(`customer_name.ilike.%${customerSearch}%,customer_email.ilike.%${customerSearch}%,customer_phone.ilike.%${customerSearch}%`)
+        .limit(50);
 
       if (error) throw error;
-      return data;
+      
+      // Deduplicate by email
+      const uniqueCustomers = new Map<string, DerivedCustomer>();
+      (data || []).forEach((booking) => {
+        if (!uniqueCustomers.has(booking.customer_email)) {
+          uniqueCustomers.set(booking.customer_email, {
+            id: booking.customer_email,
+            full_name: booking.customer_name,
+            email: booking.customer_email,
+            phone: booking.customer_phone,
+          });
+        }
+      });
+      
+      return Array.from(uniqueCustomers.values()).slice(0, 10);
     },
     enabled: customerSearch.length > 2,
   });
@@ -78,25 +98,24 @@ export function EnhancedCreateBookingDialog({
   });
 
   const createBookingMutation = useMutation({
-    mutationFn: async (booking: any) => {
-      // If creating a new customer or if no customer is selected, upsert the customer record first.
-      if (!selectedCustomer?.id || isNewCustomer) {
-        const { error: customerErr } = await supabase
-          .from("customers")
-          .upsert(
-            {
-              full_name: booking.customer_name,
-              email: booking.customer_email,
-              phone: booking.customer_phone || null,
-            },
-            { onConflict: "email" }
-          );
-        if (customerErr) throw customerErr;
-      }
-
+    mutationFn: async (booking: typeof bookingForm) => {
       const { data, error } = await supabase
         .from("bookings")
-        .insert(booking)
+        .insert({
+          customer_name: booking.customer_name,
+          customer_email: booking.customer_email,
+          customer_phone: booking.customer_phone || null,
+          booking_type: booking.booking_type,
+          service_type: booking.service_type,
+          session_date: booking.session_date,
+          session_time: booking.session_time,
+          duration_minutes: booking.duration_minutes,
+          guest_count: booking.guest_count,
+          price_amount: booking.price_amount,
+          special_requests: booking.special_requests || null,
+          booking_status: booking.booking_status,
+          payment_status: "paid", // Admin-created bookings are assumed paid
+        })
         .select()
         .single();
 
@@ -161,7 +180,7 @@ export function EnhancedCreateBookingDialog({
     onOpenChange(false);
   };
 
-  const handleCustomerSelect = (customer: any) => {
+  const handleCustomerSelect = (customer: DerivedCustomer) => {
     setSelectedCustomer(customer);
     setBookingForm(prev => ({
       ...prev,
@@ -270,7 +289,7 @@ export function EnhancedCreateBookingDialog({
                   id="customer_name"
                   value={bookingForm.customer_name}
                   onChange={(e) => setBookingForm({ ...bookingForm, customer_name: e.target.value })}
-                  disabled={!isNewCustomer && selectedCustomer}
+                  disabled={!isNewCustomer && !!selectedCustomer}
                 />
               </div>
               
@@ -281,7 +300,7 @@ export function EnhancedCreateBookingDialog({
                   type="email"
                   value={bookingForm.customer_email}
                   onChange={(e) => setBookingForm({ ...bookingForm, customer_email: e.target.value })}
-                  disabled={!isNewCustomer && selectedCustomer}
+                  disabled={!isNewCustomer && !!selectedCustomer}
                 />
               </div>
             </div>
@@ -292,7 +311,7 @@ export function EnhancedCreateBookingDialog({
                 id="customer_phone"
                 value={bookingForm.customer_phone}
                 onChange={(e) => setBookingForm({ ...bookingForm, customer_phone: e.target.value })}
-                disabled={!isNewCustomer && selectedCustomer}
+                disabled={!isNewCustomer && !!selectedCustomer}
               />
             </div>
 
@@ -366,7 +385,7 @@ export function EnhancedCreateBookingDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="booking_type">Booking Type</Label>
-                <Select value={bookingForm.booking_type} onValueChange={(value) => setBookingForm({ ...bookingForm, booking_type: value })}>
+                <Select value={bookingForm.booking_type} onValueChange={(value: "communal" | "private") => setBookingForm({ ...bookingForm, booking_type: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -401,15 +420,14 @@ export function EnhancedCreateBookingDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price_amount">Price (£)</Label>
+                <Label htmlFor="price_amount">Price (pence)</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     id="price_amount"
                     type="number"
-                    step="0.01"
                     value={bookingForm.price_amount}
-                    onChange={(e) => setBookingForm({ ...bookingForm, price_amount: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setBookingForm({ ...bookingForm, price_amount: parseInt(e.target.value) || 0 })}
                     className="pl-10"
                   />
                 </div>
