@@ -18,12 +18,11 @@ export const Navigation = () => {
   const { user, signOut } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
 
-  console.log('Navigation - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
-
   const navItems = [
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
     { name: "Our Hub", href: "/our-hub" },
+    { name: "Your Visit", href: "/your-visit" },
     { name: "Memberships", href: "/memberships" },
     { name: "Fitness & Recovery", href: "/fitness-recovery" },
     { name: "Contact", href: "/contact" },

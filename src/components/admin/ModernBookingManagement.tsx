@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { EnhancedCreateBookingDialog } from '@/components/admin/EnhancedCreateBookingDialog';
 import { EditBookingDialog } from '@/components/admin/EditBookingDialog';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { formatGBP } from '@/lib/format';
 
 type Booking = Tables<'bookings'>;
 
@@ -106,12 +108,7 @@ export default function ModernBookingManagement() {
   };
 
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(amount / 100);
-  };
+  const formatCurrency = formatGBP;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
@@ -197,11 +194,11 @@ export default function ModernBookingManagement() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6 p-4 md:p-6">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl md:text-3xl font-bold">Booking Management</h1>
-          </div>
+        <div className="space-y-6">
+          <AdminPageHeader
+            title="Bookings"
+            description="Create, edit and manage customer bookings."
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -221,20 +218,17 @@ export default function ModernBookingManagement() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Booking Management</h1>
-              <p className="text-muted-foreground">Manage customer bookings and appointments</p>
-            </div>
-          </div>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setCreateOpen(true)}>
-            <Calendar className="h-4 w-4 mr-2" />
-            Create Booking
-          </Button>
-        </div>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Bookings"
+          description="Create, edit and manage customer bookings."
+          right={
+            <Button onClick={() => setCreateOpen(true)} className="min-h-[44px]">
+              <Calendar className="h-4 w-4 mr-2" />
+              Create booking
+            </Button>
+          }
+        />
 
         <EnhancedCreateBookingDialog open={createOpen} onOpenChange={setCreateOpen} />
 

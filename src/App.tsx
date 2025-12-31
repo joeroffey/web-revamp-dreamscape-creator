@@ -19,22 +19,16 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import CookiePolicy from "./pages/CookiePolicy";
 import FitnessRecovery from "./pages/FitnessRecovery";
+import YourVisit from "./pages/YourVisit";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
-import ModernDashboard from "./components/admin/ModernDashboard";
-import AdminBookings from "./pages/admin/Bookings";
 import ModernBookingManagement from "./components/admin/ModernBookingManagement";
-import AdminCustomers from "./pages/admin/Customers";
 import ModernCustomerManagement from "./components/admin/ModernCustomerManagement";
-import AdminGiftCards from "./pages/admin/GiftCards";
 import ModernGiftCardManagement from "./components/admin/ModernGiftCardManagement";
 import AdminMemberships from "./pages/admin/Memberships";
-import AdminReports from "./pages/admin/Reports";
 import ModernReports from "./pages/admin/ModernReports";
-import AdminPromotions from "./pages/admin/Promotions";
 import ModernPromotions from "./pages/admin/ModernPromotions";
 import AdminSettings from "./pages/admin/Settings";
-import AdminSchedule from "./pages/admin/Schedule";
 import ModernScheduleManagement from "./components/admin/ModernScheduleManagement";
 
 const queryClient = new QueryClient();
@@ -54,6 +48,7 @@ const App = () => (
             <Route path="/gift-cards" element={<GiftCards />} />
             <Route path="/memberships" element={<Memberships />} />
             <Route path="/fitness-recovery" element={<FitnessRecovery />} />
+            <Route path="/your-visit" element={<YourVisit />} />
             <Route path="/our-hub" element={<OurHub />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />

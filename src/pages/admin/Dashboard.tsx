@@ -14,6 +14,8 @@ import {
   DollarSign,
   Settings
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { formatGBP, formatDateTime } from '@/lib/format';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -94,12 +96,7 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(amount / 100);
-  };
+  const formatCurrency = formatGBP;
 
   const statCards = [
     {
@@ -141,8 +138,8 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6 p-4 md:p-6">
-          <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+        <div className="space-y-6">
+          <AdminPageHeader title="Dashboard" description="Overview of bookings, customers, and revenue." />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
             {[...Array(5)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -162,17 +159,17 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Manage your wellness hub from here</p>
-          </div>
-          <div className="flex items-center space-x-2 text-muted-foreground text-sm">
-            <TrendingUp className="h-4 w-4" />
-            <span>Last updated: {new Date().toLocaleString()}</span>
-          </div>
-        </div>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Dashboard"
+          description="Overview of bookings, customers, and revenue."
+          right={
+            <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+              <TrendingUp className="h-4 w-4" />
+              <span>Last updated: {formatDateTime(new Date())}</span>
+            </div>
+          }
+        />
 
         {/* Quick Access Navigation */}
         <Card className="bg-primary/5 border-primary/20">

@@ -10,6 +10,7 @@ import { CalendarDays, List, Plus, Clock, Users, TrendingUp } from "lucide-react
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function ModernScheduleManagement() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -73,7 +74,8 @@ export default function ModernScheduleManagement() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+        <div className="space-y-6">
+          <AdminPageHeader title="Schedule" description="View and manage your upcoming sessions." />
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-4"></div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
@@ -93,46 +95,37 @@ export default function ModernScheduleManagement() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-              <CalendarDays className="h-6 w-6 text-white" />
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Schedule"
+          description="View your calendar, switch to daily view, and create bookings."
+          right={
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className="min-h-[44px]"
+              >
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Calendar
+              </Button>
+              <Button
+                variant={viewMode === 'daily' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('daily')}
+                className="min-h-[44px]"
+              >
+                <List className="h-4 w-4 mr-2" />
+                Daily view
+              </Button>
+              <Button onClick={() => setShowCreateDialog(true)} className="min-h-[44px]">
+                <Plus className="h-4 w-4 mr-2" />
+                Create booking
+              </Button>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Schedule Management
-              </h1>
-              <p className="text-gray-600 text-sm">Manage daily schedules and bookings</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'calendar' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('calendar')}
-              className="transition-all duration-200"
-            >
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Calendar
-            </Button>
-            <Button
-              variant={viewMode === 'daily' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('daily')}
-              className="transition-all duration-200"
-            >
-              <List className="h-4 w-4 mr-2" />
-              Daily View
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)} className="bg-primary hover:bg-primary/90 transition-colors">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Booking
-            </Button>
-          </div>
-        </div>
-
+          }
+        />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>

@@ -10,6 +10,8 @@ import { Gift, Search, Eye, Filter, DollarSign, Calendar, TrendingUp, Star } fro
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { formatGBP } from "@/lib/format";
 
 export default function ModernGiftCardManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,12 +63,7 @@ export default function ModernGiftCardManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(amount / 100);
-  };
+  const formatCurrency = formatGBP;
 
   const totalValue = giftCards.reduce((sum, gc) => sum + gc.amount, 0);
   const activeCards = giftCards.filter(gc => !gc.is_redeemed && new Date(gc.expires_at) >= new Date()).length;
@@ -76,7 +73,8 @@ export default function ModernGiftCardManagement() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-pink-50 min-h-screen">
+        <div className="space-y-6">
+          <AdminPageHeader title="Gift Cards" description="Create, track and redeem gift cards." />
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-4"></div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -94,20 +92,8 @@ export default function ModernGiftCardManagement() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-pink-50 min-h-screen">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Gift className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Gift Card Management
-              </h1>
-              <p className="text-gray-600 text-sm">Manage and track all gift cards</p>
-            </div>
-          </div>
-        </div>
+      <div className="space-y-6">
+        <AdminPageHeader title="Gift Cards" description="Manage and track all gift cards." />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="bg-gradient-to-br from-pink-500 to-pink-600 border-0 shadow-xl text-white overflow-hidden relative">

@@ -14,15 +14,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { session } = useAuth();
   const { isAdmin, loading } = useAdmin();
 
-  console.log('AdminLayout - session:', !!session, 'isAdmin:', isAdmin, 'loading:', loading);
-
   if (!session) {
-    console.log('AdminLayout - No session, redirecting to auth');
     return <Navigate to="/auth" />;
   }
 
   if (loading) {
-    console.log('AdminLayout - Loading admin status');
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto py-8 px-4">
@@ -37,15 +33,12 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   if (!isAdmin && !loading) {
-    console.log('AdminLayout - User is not admin, redirecting to home');
     return <Navigate to="/" />;
   }
-
-  console.log('AdminLayout - Rendering admin layout with navigation');
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-background dark:to-background">
       <AdminNavigation />
-      <main className="container mx-auto">
+      <main className="container mx-auto px-4 py-6 md:py-8">
         {children}
       </main>
     </div>
