@@ -55,14 +55,14 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string | null
+          discount_amount: number
+          discount_code_id: string | null
           duration_minutes: number
+          final_amount: number | null
           guest_count: number
           id: string
           payment_status: string | null
           price_amount: number
-          discount_amount: number
-          final_amount: number | null
-          discount_code_id: string | null
           service_type: string
           session_date: string
           session_time: string
@@ -79,14 +79,14 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone?: string | null
+          discount_amount?: number
+          discount_code_id?: string | null
           duration_minutes: number
+          final_amount?: number | null
           guest_count?: number
           id?: string
           payment_status?: string | null
           price_amount: number
-          discount_amount?: number
-          final_amount?: number | null
-          discount_code_id?: string | null
           service_type: string
           session_date: string
           session_time: string
@@ -103,14 +103,14 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
+          discount_amount?: number
+          discount_code_id?: string | null
           duration_minutes?: number
+          final_amount?: number | null
           guest_count?: number
           id?: string
           payment_status?: string | null
           price_amount?: number
-          discount_amount?: number
-          final_amount?: number | null
-          discount_code_id?: string | null
           service_type?: string
           session_date?: string
           session_time?: string
@@ -122,6 +122,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "bookings_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_time_slot_id_fkey"
             columns: ["time_slot_id"]
             isOneToOne: false
@@ -132,33 +139,33 @@ export type Database = {
       }
       customers: {
         Row: {
-          id: string
-          full_name: string | null
-          email: string
-          phone: string | null
-          notes: string | null
-          tags: string[]
           created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          tags: string[]
           updated_at: string
         }
         Insert: {
-          id?: string
-          full_name?: string | null
-          email: string
-          phone?: string | null
-          notes?: string | null
-          tags?: string[]
           created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Update: {
-          id?: string
-          full_name?: string | null
-          email?: string
-          phone?: string | null
-          notes?: string | null
-          tags?: string[]
           created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -211,7 +218,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       discount_redemptions: {
         Row: {
           created_at: string
@@ -250,17 +256,17 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "discount_codes"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       gift_cards: {
         Row: {
           amount: number
-          discount_amount: number
-          final_amount: number | null
-          discount_code_id: string | null
           created_at: string
+          discount_amount: number
+          discount_code_id: string | null
           expires_at: string | null
+          final_amount: number | null
           gift_code: string
           id: string
           is_redeemed: boolean | null
@@ -277,11 +283,11 @@ export type Database = {
         }
         Insert: {
           amount: number
-          discount_amount?: number
-          final_amount?: number | null
-          discount_code_id?: string | null
           created_at?: string
+          discount_amount?: number
+          discount_code_id?: string | null
           expires_at?: string | null
+          final_amount?: number | null
           gift_code?: string
           id?: string
           is_redeemed?: boolean | null
@@ -298,11 +304,11 @@ export type Database = {
         }
         Update: {
           amount?: number
-          discount_amount?: number
-          final_amount?: number | null
-          discount_code_id?: string | null
           created_at?: string
+          discount_amount?: number
+          discount_code_id?: string | null
           expires_at?: string | null
+          final_amount?: number | null
           gift_code?: string
           id?: string
           is_redeemed?: boolean | null
@@ -317,18 +323,26 @@ export type Database = {
           stripe_session_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gift_cards_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       memberships: {
         Row: {
           created_at: string
-          discount_percentage: number | null
           discount_amount: number
           discount_code_id: string | null
-          price_amount: number | null
+          discount_percentage: number | null
           id: string
           last_session_reset: string | null
           membership_type: string
+          price_amount: number | null
           sessions_per_week: number
           sessions_remaining: number | null
           status: string
@@ -338,13 +352,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          discount_percentage?: number | null
           discount_amount?: number
           discount_code_id?: string | null
-          price_amount?: number | null
+          discount_percentage?: number | null
           id?: string
           last_session_reset?: string | null
           membership_type: string
+          price_amount?: number | null
           sessions_per_week: number
           sessions_remaining?: number | null
           status?: string
@@ -354,13 +368,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          discount_percentage?: number | null
           discount_amount?: number
           discount_code_id?: string | null
-          price_amount?: number | null
+          discount_percentage?: number | null
           id?: string
           last_session_reset?: string | null
           membership_type?: string
+          price_amount?: number | null
           sessions_per_week?: number
           sessions_remaining?: number | null
           status?: string
@@ -368,7 +382,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "memberships_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_config: {
         Row: {
@@ -532,6 +554,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
