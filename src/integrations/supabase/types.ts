@@ -60,6 +60,9 @@ export type Database = {
           id: string
           payment_status: string | null
           price_amount: number
+          discount_amount: number
+          final_amount: number | null
+          discount_code_id: string | null
           service_type: string
           session_date: string
           session_time: string
@@ -81,6 +84,9 @@ export type Database = {
           id?: string
           payment_status?: string | null
           price_amount: number
+          discount_amount?: number
+          final_amount?: number | null
+          discount_code_id?: string | null
           service_type: string
           session_date: string
           session_time: string
@@ -102,6 +108,9 @@ export type Database = {
           id?: string
           payment_status?: string | null
           price_amount?: number
+          discount_amount?: number
+          final_amount?: number | null
+          discount_code_id?: string | null
           service_type?: string
           session_date?: string
           session_time?: string
@@ -120,6 +129,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customers: {
+        Row: {
+          id: string
+          full_name: string | null
+          email: string
+          phone: string | null
+          notes: string | null
+          tags: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name?: string | null
+          email: string
+          phone?: string | null
+          notes?: string | null
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          email?: string
+          phone?: string | null
+          notes?: string | null
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       discount_codes: {
         Row: {
@@ -169,9 +211,54 @@ export type Database = {
         }
         Relationships: []
       }
+
+      discount_redemptions: {
+        Row: {
+          created_at: string
+          discount_amount: number
+          discount_code_id: string
+          entity_id: string
+          entity_type: string
+          final_amount: number
+          id: string
+          original_amount: number
+        }
+        Insert: {
+          created_at?: string
+          discount_amount: number
+          discount_code_id: string
+          entity_id: string
+          entity_type: string
+          final_amount: number
+          id?: string
+          original_amount: number
+        }
+        Update: {
+          created_at?: string
+          discount_amount?: number
+          discount_code_id?: string
+          entity_id?: string
+          entity_type?: string
+          final_amount?: number
+          id?: string
+          original_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_redemptions_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       gift_cards: {
         Row: {
           amount: number
+          discount_amount: number
+          final_amount: number | null
+          discount_code_id: string | null
           created_at: string
           expires_at: string | null
           gift_code: string
@@ -190,6 +277,9 @@ export type Database = {
         }
         Insert: {
           amount: number
+          discount_amount?: number
+          final_amount?: number | null
+          discount_code_id?: string | null
           created_at?: string
           expires_at?: string | null
           gift_code?: string
@@ -208,6 +298,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          discount_amount?: number
+          final_amount?: number | null
+          discount_code_id?: string | null
           created_at?: string
           expires_at?: string | null
           gift_code?: string
@@ -230,6 +323,9 @@ export type Database = {
         Row: {
           created_at: string
           discount_percentage: number | null
+          discount_amount: number
+          discount_code_id: string | null
+          price_amount: number | null
           id: string
           last_session_reset: string | null
           membership_type: string
@@ -243,6 +339,9 @@ export type Database = {
         Insert: {
           created_at?: string
           discount_percentage?: number | null
+          discount_amount?: number
+          discount_code_id?: string | null
+          price_amount?: number | null
           id?: string
           last_session_reset?: string | null
           membership_type: string
@@ -256,6 +355,9 @@ export type Database = {
         Update: {
           created_at?: string
           discount_percentage?: number | null
+          discount_amount?: number
+          discount_code_id?: string | null
+          price_amount?: number | null
           id?: string
           last_session_reset?: string | null
           membership_type?: string

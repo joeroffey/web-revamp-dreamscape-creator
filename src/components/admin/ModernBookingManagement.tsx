@@ -107,6 +107,15 @@ export default function ModernBookingManagement() {
     }
   };
 
+  const handleDeleteBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      if (error) throw error;
+      await fetchBookings();
+    } catch (e) {
+      console.error('Error deleting booking:', e);
+    }
+  };
 
   const formatCurrency = formatGBP;
 

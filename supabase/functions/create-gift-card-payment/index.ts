@@ -14,6 +14,7 @@ interface GiftCardRequest {
   recipientEmail?: string;
   amount: number; // in pounds
   message?: string;
+  discountCode?: string;
 }
 
 serve(async (req) => {
@@ -29,7 +30,8 @@ serve(async (req) => {
       recipientName,
       recipientEmail,
       amount,
-      message
+      message,
+      discountCode
     }: GiftCardRequest = await req.json();
 
     // Validate required fields
@@ -54,7 +56,41 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const amountInPence = Math.round(amount * 100);
+    const originalAmountInPence = Math.round(amount * 100);
+
+    // Optional discount code
+    let discountCodeRow: any = null;
+    let discountAmount = 0;
+    if (discountCode && discountCode.trim().length > 0) {
+      const code = discountCode.trim().toUpperCase();
+      const { data: dc, error: dcErr } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .maybeSingle();
+
+      if (dcErr) throw dcErr;
+      if (!dc) throw new Error('Invalid discount code');
+
+      const now = new Date();
+      const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
+      const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
+      const activeOk = dc.is_active !== false;
+      const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
+      const minOk = !dc.min_amount || originalAmountInPence >= dc.min_amount;
+      if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
+        throw new Error('Discount code is not valid for this gift card');
+      }
+
+      discountCodeRow = dc;
+      if (dc.discount_type === 'percentage') {
+        discountAmount = Math.round(originalAmountInPence * (dc.discount_value / 100));
+      } else {
+        discountAmount = Math.min(originalAmountInPence, dc.discount_value);
+      }
+    }
+
+    const finalAmountInPence = Math.max(0, originalAmountInPence - discountAmount);
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -69,7 +105,7 @@ serve(async (req) => {
                 ? `Gift card for ${recipientName}` 
                 : "Revitalise Hub wellness gift card",
             },
-            unit_amount: amountInPence,
+            unit_amount: finalAmountInPence,
           },
           quantity: 1,
         },
@@ -82,6 +118,11 @@ serve(async (req) => {
         purchaserName,
         purchaserEmail,
         amount: amount.toString(),
+        discountCode: discountCodeRow?.code || "",
+        discountCodeId: discountCodeRow?.id || "",
+        originalAmount: originalAmountInPence.toString(),
+        discountAmount: discountAmount.toString(),
+        finalAmount: finalAmountInPence.toString(),
       }
     });
 
@@ -93,7 +134,10 @@ serve(async (req) => {
         purchaser_email: purchaserEmail,
         recipient_name: recipientName,
         recipient_email: recipientEmail,
-        amount: amountInPence,
+        amount: originalAmountInPence,
+        discount_code_id: discountCodeRow?.id || null,
+        discount_amount: discountAmount,
+        final_amount: finalAmountInPence,
         message: message,
         stripe_session_id: session.id,
         payment_status: "pending",
@@ -112,11 +156,10 @@ serve(async (req) => {
       }
     );
 
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  } catch (error) {
     console.error("Error in create-gift-card-payment:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

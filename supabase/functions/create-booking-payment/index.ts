@@ -15,6 +15,7 @@ interface BookingRequest {
   specialRequests?: string;
   bookingType: 'communal' | 'private';
   guestCount: number;
+  discountCode?: string;
 }
 
 const serviceConfig = {
@@ -37,7 +38,8 @@ serve(async (req) => {
       timeSlotId,
       specialRequests,
       bookingType = 'communal',
-      guestCount = 1
+      guestCount = 1,
+      discountCode
     }: BookingRequest = await req.json();
 
     // Validate required fields
@@ -101,6 +103,43 @@ serve(async (req) => {
       }
     }
 
+    // Calculate original amount (pence)
+    const originalAmount = bookingType === 'private' ? 7000 : (service.price * guestCount);
+
+    // Optional: validate and apply discount code
+    let discountCodeRow: any = null;
+    let discountAmount = 0;
+    if (discountCode && discountCode.trim().length > 0) {
+      const code = discountCode.trim().toUpperCase();
+      const { data: dc, error: dcErr } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .maybeSingle();
+
+      if (dcErr) throw dcErr;
+      if (!dc) throw new Error('Invalid discount code');
+
+      const now = new Date();
+      const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
+      const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
+      const activeOk = dc.is_active !== false;
+      const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
+      const minOk = !dc.min_amount || originalAmount >= dc.min_amount;
+      if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
+        throw new Error('Discount code is not valid for this booking');
+      }
+
+      discountCodeRow = dc;
+      if (dc.discount_type === 'percentage') {
+        discountAmount = Math.round(originalAmount * (dc.discount_value / 100));
+      } else {
+        discountAmount = Math.min(originalAmount, dc.discount_value);
+      }
+    }
+
+    const finalAmount = Math.max(0, originalAmount - discountAmount);
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
@@ -110,11 +149,11 @@ serve(async (req) => {
             currency: "gbp",
             product_data: {
               name: `${service.name} (${bookingType === 'private' ? 'Private' : 'Communal'})`,
-              description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}`,
+              description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}${discountCodeRow ? ` (Discount: ${discountCodeRow.code})` : ''}`,
             },
-            unit_amount: bookingType === 'private' ? 7000 : service.price, // £70 for private, £18 per person for communal
+            unit_amount: finalAmount,
           },
-          quantity: bookingType === 'private' ? 1 : guestCount, // Flat rate for private, per person for communal
+          quantity: 1,
         },
       ],
       mode: "payment",
@@ -127,6 +166,11 @@ serve(async (req) => {
         customerEmail,
         bookingType,
         guestCount: guestCount.toString(),
+        discountCode: discountCodeRow?.code || "",
+        discountCodeId: discountCodeRow?.id || "",
+        originalAmount: originalAmount.toString(),
+        discountAmount: discountAmount.toString(),
+        finalAmount: finalAmount.toString(),
       }
     });
 
@@ -141,7 +185,10 @@ serve(async (req) => {
         session_date: timeSlot.slot_date,
         session_time: timeSlot.slot_time,
         duration_minutes: service.duration,
-        price_amount: bookingType === 'private' ? 7000 : (service.price * guestCount),
+        price_amount: originalAmount,
+        discount_code_id: discountCodeRow?.id || null,
+        discount_amount: discountAmount,
+        final_amount: finalAmount,
         stripe_session_id: session.id,
         time_slot_id: timeSlotId,
         special_requests: specialRequests,
@@ -163,11 +210,10 @@ serve(async (req) => {
       }
     );
 
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  } catch (error) {
     console.error("Error in create-booking-payment:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

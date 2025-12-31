@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { membershipType, userId } = await req.json();
+    const { membershipType, userId, discountCode } = await req.json();
 
     if (!membershipType || !userId) {
       throw new Error("Missing required fields");
@@ -65,6 +65,39 @@ serve(async (req) => {
     if (!plan) {
       throw new Error("Invalid membership type");
     }
+    // Optional discount code (applied to first month only via lower unit_amount)
+    let discountCodeRow: any = null;
+    let discountAmount = 0;
+    if (discountCode && typeof discountCode === 'string' && discountCode.trim().length > 0) {
+      const code = discountCode.trim().toUpperCase();
+      const { data: dc, error: dcErr } = await supabaseClient
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .maybeSingle();
+
+      if (dcErr) throw dcErr;
+      if (!dc) throw new Error('Invalid discount code');
+
+      const now = new Date();
+      const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
+      const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
+      const activeOk = dc.is_active !== false;
+      const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
+      const minOk = !dc.min_amount || plan.price >= dc.min_amount;
+      if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
+        throw new Error('Discount code is not valid for this membership');
+      }
+
+      discountCodeRow = dc;
+      if (dc.discount_type === 'percentage') {
+        discountAmount = Math.round(plan.price * (dc.discount_value / 100));
+      } else {
+        discountAmount = Math.min(plan.price, dc.discount_value);
+      }
+    }
+
+    const finalAmount = Math.max(0, plan.price - discountAmount);
 
     // Check if customer exists in Stripe
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -85,7 +118,7 @@ serve(async (req) => {
               name: plan.name,
               description: `Revitalise Hub Membership - ${plan.name}`,
             },
-            unit_amount: plan.price,
+            unit_amount: finalAmount,
             recurring: {
               interval: "month",
             },
@@ -101,6 +134,11 @@ serve(async (req) => {
         membershipType: membershipType,
         sessions_per_week: plan.sessions_per_week.toString(),
         discount_percentage: plan.discount_percentage.toString(),
+        discountCode: discountCodeRow?.code || "",
+        discountCodeId: discountCodeRow?.id || "",
+        originalAmount: plan.price.toString(),
+        discountAmount: discountAmount.toString(),
+        finalAmount: finalAmount.toString(),
       }
     });
 

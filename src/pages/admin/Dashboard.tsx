@@ -66,10 +66,15 @@ export default function AdminDashboard() {
         // Fetch total revenue from paid bookings
         const { data: paidBookings } = await supabase
           .from('bookings')
-          .select('price_amount')
+          .select('price_amount, final_amount, discount_amount')
           .eq('payment_status', 'paid');
 
-        const totalRevenue = paidBookings?.reduce((sum, booking) => sum + booking.price_amount, 0) || 0;
+        const totalRevenue = paidBookings?.reduce((sum, booking: any) => {
+          const original = Number(booking.price_amount || 0);
+          const discount = Number(booking.discount_amount || 0);
+          const final = Number(booking.final_amount ?? (original - discount));
+          return sum + final;
+        }, 0) || 0;
 
         // Fetch recent bookings
         const { data: recentBookings } = await supabase

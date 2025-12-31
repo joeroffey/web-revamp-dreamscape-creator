@@ -13,6 +13,8 @@ import { Percent, Search, Eye, Filter, Plus, Calendar, DollarSign, Users, Trendi
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getDateRange } from "@/lib/dateRange";
+// currency formatting handled via local helper
 
 export default function ModernPromotions() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +23,8 @@ export default function ModernPromotions() {
   const [selectedPromotion, setSelectedPromotion] = useState<any>(null);
   const [showPromotionDetails, setShowPromotionDetails] = useState(false);
   const [promotions, setPromotions] = useState<any[]>([]);
+  const [redemptionByCodeId, setRedemptionByCodeId] = useState<Record<string, { uses: number; savings: number }>>({});
+  const [periodStats, setPeriodStats] = useState<{ promoUses: number; transactions: number; savings: number }>({ promoUses: 0, transactions: 0, savings: 0 });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -38,6 +42,41 @@ export default function ModernPromotions() {
 
       if (error) throw error;
       setPromotions(data || []);
+
+      // Pull real usage/savings from redemption ledger (no placeholders)
+      const { data: redemptions, error: redErr } = await supabase
+        .from('discount_redemptions')
+        .select('discount_code_id, discount_amount, created_at');
+      if (redErr) throw redErr;
+
+      const byId: Record<string, { uses: number; savings: number }> = {};
+      for (const r of redemptions || []) {
+        const id = (r as any).discount_code_id as string;
+        if (!byId[id]) byId[id] = { uses: 0, savings: 0 };
+        byId[id].uses += 1;
+        byId[id].savings += Number((r as any).discount_amount || 0);
+      }
+      setRedemptionByCodeId(byId);
+
+      // Period conversion rate (last 30 days by default)
+      const range = getDateRange('30days');
+      const from = range.from.toISOString();
+      const to = range.to.toISOString();
+
+      const [{ count: paidBookings }, { count: paidGiftCards }] = await Promise.all([
+        supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('payment_status', 'paid').gte('created_at', from).lte('created_at', to),
+        supabase.from('gift_cards').select('*', { count: 'exact', head: true }).eq('payment_status', 'paid').gte('created_at', from).lte('created_at', to),
+      ]);
+      const transactions = (paidBookings || 0) + (paidGiftCards || 0);
+
+      const periodRedemptions = (redemptions || []).filter((r: any) => {
+        const d = new Date(r.created_at);
+        return d >= range.from && d <= range.to;
+      });
+
+      const promoUses = periodRedemptions.length;
+      const savings = periodRedemptions.reduce((s: number, r: any) => s + Number(r.discount_amount || 0), 0);
+      setPeriodStats({ promoUses, transactions, savings });
     } catch (error) {
       console.error("Error fetching promotions:", error);
       toast({
@@ -82,15 +121,8 @@ export default function ModernPromotions() {
   const activePromotions = promotions.filter(p => 
     p.is_active && (!p.valid_until || new Date(p.valid_until) >= now)
   ).length;
-  const totalUsage = promotions.reduce((sum, p) => sum + (p.current_uses || 0), 0);
-  const totalSavings = promotions.reduce((sum, p) => {
-    const uses = p.current_uses || 0;
-    if (p.discount_type === 'percentage') {
-      return sum + (uses * 3000 * (p.discount_value / 100)); // Estimate based on average booking
-    } else {
-      return sum + (uses * p.discount_value);
-    }
-  }, 0);
+  const totalUsage = Object.values(redemptionByCodeId).reduce((sum, v) => sum + (v.uses || 0), 0);
+  const totalSavings = Object.values(redemptionByCodeId).reduce((sum, v) => sum + (v.savings || 0), 0);
 
   if (loading) {
     return (
@@ -185,8 +217,12 @@ export default function ModernPromotions() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">12.5%</div>
-              <p className="text-xs text-orange-100 mt-1">Promotion usage</p>
+              <div className="text-3xl font-bold">
+                {periodStats.transactions > 0 ? `${((periodStats.promoUses / periodStats.transactions) * 100).toFixed(1)}%` : "0.0%"}
+              </div>
+              <p className="text-xs text-orange-100 mt-1">
+                {periodStats.promoUses} uses in last 30 days
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -266,7 +302,7 @@ export default function ModernPromotions() {
                         
                         <div className="flex items-center text-sm text-gray-600 gap-6 mt-2">
                           <div>
-                            <strong>Usage:</strong> {promotion.current_uses || 0}
+                            <strong>Usage:</strong> {(redemptionByCodeId[promotion.id]?.uses ?? promotion.current_uses ?? 0)}
                             {promotion.max_uses && ` / ${promotion.max_uses}`}
                           </div>
                           {promotion.min_amount && promotion.min_amount > 0 && (
@@ -280,7 +316,7 @@ export default function ModernPromotions() {
                     
                     <div className="text-right">
                       <div className="text-2xl font-bold text-purple-600 mb-1">
-                        {promotion.current_uses || 0}
+                        {(redemptionByCodeId[promotion.id]?.uses ?? promotion.current_uses ?? 0)}
                       </div>
                       <div className="text-sm text-gray-500 mb-3">
                         times used
@@ -400,7 +436,7 @@ export default function ModernPromotions() {
                   <div>
                     <h3 className="font-semibold mb-2">Usage Statistics</h3>
                     <div className="space-y-1 text-sm">
-                      <div><strong>Times Used:</strong> {selectedPromotion.current_uses || 0}</div>
+                      <div><strong>Times Used:</strong> {(redemptionByCodeId[selectedPromotion.id]?.uses ?? selectedPromotion.current_uses ?? 0)}</div>
                       <div><strong>Usage Limit:</strong> {selectedPromotion.max_uses || "Unlimited"}</div>
                       <div><strong>Min Amount:</strong> {selectedPromotion.min_amount > 0 ? `£${(selectedPromotion.min_amount / 100).toFixed(2)}` : "None"}</div>
                     </div>
