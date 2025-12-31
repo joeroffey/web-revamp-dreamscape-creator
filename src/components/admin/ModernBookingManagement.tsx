@@ -26,6 +26,8 @@ import {
   Phone,
   MapPin
 } from 'lucide-react';
+import { EnhancedCreateBookingDialog } from '@/components/admin/EnhancedCreateBookingDialog';
+import { EditBookingDialog } from '@/components/admin/EditBookingDialog';
 
 type Booking = Tables<'bookings'>;
 
@@ -50,10 +52,23 @@ export default function ModernBookingManagement() {
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      if (error) throw error;
+      await fetchBookings();
+      setSelectedBookings(prev => prev.filter(id => id !== bookingId));
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+    }
+  };
 
   const fetchBookings = async () => {
     try {
@@ -87,6 +102,16 @@ export default function ModernBookingManagement() {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      if (error) throw error;
+      await fetchBookings();
+    } catch (e) {
+      console.error('Error deleting booking:', e);
     }
   };
 
@@ -214,11 +239,30 @@ export default function ModernBookingManagement() {
               <p className="text-muted-foreground">Manage customer bookings and appointments</p>
             </div>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setCreateOpen(true)}>
             <Calendar className="h-4 w-4 mr-2" />
             Create Booking
           </Button>
         </div>
+
+        <EnhancedCreateBookingDialog open={createOpen} onOpenChange={setCreateOpen} />
+
+        {selectedBooking && (
+          <EditBookingDialog
+            booking={{
+              id: selectedBooking.id,
+              customer_name: selectedBooking.customer_name,
+              customer_email: selectedBooking.customer_email,
+              customer_phone: selectedBooking.customer_phone || undefined,
+              booking_status: selectedBooking.booking_status || 'confirmed',
+              payment_status: selectedBooking.payment_status || 'pending',
+              special_requests: selectedBooking.special_requests || undefined,
+            }}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            onBookingUpdated={fetchBookings}
+          />
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -447,6 +491,27 @@ export default function ModernBookingManagement() {
                             )}
                           </DialogContent>
                         </Dialog>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setEditOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteBooking(booking.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>

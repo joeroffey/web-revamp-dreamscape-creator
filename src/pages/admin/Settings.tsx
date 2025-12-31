@@ -17,10 +17,11 @@ export default function AdminSettings() {
   const [saveLoading, setSaveLoading] = useState(false);
   
   // Pricing settings
-  const [pricingConfig, setPricingConfig] = useState({
-    iceBath: { price: 3000, duration: 60 },
-    sauna: { price: 2500, duration: 60 },
-    combined: { price: 4500, duration: 90 }
+  // Prices are stored in pence in DB, but shown/edited in pounds in the UI.
+  const [pricingConfig, setPricingConfig] = useState<Record<string, { price_amount: number; duration_minutes: number }>>({
+    ice_bath: { price_amount: 3000, duration_minutes: 60 },
+    sauna: { price_amount: 2500, duration_minutes: 60 },
+    combined: { price_amount: 4500, duration_minutes: 60 }
   });
 
   // Business hours
@@ -59,11 +60,11 @@ export default function AdminSettings() {
         .eq('is_active', true);
 
       if (pricing) {
-        const pricingMap: any = {};
+        const pricingMap: Record<string, { price_amount: number; duration_minutes: number }> = {};
         pricing.forEach(item => {
           pricingMap[item.service_type] = {
-            price: item.price_amount,
-            duration: item.duration_minutes
+            price_amount: item.price_amount,
+            duration_minutes: item.duration_minutes
           };
         });
         setPricingConfig(prev => ({ ...prev, ...pricingMap }));
@@ -108,8 +109,8 @@ export default function AdminSettings() {
           .from('pricing_config')
           .upsert({
             service_type: serviceType,
-            price_amount: config.price,
-            duration_minutes: config.duration,
+            price_amount: config.price_amount,
+            duration_minutes: config.duration_minutes,
             is_active: true
           });
       }
@@ -202,15 +203,20 @@ export default function AdminSettings() {
                     </Label>
                   </div>
                   <div>
-                    <Label htmlFor={`${serviceType}-price`}>Price (pence)</Label>
+                    <Label htmlFor={`${serviceType}-price`}>Price (GBP)</Label>
                     <Input
                       id={`${serviceType}-price`}
                       type="number"
-                      value={config.price}
-                      onChange={(e) => setPricingConfig(prev => ({
-                        ...prev,
-                        [serviceType]: { ...prev[serviceType], price: parseInt(e.target.value) || 0 }
-                      }))}
+                      step="0.01"
+                      value={Number((config.price_amount / 100).toFixed(2))}
+                      onChange={(e) => {
+                        const pounds = Number(e.target.value || 0);
+                        const pence = Math.round(pounds * 100);
+                        setPricingConfig(prev => ({
+                          ...prev,
+                          [serviceType]: { ...prev[serviceType], price_amount: pence }
+                        }));
+                      }}
                       className="mt-1"
                     />
                   </div>
@@ -219,10 +225,10 @@ export default function AdminSettings() {
                     <Input
                       id={`${serviceType}-duration`}
                       type="number"
-                      value={config.duration}
+                      value={config.duration_minutes}
                       onChange={(e) => setPricingConfig(prev => ({
                         ...prev,
-                        [serviceType]: { ...prev[serviceType], duration: parseInt(e.target.value) || 0 }
+                        [serviceType]: { ...prev[serviceType], duration_minutes: parseInt(e.target.value) || 0 }
                       }))}
                       className="mt-1"
                     />

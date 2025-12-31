@@ -1,22 +1,25 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp, Star } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp, Star, Plus, Pencil } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Customer {
   id: string;
   full_name: string | null;
   email: string;
   phone: string | null;
+  notes?: string | null;
   total_bookings: number;
   total_spent: number;
   last_booking_date: string | null;
@@ -41,63 +44,147 @@ export default function ModernCustomerManagement() {
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const [filterByType, setFilterByType] = useState<string>("all");
   const [customerBookings, setCustomerBookings] = useState<CustomerBooking[]>([]);
+  const [createCustomerOpen, setCreateCustomerOpen] = useState(false);
+  const [editCustomerOpen, setEditCustomerOpen] = useState(false);
+  const [customerForm, setCustomerForm] = useState({ full_name: "", email: "", phone: "", notes: "", tags: "" });
+
+  const queryClient = useQueryClient();
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["modern-customers"],
     queryFn: async () => {
-      const { data: bookingData } = await supabase
-        .from('bookings')
-        .select('customer_email, customer_name, customer_phone, price_amount, payment_status, session_date, service_type, booking_status')
-        .order('created_at', { ascending: false });
+      // Load CRM customers (Admin-managed) and enrich with booking metrics.
+      const [{ data: customerRows }, { data: bookingData }] = await Promise.all([
+        supabase.from('customers').select('id, full_name, email, phone, notes, tags').order('created_at', { ascending: false }),
+        supabase
+          .from('bookings')
+          .select('customer_email, customer_name, customer_phone, price_amount, payment_status, session_date, booking_status')
+          .order('created_at', { ascending: false })
+      ]);
 
-      if (bookingData) {
-        const customerMap = new Map();
-        
-        bookingData.forEach(booking => {
+      const metrics = new Map<string, { total_bookings: number; total_spent: number; last_booking_date: string | null }>();
+      (bookingData || []).forEach((booking) => {
+        const email = booking.customer_email;
+        if (!metrics.has(email)) {
+          metrics.set(email, { total_bookings: 0, total_spent: 0, last_booking_date: null });
+        }
+        const m = metrics.get(email)!;
+        m.total_bookings += 1;
+        if (booking.payment_status === 'paid') m.total_spent += booking.price_amount;
+        if (!m.last_booking_date || new Date(booking.session_date) > new Date(m.last_booking_date)) {
+          m.last_booking_date = booking.session_date;
+        }
+      });
+
+      // If no CRM rows yet, derive a lightweight customer list from bookings.
+      const derivedCustomers: Customer[] = [];
+      if (!customerRows || customerRows.length === 0) {
+        const derivedMap = new Map<string, Customer>();
+        (bookingData || []).forEach((booking) => {
           const email = booking.customer_email;
-          if (!customerMap.has(email)) {
-            customerMap.set(email, {
+          if (!derivedMap.has(email)) {
+            derivedMap.set(email, {
               id: email,
               full_name: booking.customer_name,
-              email: email,
+              email,
               phone: booking.customer_phone,
               total_bookings: 0,
               total_spent: 0,
               last_booking_date: null,
               membership_status: null,
-              customer_type: 'regular',
-              tags: []
+              customer_type: 'new',
+              tags: ['New Customer'],
             });
           }
-          
-          const customer = customerMap.get(email);
-          customer.total_bookings += 1;
-          
-          if (booking.payment_status === 'paid') {
-            customer.total_spent += booking.price_amount;
-          }
-          
-          if (!customer.last_booking_date || new Date(booking.session_date) > new Date(customer.last_booking_date)) {
-            customer.last_booking_date = booking.session_date;
-          }
-
-          if (customer.total_spent > 50000) {
-            customer.customer_type = 'vip';
-            customer.tags = ['VIP', 'High Value', 'Premium'];
-          } else if (customer.total_bookings >= 5) {
-            customer.customer_type = 'regular';
-            customer.tags = ['Regular', 'Frequent Visitor'];
-          } else {
-            customer.customer_type = 'new';
-            customer.tags = ['New Customer'];
-          }
         });
-
-        return Array.from(customerMap.values());
+        derivedCustomers.push(...Array.from(derivedMap.values()));
       }
-      return [];
+
+      const baseCustomers: Customer[] = (customerRows || []).map((c) => {
+        const m = metrics.get(c.email) || { total_bookings: 0, total_spent: 0, last_booking_date: null };
+        let customer_type: string = 'new';
+        let tags: string[] = (c.tags as any) || [];
+        if (m.total_spent > 50000) {
+          customer_type = 'vip';
+          tags = tags.length ? tags : ['VIP', 'High Value'];
+        } else if (m.total_bookings >= 5) {
+          customer_type = 'regular';
+          tags = tags.length ? tags : ['Regular'];
+        } else {
+          customer_type = 'new';
+          tags = tags.length ? tags : ['New Customer'];
+        }
+        return {
+          id: c.id,
+          full_name: c.full_name,
+          email: c.email,
+          phone: c.phone,
+          notes: (c as any).notes,
+          total_bookings: m.total_bookings,
+          total_spent: m.total_spent,
+          last_booking_date: m.last_booking_date,
+          membership_status: null,
+          customer_type,
+          tags,
+        };
+      });
+
+      return baseCustomers.length ? baseCustomers : derivedCustomers;
     },
   });
+
+  const resetCustomerForm = () => setCustomerForm({ full_name: "", email: "", phone: "", notes: "", tags: "" });
+
+  const openCreateCustomer = () => {
+    resetCustomerForm();
+    setCreateCustomerOpen(true);
+  };
+
+  const openEditCustomer = (customer: Customer) => {
+    setCustomerForm({
+      full_name: customer.full_name || "",
+      email: customer.email,
+      phone: customer.phone || "",
+      notes: customer.notes || "",
+      tags: (customer.tags || []).join(", "),
+    });
+    setSelectedCustomer(customer);
+    setEditCustomerOpen(true);
+  };
+
+  const saveCustomer = async (mode: 'create' | 'edit') => {
+    try {
+      if (!customerForm.email.trim()) {
+        toast.error('Email is required');
+        return;
+      }
+
+      const payload = {
+        full_name: customerForm.full_name || null,
+        email: customerForm.email.trim().toLowerCase(),
+        phone: customerForm.phone || null,
+        notes: customerForm.notes || null,
+        tags: customerForm.tags
+          ? customerForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+          : [],
+      };
+
+      const { error } = mode === 'create'
+        ? await supabase.from('customers').insert(payload)
+        : await supabase.from('customers').update(payload).eq('id', selectedCustomer?.id);
+
+      if (error) throw error;
+
+      toast.success(mode === 'create' ? 'Customer created' : 'Customer updated');
+      queryClient.invalidateQueries({ queryKey: ['modern-customers'] });
+      setCreateCustomerOpen(false);
+      setEditCustomerOpen(false);
+      resetCustomerForm();
+    } catch (e: any) {
+      console.error('Customer save error:', e);
+      toast.error(e?.message || 'Failed to save customer');
+    }
+  };
 
   const fetchCustomerBookings = async (customerEmail: string) => {
     try {
@@ -188,7 +275,80 @@ export default function ModernCustomerManagement() {
               <p className="text-gray-600 text-sm">Manage your customer relationships and insights</p>
             </div>
           </div>
+
+          <Button onClick={openCreateCustomer} className="shadow-lg">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Customer
+          </Button>
         </div>
+
+        <Dialog open={createCustomerOpen} onOpenChange={setCreateCustomerOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Create Customer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Full name</label>
+                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email *</label>
+                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone</label>
+                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Tags (comma separated)</label>
+                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Notes</label>
+                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setCreateCustomerOpen(false)}>Cancel</Button>
+                <Button onClick={() => saveCustomer('create')}>Save</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Customer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Full name</label>
+                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email *</label>
+                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone</label>
+                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Tags (comma separated)</label>
+                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Notes</label>
+                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setEditCustomerOpen(false)}>Cancel</Button>
+                <Button onClick={() => saveCustomer('edit')}>Save changes</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="flex items-center space-x-4 mb-6">
           <div className="relative flex-1">
@@ -358,15 +518,26 @@ export default function ModernCustomerManagement() {
                         </div>
                       )}
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openCustomerDialog(customer)}
-                        className="group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200 transition-colors"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCustomerDialog(customer)}
+                          className="group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200 transition-colors"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditCustomer(customer)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

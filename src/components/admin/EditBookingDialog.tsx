@@ -35,7 +35,7 @@ const formSchema = z.object({
   customer_email: z.string().email('Valid email is required'),
   customer_phone: z.string().optional(),
   booking_status: z.enum(['confirmed', 'completed', 'cancelled']),
-  payment_status: z.enum(['paid', 'pending', 'comp']),
+  payment_status: z.enum(['paid', 'pending', 'failed']),
   special_requests: z.string().optional(),
 });
 
@@ -219,7 +219,7 @@ export const EditBookingDialog = ({
                       <SelectContent>
                         <SelectItem value="paid">Paid</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="comp">Complimentary</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

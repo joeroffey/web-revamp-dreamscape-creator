@@ -51,9 +51,11 @@ export function EnhancedCreateBookingDialog({
     queryFn: async () => {
       if (!customerSearch.trim()) return [];
       
+      // CRM uses public.customers (separate from auth users). This keeps Admin operations working
+      // even for guest bookings.
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
+        .from("customers")
+        .select("id, full_name, email, phone, tags")
         .or(`full_name.ilike.%${customerSearch}%,email.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
         .limit(10);
 
@@ -77,6 +79,21 @@ export function EnhancedCreateBookingDialog({
 
   const createBookingMutation = useMutation({
     mutationFn: async (booking: any) => {
+      // If creating a new customer or if no customer is selected, upsert the customer record first.
+      if (!selectedCustomer?.id || isNewCustomer) {
+        const { error: customerErr } = await supabase
+          .from("customers")
+          .upsert(
+            {
+              full_name: booking.customer_name,
+              email: booking.customer_email,
+              phone: booking.customer_phone || null,
+            },
+            { onConflict: "email" }
+          );
+        if (customerErr) throw customerErr;
+      }
+
       const { data, error } = await supabase
         .from("bookings")
         .insert(booking)
@@ -211,7 +228,7 @@ export function EnhancedCreateBookingDialog({
                           <div className="font-medium">{customer.full_name || "No name"}</div>
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
                             <Mail className="h-3 w-3" />
-                            {customer.id}
+                            {customer.email}
                             {customer.phone && (
                               <>
                                 <Phone className="h-3 w-3 ml-2" />

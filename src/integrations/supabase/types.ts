@@ -121,6 +121,39 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          id: string
+          full_name: string | null
+          email: string
+          phone: string | null
+          notes: string | null
+          tags: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name?: string | null
+          email: string
+          phone?: string | null
+          notes?: string | null
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          email?: string
+          phone?: string | null
+          notes?: string | null
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       discount_codes: {
         Row: {
           code: string
