@@ -1,31 +1,27 @@
 import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp, Star, Plus, Pencil } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, Filter, TrendingUp, Star } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 interface Customer {
   id: string;
   full_name: string | null;
   email: string;
   phone: string | null;
-  notes?: string | null;
   total_bookings: number;
   total_spent: number;
   last_booking_date: string | null;
-  membership_status: string | null;
-  customer_type?: string;
-  tags?: string[];
+  customer_type: string;
+  tags: string[];
 }
 
 interface CustomerBooking {
@@ -44,147 +40,78 @@ export default function ModernCustomerManagement() {
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const [filterByType, setFilterByType] = useState<string>("all");
   const [customerBookings, setCustomerBookings] = useState<CustomerBooking[]>([]);
-  const [createCustomerOpen, setCreateCustomerOpen] = useState(false);
-  const [editCustomerOpen, setEditCustomerOpen] = useState(false);
-  const [customerForm, setCustomerForm] = useState({ full_name: "", email: "", phone: "", notes: "", tags: "" });
 
-  const queryClient = useQueryClient();
-
+  // Derive customers from bookings table
   const { data: customers, isLoading } = useQuery({
     queryKey: ["modern-customers"],
     queryFn: async () => {
-      // Load CRM customers (Admin-managed) and enrich with booking metrics.
-      const [{ data: customerRows }, { data: bookingData }] = await Promise.all([
-        supabase.from('customers').select('id, full_name, email, phone, notes, tags').order('created_at', { ascending: false }),
-        supabase
-          .from('bookings')
-          .select('customer_email, customer_name, customer_phone, price_amount, payment_status, session_date, booking_status')
-          .order('created_at', { ascending: false })
-      ]);
+      const { data: bookingData, error } = await supabase
+        .from('bookings')
+        .select('customer_email, customer_name, customer_phone, price_amount, payment_status, session_date, booking_status')
+        .order('created_at', { ascending: false });
 
-      const metrics = new Map<string, { total_bookings: number; total_spent: number; last_booking_date: string | null }>();
+      if (error) throw error;
+
+      // Aggregate by email
+      const customerMap = new Map<string, {
+        full_name: string | null;
+        email: string;
+        phone: string | null;
+        total_bookings: number;
+        total_spent: number;
+        last_booking_date: string | null;
+      }>();
+
       (bookingData || []).forEach((booking) => {
         const email = booking.customer_email;
-        if (!metrics.has(email)) {
-          metrics.set(email, { total_bookings: 0, total_spent: 0, last_booking_date: null });
+        if (!customerMap.has(email)) {
+          customerMap.set(email, {
+            full_name: booking.customer_name,
+            email,
+            phone: booking.customer_phone,
+            total_bookings: 0,
+            total_spent: 0,
+            last_booking_date: null,
+          });
         }
-        const m = metrics.get(email)!;
-        m.total_bookings += 1;
-        if (booking.payment_status === 'paid') m.total_spent += booking.price_amount;
-        if (!m.last_booking_date || new Date(booking.session_date) > new Date(m.last_booking_date)) {
-          m.last_booking_date = booking.session_date;
+        const c = customerMap.get(email)!;
+        c.total_bookings += 1;
+        if (booking.payment_status === 'paid') {
+          c.total_spent += booking.price_amount;
+        }
+        if (!c.last_booking_date || new Date(booking.session_date) > new Date(c.last_booking_date)) {
+          c.last_booking_date = booking.session_date;
         }
       });
 
-      // If no CRM rows yet, derive a lightweight customer list from bookings.
-      const derivedCustomers: Customer[] = [];
-      if (!customerRows || customerRows.length === 0) {
-        const derivedMap = new Map<string, Customer>();
-        (bookingData || []).forEach((booking) => {
-          const email = booking.customer_email;
-          if (!derivedMap.has(email)) {
-            derivedMap.set(email, {
-              id: email,
-              full_name: booking.customer_name,
-              email,
-              phone: booking.customer_phone,
-              total_bookings: 0,
-              total_spent: 0,
-              last_booking_date: null,
-              membership_status: null,
-              customer_type: 'new',
-              tags: ['New Customer'],
-            });
-          }
-        });
-        derivedCustomers.push(...Array.from(derivedMap.values()));
-      }
-
-      const baseCustomers: Customer[] = (customerRows || []).map((c) => {
-        const m = metrics.get(c.email) || { total_bookings: 0, total_spent: 0, last_booking_date: null };
-        let customer_type: string = 'new';
-        let tags: string[] = (c.tags as any) || [];
-        if (m.total_spent > 50000) {
+      const result: Customer[] = Array.from(customerMap.entries()).map(([email, data]) => {
+        let customer_type = 'new';
+        let tags: string[] = ['New Customer'];
+        
+        if (data.total_spent > 50000) { // > £500
           customer_type = 'vip';
-          tags = tags.length ? tags : ['VIP', 'High Value'];
-        } else if (m.total_bookings >= 5) {
+          tags = ['VIP', 'High Value'];
+        } else if (data.total_bookings >= 5) {
           customer_type = 'regular';
-          tags = tags.length ? tags : ['Regular'];
-        } else {
-          customer_type = 'new';
-          tags = tags.length ? tags : ['New Customer'];
+          tags = ['Regular'];
         }
+
         return {
-          id: c.id,
-          full_name: c.full_name,
-          email: c.email,
-          phone: c.phone,
-          notes: (c as any).notes,
-          total_bookings: m.total_bookings,
-          total_spent: m.total_spent,
-          last_booking_date: m.last_booking_date,
-          membership_status: null,
+          id: email,
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          total_bookings: data.total_bookings,
+          total_spent: data.total_spent,
+          last_booking_date: data.last_booking_date,
           customer_type,
           tags,
         };
       });
 
-      return baseCustomers.length ? baseCustomers : derivedCustomers;
+      return result;
     },
   });
-
-  const resetCustomerForm = () => setCustomerForm({ full_name: "", email: "", phone: "", notes: "", tags: "" });
-
-  const openCreateCustomer = () => {
-    resetCustomerForm();
-    setCreateCustomerOpen(true);
-  };
-
-  const openEditCustomer = (customer: Customer) => {
-    setCustomerForm({
-      full_name: customer.full_name || "",
-      email: customer.email,
-      phone: customer.phone || "",
-      notes: customer.notes || "",
-      tags: (customer.tags || []).join(", "),
-    });
-    setSelectedCustomer(customer);
-    setEditCustomerOpen(true);
-  };
-
-  const saveCustomer = async (mode: 'create' | 'edit') => {
-    try {
-      if (!customerForm.email.trim()) {
-        toast.error('Email is required');
-        return;
-      }
-
-      const payload = {
-        full_name: customerForm.full_name || null,
-        email: customerForm.email.trim().toLowerCase(),
-        phone: customerForm.phone || null,
-        notes: customerForm.notes || null,
-        tags: customerForm.tags
-          ? customerForm.tags.split(',').map(t => t.trim()).filter(Boolean)
-          : [],
-      };
-
-      const { error } = mode === 'create'
-        ? await supabase.from('customers').insert(payload)
-        : await supabase.from('customers').update(payload).eq('id', selectedCustomer?.id);
-
-      if (error) throw error;
-
-      toast.success(mode === 'create' ? 'Customer created' : 'Customer updated');
-      queryClient.invalidateQueries({ queryKey: ['modern-customers'] });
-      setCreateCustomerOpen(false);
-      setEditCustomerOpen(false);
-      resetCustomerForm();
-    } catch (e: any) {
-      console.error('Customer save error:', e);
-      toast.error(e?.message || 'Failed to save customer');
-    }
-  };
 
   const fetchCustomerBookings = async (customerEmail: string) => {
     try {
@@ -256,7 +183,6 @@ export default function ModernCustomerManagement() {
   }
 
   const vipCustomers = customers?.filter(c => c.customer_type === 'vip').length || 0;
-  const newCustomers = customers?.filter(c => c.customer_type === 'new').length || 0;
   const totalRevenue = customers?.reduce((sum, c) => sum + c.total_spent, 0) || 0;
   const avgBookingsPerCustomer = customers?.length ? Math.round(customers.reduce((sum, c) => sum + c.total_bookings, 0) / customers.length) : 0;
 
@@ -275,80 +201,7 @@ export default function ModernCustomerManagement() {
               <p className="text-gray-600 text-sm">Manage your customer relationships and insights</p>
             </div>
           </div>
-
-          <Button onClick={openCreateCustomer} className="shadow-lg">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Customer
-          </Button>
         </div>
-
-        <Dialog open={createCustomerOpen} onOpenChange={setCreateCustomerOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Customer</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">Full name</label>
-                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email *</label>
-                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tags (comma separated)</label>
-                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setCreateCustomerOpen(false)}>Cancel</Button>
-                <Button onClick={() => saveCustomer('create')}>Save</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Edit Customer</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">Full name</label>
-                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email *</label>
-                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tags (comma separated)</label>
-                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setEditCustomerOpen(false)}>Cancel</Button>
-                <Button onClick={() => saveCustomer('edit')}>Save changes</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <div className="flex items-center space-x-4 mb-6">
           <div className="relative flex-1">
@@ -414,7 +267,7 @@ export default function ModernCustomerManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
-              <p className="text-xs text-green-100 mt-1">From all customers</p>
+              <p className="text-xs text-green-100 mt-1">From paid bookings</p>
             </CardContent>
           </Card>
 
@@ -423,7 +276,7 @@ export default function ModernCustomerManagement() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-orange-100 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Avg. Bookings
+                Avg Bookings
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -433,109 +286,62 @@ export default function ModernCustomerManagement() {
           </Card>
         </div>
 
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        {/* Customer List */}
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="text-xl font-semibold">Customers ({filteredCustomers.length})</span>
-              <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200">
-                {newCustomers} new this month
-              </Badge>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Customers ({filteredCustomers.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {filteredCustomers.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="h-16 w-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="text-gray-500 text-lg">No customers found</p>
-                <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
+              <div className="text-center py-12 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No customers found</p>
+                <p className="text-sm">Customers will appear here after they make bookings</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {filteredCustomers.map((customer) => (
-                  <div 
-                    key={customer.id} 
-                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-blue-200 bg-white/60 backdrop-blur-sm gap-4"
+                  <div
+                    key={customer.id}
+                    className="p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer bg-white"
+                    onClick={() => openCustomerDialog(customer)}
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                          {customer.full_name?.charAt(0) || customer.email.charAt(0).toUpperCase()}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                          {customer.full_name?.charAt(0)?.toUpperCase() || customer.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-lg text-gray-900">{customer.full_name || "No name"}</h3>
-                          {customer.customer_type && customer.customer_type !== 'regular' && (
-                            <Badge 
-                              variant={customer.customer_type === 'vip' ? 'default' : 'secondary'} 
-                              className={`text-xs ${customer.customer_type === 'vip' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : ''}`}
-                            >
-                              {customer.customer_type.toUpperCase()}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center text-sm text-gray-600 gap-6">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-blue-500" />
-                          <span className="break-all">{customer.email}</span>
-                        </div>
-                        {customer.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-green-500" />
-                            <span>{customer.phone}</span>
+                          <div className="font-medium">{customer.full_name || 'No name'}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Mail className="h-3 w-3" />
+                            {customer.email}
+                            {customer.phone && (
+                              <>
+                                <Phone className="h-3 w-3 ml-2" />
+                                {customer.phone}
+                              </>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
-                      
-                      {customer.tags && customer.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {customer.tags.slice(0, 3).map((tag: string) => (
-                            <Badge key={tag} variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="font-semibold">{formatCurrency(customer.total_spent)}</div>
+                          <div className="text-sm text-muted-foreground">{customer.total_bookings} bookings</div>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {customer.tags.map((tag, i) => (
+                            <Badge key={i} variant={customer.customer_type === 'vip' ? 'default' : 'secondary'} className="text-xs">
                               {tag}
                             </Badge>
                           ))}
-                          {customer.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">
-                              +{customer.tags.length - 3} more
-                            </Badge>
-                          )}
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600 mb-1">
-                        {customer.total_bookings} booking{customer.total_bookings !== 1 ? 's' : ''}
-                      </div>
-                      <div className="text-2xl font-bold text-green-600 mb-1">
-                        {formatCurrency(customer.total_spent)}
-                      </div>
-                      {customer.last_booking_date && (
-                        <div className="text-xs text-gray-500 mb-3">
-                          Last: {new Date(customer.last_booking_date).toLocaleDateString()}
-                        </div>
-                      )}
-                      
-                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCustomerDialog(customer)}
-                          className="group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200 transition-colors"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditCustomer(customer)}
-                        >
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -546,8 +352,9 @@ export default function ModernCustomerManagement() {
           </CardContent>
         </Card>
 
+        {/* Customer Details Dialog */}
         <Dialog open={showCustomerDetails} onOpenChange={setShowCustomerDetails}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -555,83 +362,75 @@ export default function ModernCustomerManagement() {
               </DialogTitle>
             </DialogHeader>
             {selectedCustomer && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Contact Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div><strong>Name:</strong> {selectedCustomer.full_name || 'No name provided'}</div>
-                      <div><strong>Email:</strong> {selectedCustomer.email}</div>
-                      <div><strong>Phone:</strong> {selectedCustomer.phone || 'No phone provided'}</div>
-                      <div><strong>Customer Type:</strong> {selectedCustomer.customer_type || "Regular"}</div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Statistics</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div><strong>Total Bookings:</strong> {selectedCustomer.total_bookings}</div>
-                      <div><strong>Total Spent:</strong> {formatCurrency(selectedCustomer.total_spent)}</div>
-                      <div><strong>Average per Booking:</strong> {selectedCustomer.total_bookings ? formatCurrency(selectedCustomer.total_spent / selectedCustomer.total_bookings) : "£0.00"}</div>
-                      <div><strong>Customer Since:</strong> {selectedCustomer.last_booking_date ? format(new Date(selectedCustomer.last_booking_date), "MMM yyyy") : "Unknown"}</div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {selectedCustomer.tags && selectedCustomer.tags.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Tags</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCustomer.tags.map((tag: string) => (
-                          <Badge key={tag} variant="outline">{tag}</Badge>
-                        ))}
+              <ScrollArea className="max-h-[70vh]">
+                <div className="space-y-6 p-1">
+                  {/* Customer Info */}
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-semibold">
+                      {selectedCustomer.full_name?.charAt(0)?.toUpperCase() || selectedCustomer.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">{selectedCustomer.full_name || 'No name'}</h3>
+                      <div className="text-muted-foreground flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        {selectedCustomer.email}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                      {selectedCustomer.phone && (
+                        <div className="text-muted-foreground flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          {selectedCustomer.phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Booking History ({customerBookings.length})</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <Card className="p-4 text-center">
+                      <div className="text-2xl font-bold">{selectedCustomer.total_bookings}</div>
+                      <div className="text-sm text-muted-foreground">Total Bookings</div>
+                    </Card>
+                    <Card className="p-4 text-center">
+                      <div className="text-2xl font-bold">{formatCurrency(selectedCustomer.total_spent)}</div>
+                      <div className="text-sm text-muted-foreground">Total Spent</div>
+                    </Card>
+                    <Card className="p-4 text-center">
+                      <div className="text-2xl font-bold capitalize">{selectedCustomer.customer_type}</div>
+                      <div className="text-sm text-muted-foreground">Customer Type</div>
+                    </Card>
+                  </div>
+
+                  {/* Booking History */}
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Booking History
+                    </h4>
                     {customerBookings.length === 0 ? (
-                      <p className="text-muted-foreground">No bookings found.</p>
+                      <p className="text-muted-foreground text-sm">No bookings found</p>
                     ) : (
-                      <ScrollArea className="h-64">
-                        <div className="space-y-3">
-                          {customerBookings.map((booking) => (
-                            <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded gap-2">
-                              <div>
-                                <p className="font-medium">{formatServiceType(booking.service_type)}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={booking.payment_status === 'paid' ? 'default' : 'secondary'}>
-                                  {booking.payment_status}
-                                </Badge>
-                                <Badge variant={booking.booking_status === 'completed' ? 'secondary' : 'outline'}>
-                                  {booking.booking_status}
-                                </Badge>
-                                <span className="font-medium">{formatCurrency(booking.price_amount)}</span>
+                      <div className="space-y-2">
+                        {customerBookings.map((booking) => (
+                          <div key={booking.id} className="p-3 border rounded-lg flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{formatServiceType(booking.service_type)}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {format(new Date(booking.session_date), 'PPP')} at {booking.session_time}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
+                            <div className="text-right">
+                              <div className="font-medium">{formatCurrency(booking.price_amount)}</div>
+                              <Badge variant={booking.payment_status === 'paid' ? 'default' : 'secondary'}>
+                                {booking.payment_status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </div>
+              </ScrollArea>
             )}
           </DialogContent>
         </Dialog>
