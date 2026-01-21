@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle } from 'lucide-react';
+import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 
 interface Membership {
@@ -26,6 +26,7 @@ interface Membership {
   customer_name: string | null;
   start_date: string | null;
   end_date: string | null;
+  is_auto_renew: boolean | null;
 }
 
 export default function AdminMemberships() {
@@ -264,6 +265,19 @@ export default function AdminMemberships() {
                           </div>
                           <Badge variant={getStatusBadgeVariant(membership.status)}>
                             {membership.status}
+                          </Badge>
+                          <Badge variant="outline" className={membership.is_auto_renew ? "text-green-600 border-green-500/50 bg-green-50" : "text-muted-foreground"}>
+                            {membership.is_auto_renew ? (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Subscription
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag className="h-3 w-3 mr-1" />
+                                One-time
+                              </>
+                            )}
                           </Badge>
                           {expiringSoon && membership.status === 'active' && (
                             <Badge variant="outline" className="text-primary border-primary/50">
