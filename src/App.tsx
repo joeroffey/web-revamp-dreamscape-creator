@@ -14,6 +14,7 @@ import OurHub from "./pages/OurHub";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import BookingSuccess from "./pages/BookingSuccess";
+import MembershipSuccess from "./pages/MembershipSuccess";
 import GiftCardSuccess from "./pages/GiftCardSuccess";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/booking-success" element={<BookingSuccess />} />
+            <Route path="/membership-success" element={<MembershipSuccess />} />
             <Route path="/gift-card-success" element={<GiftCardSuccess />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
