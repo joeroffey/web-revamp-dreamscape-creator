@@ -9,13 +9,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users } from "lucide-react";
-import { useState } from "react";
+import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthContext";
+
+interface MembershipStatus {
+  hasMembership: boolean;
+  canBook: boolean;
+  membership: {
+    id: string;
+    type: string;
+    sessionsPerWeek: number;
+    sessionsRemaining: number;
+    isUnlimited: boolean;
+    startDate: string;
+    endDate: string;
+    customerEmail: string;
+    customerName: string;
+  } | null;
+}
 
 const Booking = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{
     id: string;
     date: string;
@@ -24,6 +42,8 @@ const Booking = () => {
   const [availableSpaces, setAvailableSpaces] = useState<number>(4);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
+  const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
+  const [checkingMembership, setCheckingMembership] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -32,6 +52,56 @@ const Booking = () => {
     bookingType: "communal" as "communal" | "private",
     guestCount: 1,
   });
+
+  // Check membership status when user is logged in
+  useEffect(() => {
+    const checkMembership = async () => {
+      if (!user?.id) {
+        setMembershipStatus(null);
+        return;
+      }
+
+      setCheckingMembership(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('check-membership-status', {
+          body: { userId: user.id }
+        });
+
+        if (error) {
+          console.error('Error checking membership:', error);
+          setMembershipStatus(null);
+        } else {
+          setMembershipStatus(data);
+          // Pre-fill form data from membership if available
+          if (data?.membership?.customerName) {
+            setFormData(prev => ({
+              ...prev,
+              customerName: data.membership.customerName || prev.customerName,
+              customerEmail: data.membership.customerEmail || prev.customerEmail
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Error checking membership:', err);
+        setMembershipStatus(null);
+      } finally {
+        setCheckingMembership(false);
+      }
+    };
+
+    checkMembership();
+  }, [user?.id]);
+
+  // Pre-fill user data from auth if no membership
+  useEffect(() => {
+    if (user && !membershipStatus?.membership) {
+      setFormData(prev => ({
+        ...prev,
+        customerEmail: user.email || prev.customerEmail,
+        customerName: user.user_metadata?.full_name || user.user_metadata?.name || prev.customerName
+      }));
+    }
+  }, [user, membershipStatus]);
 
   const services = [
     {
@@ -144,6 +214,57 @@ const Booking = () => {
     return formData.bookingType === 'private' ? 70 : (18 * formData.guestCount);
   };
 
+  const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook;
+
+  const handleMemberBooking = async () => {
+    if (!validateForm() || !user?.id) {
+      toast({
+        title: "Please Complete All Required Fields",
+        description: "Check the form for any missing information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-member-booking', {
+        body: {
+          userId: user.id,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          timeSlotId: selectedTimeSlot!.id,
+          specialRequests: formData.specialRequests,
+          bookingType: formData.bookingType,
+          guestCount: formData.guestCount,
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
+
+      if (data?.success) {
+        // Redirect to success page
+        window.location.href = `/booking-success?membership=true&sessions=${data.sessionsRemaining}`;
+      } else {
+        throw new Error(data?.error || "Failed to create booking");
+      }
+    } catch (error) {
+      console.error('Member booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      toast({
+        title: "Booking Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleBooking = async () => {
     if (!validateForm()) {
       toast({
@@ -192,6 +313,15 @@ const Booking = () => {
     }
   };
 
+  const formatMembershipType = (type: string) => {
+    switch (type) {
+      case '1_session_week': return '1 Session/Week';
+      case '2_sessions_week': return '2 Sessions/Week';
+      case 'unlimited': return 'Unlimited';
+      default: return type;
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -207,6 +337,60 @@ const Booking = () => {
                 Our signature combined session includes both ice bath and sauna for the ultimate contrast therapy experience.
               </p>
             </div>
+
+            {/* Membership Status Banner */}
+            {checkingMembership ? (
+              <Card className="mb-8 border-primary/20 bg-primary/5">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="animate-pulse h-4 w-4 rounded-full bg-primary/30"></div>
+                  <span className="text-muted-foreground">Checking membership status...</span>
+                </CardContent>
+              </Card>
+            ) : canUseMembership && membershipStatus?.membership ? (
+              <Card className="mb-8 border-primary bg-primary/5">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Active Membership</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {formatMembershipType(membershipStatus.membership.type)} • 
+                          {membershipStatus.membership.isUnlimited 
+                            ? ' Unlimited sessions' 
+                            : ` ${membershipStatus.membership.sessionsRemaining} sessions remaining this week`}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="w-fit">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Book Free with Membership
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : user && membershipStatus && !membershipStatus.hasMembership ? (
+              <Card className="mb-8 border-muted">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold text-foreground">No Active Membership</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Get unlimited sessions or weekly credits with a membership plan.
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.href = '/memberships'}
+                    >
+                      View Memberships
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
 
             {/* Service Selection and Time Slots */}
             <div className="mb-8 lg:mb-12">
@@ -227,7 +411,9 @@ const Booking = () => {
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
                               <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-lg sm:text-xl font-semibold text-primary">£18</span>
+                                <span className="text-lg sm:text-xl font-semibold text-primary">
+                                  {canUseMembership ? 'Free' : '£18'}
+                                </span>
                                 <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               </div>
                             </div>
@@ -287,7 +473,9 @@ const Booking = () => {
                           Share the hub with others (up to 4 people total)
                         </p>
                         <div className="mt-2">
-                          <Badge variant="secondary">£18 per person</Badge>
+                          <Badge variant="secondary">
+                            {canUseMembership ? 'Included in membership' : '£18 per person'}
+                          </Badge>
                         </div>
                       </div>
                       
@@ -307,7 +495,9 @@ const Booking = () => {
                           Exclusive use of the entire hub (maximum 7 people)
                         </p>
                         <div className="mt-2">
-                          <Badge variant="secondary">£70 flat rate</Badge>
+                          <Badge variant="secondary">
+                            {canUseMembership ? 'Uses 1 session credit' : '£70 flat rate'}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -469,27 +659,63 @@ const Booking = () => {
                           <span>Time:</span>
                           <span className="font-medium">{selectedTimeSlot.time.slice(0, 5)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Price:</span>
-                          <span>
-                            {formData.bookingType === 'private' 
-                              ? '£70 flat rate' 
-                              : `£18 × ${formData.guestCount} people`}
-                          </span>
-                        </div>
-                        <div className="flex justify-between font-semibold text-primary">
-                          <span>Total:</span>
-                          <span>£{calculateTotalPrice()}</span>
-                        </div>
+                        
+                        {canUseMembership ? (
+                          <>
+                            <div className="flex justify-between text-primary font-medium pt-2 border-t">
+                              <span>Payment:</span>
+                              <span className="flex items-center gap-1">
+                                <CreditCard className="h-4 w-4" />
+                                Membership
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-semibold text-primary">
+                              <span>Total:</span>
+                              <span>£0 (Free with membership)</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between">
+                              <span>Price:</span>
+                              <span>
+                                {formData.bookingType === 'private' 
+                                  ? '£70 flat rate' 
+                                  : `£18 × ${formData.guestCount} people`}
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-semibold text-primary">
+                              <span>Total:</span>
+                              <span>£{calculateTotalPrice()}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <Button 
-                        size="lg" 
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                        onClick={handleBooking}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Processing..." : "Confirm Booking & Pay"}
-                      </Button>
+                      
+                      {canUseMembership ? (
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                          onClick={handleMemberBooking}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Processing..." : (
+                            <>
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              Confirm Booking with Membership
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                          onClick={handleBooking}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Processing..." : "Confirm Booking & Pay"}
+                        </Button>
+                      )}
                     </>
                   ) : (
                     <div className="text-center py-8">
@@ -511,7 +737,7 @@ const Booking = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>Price per person:</span>
-                          <span>£18</span>
+                          <span>{canUseMembership ? 'Free with membership' : '£18'}</span>
                         </div>
                       </div>
                     </div>

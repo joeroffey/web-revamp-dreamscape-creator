@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CreditCard, User, Calendar, Pause, Play, X } from 'lucide-react';
+import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle } from 'lucide-react';
+import { format, differenceInDays, parseISO } from 'date-fns';
 
 interface Membership {
   id: string;
@@ -21,8 +22,10 @@ interface Membership {
   created_at: string;
   updated_at: string;
   stripe_subscription_id: string | null;
-  user_email?: string;
-  user_name?: string;
+  customer_email: string | null;
+  customer_name: string | null;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 export default function AdminMemberships() {
@@ -30,7 +33,7 @@ export default function AdminMemberships() {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'cancelled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'cancelled' | 'expired'>('all');
 
   useEffect(() => {
     fetchMemberships();
@@ -45,42 +48,14 @@ export default function AdminMemberships() {
 
       if (error) throw error;
 
-      // Get user details for each membership
-      const membershipsWithUsers = await Promise.all(
-        (membershipData || []).map(async (membership) => {
-          // Try to get user info from bookings first
-          const { data: bookingData } = await supabase
-            .from('bookings')
-            .select('customer_name, customer_email')
-            .eq('user_id', membership.user_id)
-            .limit(1);
-
-          if (bookingData && bookingData.length > 0) {
-            return {
-              ...membership,
-              user_email: bookingData[0].customer_email,
-              user_name: bookingData[0].customer_name
-            };
-          }
-
-          // Fallback to profiles table
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', membership.user_id)
-            .single();
-
-          return {
-            ...membership,
-            user_name: profileData?.full_name || 'Unknown User',
-            user_email: 'No email available'
-          };
-        })
-      );
-
-      setMemberships(membershipsWithUsers);
+      setMemberships(membershipData || []);
     } catch (error) {
       console.error('Error fetching memberships:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load memberships",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -119,8 +94,8 @@ export default function AdminMemberships() {
 
   const filteredMemberships = memberships.filter(membership => {
     const matchesSearch = 
-      membership.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      membership.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      membership.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      membership.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       membership.membership_type.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || membership.status === statusFilter;
@@ -142,15 +117,28 @@ export default function AdminMemberships() {
       case 'active': return 'default';
       case 'paused': return 'secondary';
       case 'cancelled': return 'destructive';
+      case 'expired': return 'outline';
       default: return 'outline';
     }
+  };
+
+  const getDaysRemaining = (endDate: string | null) => {
+    if (!endDate) return null;
+    const days = differenceInDays(parseISO(endDate), new Date());
+    return days;
+  };
+
+  const isExpiringSoon = (endDate: string | null) => {
+    const days = getDaysRemaining(endDate);
+    return days !== null && days <= 7 && days >= 0;
   };
 
   const stats = {
     total: memberships.length,
     active: memberships.filter(m => m.status === 'active').length,
     paused: memberships.filter(m => m.status === 'paused').length,
-    cancelled: memberships.filter(m => m.status === 'cancelled').length
+    cancelled: memberships.filter(m => m.status === 'cancelled').length,
+    expired: memberships.filter(m => m.status === 'expired').length
   };
 
   if (loading) {
@@ -182,7 +170,7 @@ export default function AdminMemberships() {
             <div className="relative flex-1 sm:w-80">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search memberships..."
+                placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -197,13 +185,14 @@ export default function AdminMemberships() {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="paused">Paused</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {/* Membership Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
@@ -217,7 +206,7 @@ export default function AdminMemberships() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Active</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+              <div className="text-2xl font-bold text-primary">{stats.active}</div>
             </CardContent>
           </Card>
           <Card>
@@ -225,7 +214,7 @@ export default function AdminMemberships() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Paused</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.paused}</div>
+              <div className="text-2xl font-bold text-accent-foreground">{stats.paused}</div>
             </CardContent>
           </Card>
           <Card>
@@ -233,7 +222,15 @@ export default function AdminMemberships() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Cancelled</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
+              <div className="text-2xl font-bold text-destructive">{stats.cancelled}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Expired</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-muted-foreground">{stats.expired}</div>
             </CardContent>
           </Card>
         </div>
@@ -248,93 +245,140 @@ export default function AdminMemberships() {
               <p className="text-muted-foreground">No memberships found.</p>
             ) : (
               <div className="space-y-4">
-                {filteredMemberships.map((membership) => (
-                  <div 
-                    key={membership.id} 
-                    className="flex flex-col p-4 border rounded-lg hover:bg-accent transition-colors space-y-4"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center space-x-2">
-                          <CreditCard className="h-4 w-4 text-primary" />
-                          <span className="font-medium">{formatMembershipType(membership.membership_type)}</span>
+                {filteredMemberships.map((membership) => {
+                  const daysRemaining = getDaysRemaining(membership.end_date);
+                  const expiringSoon = isExpiringSoon(membership.end_date);
+                  
+                  return (
+                      <div 
+                      key={membership.id} 
+                      className={`flex flex-col p-4 border rounded-lg hover:bg-accent transition-colors space-y-4 ${
+                        expiringSoon && membership.status === 'active' ? 'border-primary/50 bg-primary/5' : ''
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="h-4 w-4 text-primary" />
+                            <span className="font-medium">{formatMembershipType(membership.membership_type)}</span>
+                          </div>
+                          <Badge variant={getStatusBadgeVariant(membership.status)}>
+                            {membership.status}
+                          </Badge>
+                          {expiringSoon && membership.status === 'active' && (
+                            <Badge variant="outline" className="text-primary border-primary/50">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Expires in {daysRemaining} days
+                            </Badge>
+                          )}
                         </div>
-                        <Badge variant={getStatusBadgeVariant(membership.status)}>
-                          {membership.status}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {membership.status === 'active' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateMembershipStatus(membership.id, 'paused')}
-                            className="min-h-[40px]"
-                          >
-                            <Pause className="h-4 w-4 mr-2" />
-                            Pause
-                          </Button>
-                        )}
-                        {membership.status === 'paused' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateMembershipStatus(membership.id, 'active')}
-                            className="min-h-[40px]"
-                          >
-                            <Play className="h-4 w-4 mr-2" />
-                            Resume
-                          </Button>
-                        )}
-                        {membership.status !== 'cancelled' && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => updateMembershipStatus(membership.id, 'cancelled')}
-                            className="min-h-[40px]"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Cancel
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-medium break-all">{membership.user_name}</div>
-                          <div className="text-muted-foreground break-all">{membership.user_email}</div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="text-muted-foreground">Sessions/Week</div>
-                        <div className="font-medium">
-                          {membership.sessions_per_week === 999 ? 'Unlimited' : membership.sessions_per_week}
+                        
+                        <div className="flex flex-wrap gap-2">
+                          {membership.status === 'active' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateMembershipStatus(membership.id, 'paused')}
+                              className="min-h-[40px]"
+                            >
+                              <Pause className="h-4 w-4 mr-2" />
+                              Pause
+                            </Button>
+                          )}
+                          {membership.status === 'paused' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateMembershipStatus(membership.id, 'active')}
+                              className="min-h-[40px]"
+                            >
+                              <Play className="h-4 w-4 mr-2" />
+                              Resume
+                            </Button>
+                          )}
+                          {membership.status !== 'cancelled' && membership.status !== 'expired' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => updateMembershipStatus(membership.id, 'cancelled')}
+                              className="min-h-[40px]"
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Cancel
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
-                      <div>
-                        <div className="text-muted-foreground">Discount</div>
-                        <div className="font-medium">{membership.discount_percentage}%</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
+                        {/* Customer Info */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            <span>Customer</span>
+                          </div>
+                          <div className="font-medium break-all">
+                            {membership.customer_name || 'Unknown'}
+                          </div>
+                          <div className="flex items-center gap-1 text-muted-foreground break-all">
+                            <Mail className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">
+                              {membership.customer_email || 'No email'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Sessions Info */}
+                        <div className="space-y-1">
+                          <div className="text-muted-foreground">Sessions</div>
+                          <div className="font-medium">
+                            {membership.sessions_per_week === 999 || membership.membership_type === 'unlimited' 
+                              ? 'Unlimited' 
+                              : `${membership.sessions_remaining} / ${membership.sessions_per_week} remaining`}
+                          </div>
+                        </div>
+                        
+                        {/* Start Date */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>Start Date</span>
+                          </div>
+                          <div className="font-medium">
+                            {membership.start_date 
+                              ? format(parseISO(membership.start_date), 'dd MMM yyyy')
+                              : format(parseISO(membership.created_at), 'dd MMM yyyy')}
+                          </div>
+                        </div>
+                        
+                        {/* End Date */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>End Date</span>
+                          </div>
+                          <div className={`font-medium ${expiringSoon && membership.status === 'active' ? 'text-primary' : ''}`}>
+                            {membership.end_date 
+                              ? format(parseISO(membership.end_date), 'dd MMM yyyy')
+                              : 'Not set'}
+                          </div>
+                        </div>
+                        
+                        {/* Discount */}
+                        <div className="space-y-1">
+                          <div className="text-muted-foreground">Discount</div>
+                          <div className="font-medium">{membership.discount_percentage}%</div>
+                        </div>
                       </div>
-                      
-                      <div>
-                        <div className="text-muted-foreground">Created</div>
-                        <div className="font-medium">{new Date(membership.created_at).toLocaleDateString()}</div>
-                      </div>
-                    </div>
 
-                    {membership.stripe_subscription_id && (
-                      <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                        Stripe ID: {membership.stripe_subscription_id}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {membership.stripe_subscription_id && (
+                        <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                          Stripe ID: {membership.stripe_subscription_id}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

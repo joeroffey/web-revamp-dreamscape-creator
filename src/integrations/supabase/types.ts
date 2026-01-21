@@ -336,15 +336,19 @@ export type Database = {
       memberships: {
         Row: {
           created_at: string
+          customer_email: string | null
+          customer_name: string | null
           discount_amount: number
           discount_code_id: string | null
           discount_percentage: number | null
+          end_date: string | null
           id: string
           last_session_reset: string | null
           membership_type: string
           price_amount: number | null
           sessions_per_week: number
           sessions_remaining: number | null
+          start_date: string | null
           status: string
           stripe_subscription_id: string | null
           updated_at: string
@@ -352,15 +356,19 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
           discount_amount?: number
           discount_code_id?: string | null
           discount_percentage?: number | null
+          end_date?: string | null
           id?: string
           last_session_reset?: string | null
           membership_type: string
           price_amount?: number | null
           sessions_per_week: number
           sessions_remaining?: number | null
+          start_date?: string | null
           status?: string
           stripe_subscription_id?: string | null
           updated_at?: string
@@ -368,15 +376,19 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
           discount_amount?: number
           discount_code_id?: string | null
           discount_percentage?: number | null
+          end_date?: string | null
           id?: string
           last_session_reset?: string | null
           membership_type?: string
           price_amount?: number | null
           sessions_per_week?: number
           sessions_remaining?: number | null
+          start_date?: string | null
           status?: string
           stripe_subscription_id?: string | null
           updated_at?: string
@@ -539,6 +551,7 @@ export type Database = {
         Args: { p_stripe_session_id: string; p_time_slot_id: string }
         Returns: boolean
       }
+      expire_old_memberships: { Args: never; Returns: undefined }
       generate_time_slots: {
         Args: { end_date: string; start_date: string }
         Returns: undefined
@@ -555,6 +568,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }
+      reset_weekly_sessions: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

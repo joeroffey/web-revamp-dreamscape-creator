@@ -131,19 +131,34 @@ serve(async (req) => {
         const discountAmount = Number(session.metadata?.discountAmount || 0);
         const discountCodeId = session.metadata?.discountCodeId || null;
 
+        // Get user email and name from Supabase auth
+        const { data: userData } = await supabase.auth.admin.getUserById(userId);
+        const customerEmail = userData?.user?.email || session.customer_email || '';
+        const customerName = userData?.user?.user_metadata?.full_name || 
+                            userData?.user?.user_metadata?.name || 
+                            session.customer_details?.name || '';
+
+        // Calculate start and end dates
+        const startDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days from now
+
         const { data: membershipRow, error: membershipInsertError } = await supabase
           .from('memberships')
           .insert({
             user_id: userId,
             membership_type: membershipType,
             sessions_per_week: sessionsPerWeek,
-            sessions_remaining: sessionsPerWeek,
+            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerWeek,
             status: 'active',
             stripe_subscription_id: subscriptionId,
             discount_percentage: discountPercentage,
             discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
             discount_amount: discountAmount,
-            price_amount: originalAmount
+            price_amount: originalAmount,
+            customer_email: customerEmail,
+            customer_name: customerName,
+            start_date: startDate,
+            end_date: endDate
           })
           .select('id')
           .maybeSingle();
