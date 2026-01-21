@@ -44,6 +44,7 @@ const Booking = () => {
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
   const [checkingMembership, setCheckingMembership] = useState(false);
+  const [pricing, setPricing] = useState({ combined: 1800, private: 7000 }); // pence
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -52,6 +53,27 @@ const Booking = () => {
     bookingType: "communal" as "communal" | "private",
     guestCount: 1,
   });
+
+  // Fetch pricing from database
+  useEffect(() => {
+    const fetchPricing = async () => {
+      const { data } = await supabase
+        .from('pricing_config')
+        .select('service_type, price_amount')
+        .eq('is_active', true)
+        .in('service_type', ['combined', 'private']);
+      
+      if (data) {
+        const newPricing = { ...pricing };
+        data.forEach(p => {
+          if (p.service_type === 'combined') newPricing.combined = p.price_amount;
+          if (p.service_type === 'private') newPricing.private = p.price_amount;
+        });
+        setPricing(newPricing);
+      }
+    };
+    fetchPricing();
+  }, []);
 
   // Check membership status when user is logged in
   useEffect(() => {
@@ -231,7 +253,7 @@ const Booking = () => {
   };
 
   const calculateTotalPrice = () => {
-    return formData.bookingType === 'private' ? 70 : (18 * formData.guestCount);
+    return formData.bookingType === 'private' ? (pricing.private / 100) : ((pricing.combined / 100) * formData.guestCount);
   };
 
   const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook;
@@ -432,7 +454,7 @@ const Booking = () => {
                               <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className="text-lg sm:text-xl font-semibold text-primary">
-                                  {canUseMembership ? 'Free' : '£18'}
+                                  {canUseMembership ? 'Free' : `£${(pricing.combined / 100).toFixed(0)}`}
                                 </span>
                                 <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               </div>
