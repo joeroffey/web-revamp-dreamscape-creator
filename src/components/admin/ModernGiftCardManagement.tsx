@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Search, Eye, Filter, DollarSign, Calendar, TrendingUp, Star } from "lucide-react";
+import { Gift, Search, Eye, Filter, PoundSterling, Calendar, TrendingUp, Star } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -114,7 +114,7 @@ export default function ModernGiftCardManagement() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-green-100 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <PoundSterling className="h-4 w-4" />
                 Total Value
               </CardTitle>
             </CardHeader>

@@ -12,7 +12,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { 
   Calendar, 
   Users, 
-  DollarSign, 
+  PoundSterling, 
   Clock,
   Search,
   Filter,
@@ -185,7 +185,7 @@ export default function ModernBookingManagement() {
     {
       title: 'Total Revenue',
       value: formatCurrency(stats.totalRevenue),
-      icon: DollarSign,
+      icon: PoundSterling,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50'
     }
@@ -308,7 +308,7 @@ export default function ModernBookingManagement() {
                 </Select>
                 <Select value={paymentFilter} onValueChange={setPaymentFilter}>
                   <SelectTrigger className="w-[140px]">
-                    <DollarSign className="h-4 w-4 mr-2" />
+                    <PoundSterling className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Payment" />
                   </SelectTrigger>
                   <SelectContent>
