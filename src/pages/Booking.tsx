@@ -184,6 +184,16 @@ const Booking = () => {
   };
 
   const handleBookingTypeChange = (value: "communal" | "private") => {
+    // Prevent switching to private if slot doesn't have full availability
+    if (value === "private" && availableSpaces < 5) {
+      toast({
+        title: "Private Session Unavailable",
+        description: "Private sessions require an empty time slot. Please select a slot with 5/5 spaces available.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, bookingType: value }));
     
     // Adjust guest count if switching to communal and current count exceeds available spaces
@@ -194,11 +204,21 @@ const Booking = () => {
 
   const handleTimeSlotSelect = (slotId: string, date: string, time: string, spaces?: number) => {
     setSelectedTimeSlot({ id: slotId, date, time });
-    setAvailableSpaces(spaces || 4);
+    const newAvailableSpaces = spaces ?? 5;
+    setAvailableSpaces(newAvailableSpaces);
+    
+    // If currently set to private but new slot doesn't have full availability, switch to communal
+    if (formData.bookingType === "private" && newAvailableSpaces < 5) {
+      setFormData(prev => ({ ...prev, bookingType: "communal", guestCount: Math.min(prev.guestCount, newAvailableSpaces) }));
+      toast({
+        title: "Switched to Communal",
+        description: "Private sessions require an empty time slot. Switched to communal booking.",
+      });
+    }
     
     // Auto-adjust guest count if it exceeds available spaces for communal bookings
-    if (formData.bookingType === "communal" && formData.guestCount > (spaces || 4)) {
-      setFormData(prev => ({ ...prev, guestCount: spaces || 4 }));
+    if (formData.bookingType === "communal" && formData.guestCount > newAvailableSpaces) {
+      setFormData(prev => ({ ...prev, guestCount: newAvailableSpaces }));
     }
     
     // Clear time slot error
@@ -479,27 +499,46 @@ const Booking = () => {
                         </div>
                       </div>
                       
-                      <div 
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          formData.bookingType === "private" 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border hover:bg-muted/50"
-                        }`}
-                        onClick={() => handleBookingTypeChange("private")}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <User className="h-5 w-5" />
-                          <h3 className="font-semibold">Private Session</h3>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Exclusive use of the entire hub (maximum 7 people)
-                        </p>
-                        <div className="mt-2">
-                          <Badge variant="secondary">
-                            {canUseMembership ? 'Uses 1 session credit' : '£70 flat rate'}
-                          </Badge>
-                        </div>
-                      </div>
+                      {(() => {
+                        const privateDisabled = selectedTimeSlot && availableSpaces < 5;
+                        return (
+                          <div 
+                            className={`p-4 border rounded-lg transition-colors ${
+                              privateDisabled 
+                                ? "opacity-50 cursor-not-allowed bg-muted/30 border-border" 
+                                : formData.bookingType === "private" 
+                                  ? "border-primary bg-primary/5 cursor-pointer" 
+                                  : "border-border hover:bg-muted/50 cursor-pointer"
+                            }`}
+                            onClick={() => !privateDisabled && handleBookingTypeChange("private")}
+                          >
+                            <div className="flex items-center gap-3 mb-2">
+                              <User className="h-5 w-5" />
+                              <h3 className="font-semibold">Private Session</h3>
+                              {privateDisabled && (
+                                <Badge variant="outline" className="ml-auto text-xs">
+                                  Unavailable
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Exclusive use of the entire hub (maximum 7 people)
+                            </p>
+                            {privateDisabled ? (
+                              <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                This slot already has bookings. Select an empty slot (5/5 spaces) for private sessions.
+                              </p>
+                            ) : (
+                              <div className="mt-2">
+                                <Badge variant="secondary">
+                                  {canUseMembership ? 'Uses 1 session credit' : '£70 flat rate'}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Guest Count */}
