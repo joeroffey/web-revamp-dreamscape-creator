@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp, Plus, Pencil } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, MessageSquare, Tag, Filter, TrendingUp, Plus, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -419,7 +419,7 @@ export default function ModernCustomerManagement() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-green-100 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <PoundSterling className="h-4 w-4" />
                 Total Revenue
               </CardTitle>
             </CardHeader>

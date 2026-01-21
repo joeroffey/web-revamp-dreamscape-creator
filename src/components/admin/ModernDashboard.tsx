@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Users, 
   Calendar, 
-  DollarSign, 
+  PoundSterling, 
   TrendingUp, 
   Gift, 
   CreditCard,
@@ -122,7 +122,7 @@ export default function ModernDashboard() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-purple-100 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <PoundSterling className="h-4 w-4" />
                 Total Revenue
               </CardTitle>
             </CardHeader>

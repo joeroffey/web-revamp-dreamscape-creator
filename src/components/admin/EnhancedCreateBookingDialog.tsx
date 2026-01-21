@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, Phone, Mail, Calendar, Clock, DollarSign, Plus } from "lucide-react";
+import { Search, User, Phone, Mail, Calendar, Clock, PoundSterling, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -403,7 +403,7 @@ export function EnhancedCreateBookingDialog({
               <div className="space-y-2">
                 <Label htmlFor="price_amount">Price (£)</Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <PoundSterling className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     id="price_amount"
                     type="number"
