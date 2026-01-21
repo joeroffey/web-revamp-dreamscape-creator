@@ -156,7 +156,7 @@ serve(async (req) => {
     const finalAmount = Math.max(0, originalAmount - discountAmount);
 
     // Create Stripe checkout session
-    const sessionName = bookingType === 'private' ? 'Private Session' : 'Combined Session';
+    const sessionName = bookingType === 'private' ? 'Private Session' : 'Communal Session';
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
       line_items: [
