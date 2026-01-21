@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Calendar, User, LogOut, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/components/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +16,30 @@ import {
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [firstName, setFirstName] = useState<string>("");
   const { user, signOut } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
+
+  // Fetch user's first name from profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.full_name) {
+          setFirstName(profile.full_name.split(' ')[0]);
+        }
+      } else {
+        setFirstName("");
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id]);
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -68,7 +91,7 @@ export const Navigation = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="rounded-full px-4 lg:px-6 py-2 transition-all duration-300 hover:scale-105">
                     <User className="h-4 w-4 mr-2" />
-                    {user.email?.split('@')[0] || 'Account'}
+                    {firstName || user.email?.split('@')[0] || 'Account'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
