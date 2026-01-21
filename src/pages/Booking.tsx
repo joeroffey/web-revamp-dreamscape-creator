@@ -129,7 +129,7 @@ const Booking = () => {
     {
       id: "combined",
       icon: Calendar,
-      name: "Combined Session",
+      name: "Communal Session",
       duration: "1 hour",
       price: "£18",
       description: "Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness"
@@ -451,7 +451,7 @@ const Booking = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
+                              <h4 className="text-base sm:text-lg font-semibold truncate">Communal Session</h4>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className="text-lg sm:text-xl font-semibold text-primary">
                                   {canUseMembership ? 'Free' : `£${(pricing.combined / 100).toFixed(0)}`}

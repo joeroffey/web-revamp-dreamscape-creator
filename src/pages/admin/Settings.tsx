@@ -196,10 +196,10 @@ export default function AdminSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Combined Session (Communal) */}
+              {/* Communal Session */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-lg">
                 <div>
-                  <Label className="font-medium text-base">Combined Session</Label>
+                  <Label className="font-medium text-base">Communal Session</Label>
                   <p className="text-sm text-muted-foreground mt-1">Per person price for communal bookings</p>
                 </div>
                 <div>
