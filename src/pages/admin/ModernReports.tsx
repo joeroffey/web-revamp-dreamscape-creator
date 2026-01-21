@@ -127,10 +127,11 @@ export default function ModernReports() {
       );
       setRows(all);
 
-      // Service breakdown (bookings only)
+      // Service breakdown by booking type (communal vs private)
       const breakdown: Record<string, { count: number; revenue: number }> = {};
       for (const b of bookingsRes.data || []) {
-        const key = String(b.service_type || "unknown");
+        const bookingType = String(b.booking_type || "communal");
+        const key = bookingType === 'private' ? 'Private Session' : 'Communal Session';
         const original = Number(b.price_amount || 0);
         const discount = Number(b.discount_amount || 0);
         const final = Number(b.final_amount ?? original - discount);
@@ -290,7 +291,7 @@ export default function ModernReports() {
                       .map(([key, v]) => (
                         <div key={key} className="flex items-center justify-between gap-2">
                           <div>
-                            <div className="font-medium capitalize">{key.replace(/_/g, " ")}</div>
+                            <div className="font-medium">{key}</div>
                             <div className="text-xs text-muted-foreground">{v.count} bookings</div>
                           </div>
                           <div className="text-right">
