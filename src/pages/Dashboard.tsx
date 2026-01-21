@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, CreditCard, Settings } from "lucide-react";
+import { Calendar, Clock, User, CreditCard, Settings, RefreshCw, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -28,6 +28,9 @@ interface Membership {
   sessions_per_week: number;
   sessions_remaining: number;
   discount_percentage: number;
+  is_auto_renew?: boolean;
+  end_date?: string;
+  stripe_subscription_id?: string;
 }
 
 const Dashboard = () => {
@@ -39,6 +42,7 @@ const Dashboard = () => {
   const [membership, setMembership] = useState<Membership | null>(null);
   const [firstName, setFirstName] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
   console.log('Dashboard - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
 
@@ -127,6 +131,39 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
     window.location.href = "/";
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!membership?.id || !user?.id) return;
+    
+    setCancellingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-membership', {
+        body: {
+          membershipId: membership.id,
+          userId: user.id,
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Subscription Cancelled",
+        description: "Your membership will not auto-renew. You can continue using it until the end of your billing period.",
+      });
+
+      // Refresh membership data
+      setMembership(prev => prev ? { ...prev, is_auto_renew: false } : null);
+    } catch (error) {
+      console.error('Cancel subscription error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription. Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancellingSubscription(false);
+    }
   };
 
   const formatServiceType = (serviceType: string) => {
@@ -249,10 +286,29 @@ const Dashboard = () => {
                           {membership.status}
                         </Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground space-y-1">
                         <p>{membership.sessions_per_week === 999 ? 'Unlimited' : `${membership.sessions_per_week} sessions/week`}</p>
                         <p>{membership.discount_percentage}% discount on products</p>
+                        {membership.end_date && (
+                          <p>Expires: {new Date(membership.end_date).toLocaleDateString()}</p>
+                        )}
+                        <div className="flex items-center gap-1 pt-1">
+                          <RefreshCw className="h-3 w-3" />
+                          <span>{membership.is_auto_renew ? 'Auto-renewing' : 'One-time purchase'}</span>
+                        </div>
                       </div>
+                      {membership.is_auto_renew && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full mt-2 text-destructive hover:text-destructive"
+                          onClick={handleCancelSubscription}
+                          disabled={cancellingSubscription}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          {cancellingSubscription ? 'Cancelling...' : 'Cancel Auto-Renewal'}
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center">

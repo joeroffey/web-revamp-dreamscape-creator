@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { membershipType, userId, discountCode } = await req.json();
+    const { membershipType, userId, discountCode, autoRenew = false } = await req.json();
 
     if (!membershipType || !userId) {
       throw new Error("Missing required fields");
@@ -65,6 +65,7 @@ serve(async (req) => {
     if (!plan) {
       throw new Error("Invalid membership type");
     }
+
     // Optional discount code (applied to first month only via lower unit_amount)
     let discountCodeRow: any = null;
     let discountAmount = 0;
@@ -106,46 +107,90 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Create Stripe checkout session for subscription
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "gbp",
-            product_data: {
-              name: plan.name,
-              description: `Revitalise Hub Membership - ${plan.name}`,
+    // Create Stripe checkout session - subscription for auto-renew, payment for one-time
+    if (autoRenew) {
+      // Subscription mode for auto-renewal
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_email: customerId ? undefined : user.email,
+        line_items: [
+          {
+            price_data: {
+              currency: "gbp",
+              product_data: {
+                name: plan.name,
+                description: `Revitalise Hub Membership - ${plan.name} (Auto-Renewing)`,
+              },
+              unit_amount: finalAmount,
+              recurring: {
+                interval: "month",
+              },
             },
-            unit_amount: finalAmount,
-            recurring: {
-              interval: "month",
-            },
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      mode: "subscription",
-      success_url: `${req.headers.get("origin")}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/memberships`,
-      metadata: {
-        userId: userId,
-        membershipType: membershipType,
-        sessions_per_week: plan.sessions_per_week.toString(),
-        discount_percentage: plan.discount_percentage.toString(),
-        discountCode: discountCodeRow?.code || "",
-        discountCodeId: discountCodeRow?.id || "",
-        originalAmount: plan.price.toString(),
-        discountAmount: discountAmount.toString(),
-        finalAmount: finalAmount.toString(),
-      }
-    });
+        ],
+        mode: "subscription",
+        success_url: `${req.headers.get("origin")}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}/memberships`,
+        metadata: {
+          userId: userId,
+          membershipType: membershipType,
+          sessions_per_week: plan.sessions_per_week.toString(),
+          discount_percentage: plan.discount_percentage.toString(),
+          discountCode: discountCodeRow?.code || "",
+          discountCodeId: discountCodeRow?.id || "",
+          originalAmount: plan.price.toString(),
+          discountAmount: discountAmount.toString(),
+          finalAmount: finalAmount.toString(),
+          isAutoRenew: "true",
+        }
+      });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } else {
+      // Payment mode for one-time purchase (no auto-renewal)
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_email: customerId ? undefined : user.email,
+        line_items: [
+          {
+            price_data: {
+              currency: "gbp",
+              product_data: {
+                name: plan.name,
+                description: `Revitalise Hub Membership - ${plan.name} (1 Month)`,
+              },
+              unit_amount: finalAmount,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${req.headers.get("origin")}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}/memberships`,
+        metadata: {
+          type: "membership_onetime",
+          userId: userId,
+          membershipType: membershipType,
+          sessions_per_week: plan.sessions_per_week.toString(),
+          discount_percentage: plan.discount_percentage.toString(),
+          discountCode: discountCodeRow?.code || "",
+          discountCodeId: discountCodeRow?.id || "",
+          originalAmount: plan.price.toString(),
+          discountAmount: discountAmount.toString(),
+          finalAmount: finalAmount.toString(),
+          isAutoRenew: "false",
+        }
+      });
+
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
   } catch (error) {
     console.error("Error creating membership payment:", error);
