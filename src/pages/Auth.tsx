@@ -48,15 +48,29 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password,
       });
 
       if (error) throw error;
 
+      // Fetch user's first name from profile
+      let firstName = "";
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", data.user.id)
+          .single();
+        
+        if (profile?.full_name) {
+          firstName = profile.full_name.split(' ')[0];
+        }
+      }
+
       toast({
-        title: "Welcome back!",
+        title: firstName ? `Welcome back, ${firstName}!` : "Welcome back!",
         description: "You have been successfully logged in.",
       });
       navigate("/");
