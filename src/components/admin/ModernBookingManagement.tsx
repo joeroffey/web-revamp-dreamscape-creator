@@ -239,9 +239,15 @@ export default function ModernBookingManagement() {
               customer_name: selectedBooking.customer_name,
               customer_email: selectedBooking.customer_email,
               customer_phone: selectedBooking.customer_phone || undefined,
+              guest_count: selectedBooking.guest_count || 1,
+              session_date: selectedBooking.session_date,
+              session_time: selectedBooking.session_time,
               booking_status: selectedBooking.booking_status || 'confirmed',
               payment_status: selectedBooking.payment_status || 'pending',
               special_requests: selectedBooking.special_requests || undefined,
+              stripe_session_id: selectedBooking.stripe_session_id || undefined,
+              price_amount: selectedBooking.price_amount,
+              final_amount: selectedBooking.final_amount || undefined,
             }}
             open={editOpen}
             onOpenChange={setEditOpen}
