@@ -41,21 +41,33 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch total customers
-        const { count: customersCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
+        // Fetch unique customers from bookings + CRM customers table
+        const [{ data: bookingEmails }, { data: crmCustomers }] = await Promise.all([
+          supabase.from('bookings').select('customer_email'),
+          supabase.from('customers').select('email')
+        ]);
+        
+        const uniqueEmails = new Set<string>();
+        (bookingEmails || []).forEach((b: any) => {
+          if (b.customer_email) uniqueEmails.add(b.customer_email.toLowerCase());
+        });
+        (crmCustomers || []).forEach((c: any) => {
+          if (c.email) uniqueEmails.add(c.email.toLowerCase());
+        });
+        const totalCustomers = uniqueEmails.size;
 
-        // Fetch total bookings
+        // Fetch total bookings (paid only for accurate count)
         const { count: bookingsCount } = await supabase
           .from('bookings')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .eq('payment_status', 'paid');
 
-        // Fetch active gift cards
+        // Fetch active gift cards (paid and not redeemed)
         const { count: giftCardsCount } = await supabase
           .from('gift_cards')
           .select('*', { count: 'exact', head: true })
-          .eq('is_redeemed', false);
+          .eq('is_redeemed', false)
+          .eq('payment_status', 'paid');
 
         // Fetch active memberships
         const { count: membershipsCount } = await supabase
@@ -63,28 +75,54 @@ export default function AdminDashboard() {
           .select('*', { count: 'exact', head: true })
           .eq('status', 'active');
 
-        // Fetch total revenue from paid bookings
-        const { data: paidBookings } = await supabase
-          .from('bookings')
-          .select('price_amount, final_amount, discount_amount')
-          .eq('payment_status', 'paid');
+        // Fetch total revenue from paid bookings, gift cards, and memberships
+        const [{ data: paidBookings }, { data: paidGiftCards }, { data: paidMemberships }] = await Promise.all([
+          supabase
+            .from('bookings')
+            .select('price_amount, final_amount, discount_amount')
+            .eq('payment_status', 'paid'),
+          supabase
+            .from('gift_cards')
+            .select('amount, final_amount, discount_amount')
+            .eq('payment_status', 'paid'),
+          supabase
+            .from('memberships')
+            .select('price_amount, discount_amount')
+            .eq('status', 'active')
+        ]);
 
-        const totalRevenue = paidBookings?.reduce((sum, booking: any) => {
+        const bookingRevenue = paidBookings?.reduce((sum, booking: any) => {
           const original = Number(booking.price_amount || 0);
           const discount = Number(booking.discount_amount || 0);
           const final = Number(booking.final_amount ?? (original - discount));
           return sum + final;
         }, 0) || 0;
 
+        const giftCardRevenue = paidGiftCards?.reduce((sum, gc: any) => {
+          const original = Number(gc.amount || 0);
+          const discount = Number(gc.discount_amount || 0);
+          const final = Number(gc.final_amount ?? (original - discount));
+          return sum + final;
+        }, 0) || 0;
+
+        const membershipRevenue = paidMemberships?.reduce((sum, m: any) => {
+          const original = Number(m.price_amount || 0);
+          const discount = Number(m.discount_amount || 0);
+          return sum + Math.max(0, original - discount);
+        }, 0) || 0;
+
+        const totalRevenue = bookingRevenue + giftCardRevenue + membershipRevenue;
+
         // Fetch recent bookings
         const { data: recentBookings } = await supabase
           .from('bookings')
           .select('*')
+          .eq('payment_status', 'paid')
           .order('created_at', { ascending: false })
           .limit(5);
 
         setStats({
-          totalCustomers: customersCount || 0,
+          totalCustomers,
           totalBookings: bookingsCount || 0,
           activeGiftCards: giftCardsCount || 0,
           activeMemberships: membershipsCount || 0,
