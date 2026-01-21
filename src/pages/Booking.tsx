@@ -18,8 +18,8 @@ import { useAuth } from "@/components/AuthContext";
 interface MembershipStatus {
   hasMembership: boolean;
   canBook: boolean;
-  hasBookingForDate?: boolean;
-  bookingForDate?: {
+  hasUsedCreditForDate?: boolean;
+  membershipBookingForDate?: {
     id: string;
     session_date: string;
     session_time: string;
@@ -300,8 +300,8 @@ const Booking = () => {
     return (pricing.combined / 100) * formData.guestCount;
   };
 
-  const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook && !membershipStatus?.hasBookingForDate;
-  const hasBookingForSelectedDate = membershipStatus?.hasBookingForDate;
+  const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook && !membershipStatus?.hasUsedCreditForDate;
+  const hasUsedCreditForSelectedDate = selectedTimeSlot && membershipStatus?.hasUsedCreditForDate;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
@@ -458,7 +458,7 @@ const Booking = () => {
                   <span className="text-muted-foreground">Checking membership status...</span>
                 </CardContent>
               </Card>
-            ) : hasBookingForSelectedDate && membershipStatus?.membership ? (
+            ) : hasUsedCreditForSelectedDate && membershipStatus?.membership ? (
               <Card className="mb-8 border-amber-500 bg-amber-500/5">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -467,19 +467,16 @@ const Booking = () => {
                         <AlertCircle className="h-5 w-5 text-amber-500" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Already Booked This Day</h3>
+                        <h3 className="font-semibold text-foreground">Membership Credit Already Used</h3>
                         <p className="text-sm text-muted-foreground">
-                          You have a booking at {membershipStatus.bookingForDate?.session_time?.slice(0, 5)}. 
-                          Members can only book one session per day.
+                          You've already used your free session for {selectedTimeSlot?.date ? new Date(selectedTimeSlot.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : 'this day'}.
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="w-fit border-amber-500 text-amber-600">
-                      Select Different Date
-                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-3">
-                    Want to bring guests? You can add paying guests to your existing booking, or they can book separately.
+                    You can still book another session today, but it will be charged at the standard rate of £{(pricing.combined / 100).toFixed(0)}.
+                    Or select a different date to use your membership credit.
                   </p>
                 </CardContent>
               </Card>
