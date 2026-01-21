@@ -21,15 +21,6 @@ import CookiePolicy from "./pages/CookiePolicy";
 import FitnessRecovery from "./pages/FitnessRecovery";
 import YourVisit from "./pages/YourVisit";
 import NotFound from "./pages/NotFound";
-import AdminDashboard from "./pages/admin/Dashboard";
-import ModernBookingManagement from "./components/admin/ModernBookingManagement";
-import ModernCustomerManagement from "./components/admin/ModernCustomerManagement";
-import ModernGiftCardManagement from "./components/admin/ModernGiftCardManagement";
-import AdminMemberships from "./pages/admin/Memberships";
-import ModernReports from "./pages/admin/ModernReports";
-import ModernPromotions from "./pages/admin/ModernPromotions";
-import AdminSettings from "./pages/admin/Settings";
-import ModernScheduleManagement from "./components/admin/ModernScheduleManagement";
 
 const queryClient = new QueryClient();
 
@@ -57,16 +48,6 @@ const App = () => (
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/schedule" element={<ModernScheduleManagement />} />
-            <Route path="/admin/bookings" element={<ModernBookingManagement />} />
-            <Route path="/admin/customers" element={<ModernCustomerManagement />} />
-            <Route path="/admin/gift-cards" element={<ModernGiftCardManagement />} />
-            <Route path="/admin/memberships" element={<AdminMemberships />} />
-            <Route path="/admin/reports" element={<ModernReports />} />
-            <Route path="/admin/promotions" element={<ModernPromotions />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
