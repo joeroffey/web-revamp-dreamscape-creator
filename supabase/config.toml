@@ -2,3 +2,9 @@ project_id = "ismifvjzvvyleahdmdrz"
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.check-membership-status]
+verify_jwt = false
+
+[functions.create-member-booking]
+verify_jwt = false
