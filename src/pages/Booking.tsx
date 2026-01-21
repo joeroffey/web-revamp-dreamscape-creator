@@ -516,7 +516,7 @@ const Booking = () => {
                         </p>
                         <div className="mt-2">
                           <Badge variant="secondary">
-                            {canUseMembership ? 'Included in membership' : '£18 per person'}
+                            {canUseMembership ? 'Included in membership' : `£${(pricing.combined / 100).toFixed(0)} per person`}
                           </Badge>
                         </div>
                       </div>
@@ -554,7 +554,7 @@ const Booking = () => {
                             ) : (
                               <div className="mt-2">
                                 <Badge variant="secondary">
-                                  {canUseMembership ? 'Uses 1 session credit' : '£70 flat rate'}
+                                  {canUseMembership ? 'Uses 1 session credit' : `£${(pricing.private / 100).toFixed(0)} flat rate`}
                                 </Badge>
                               </div>
                             )}
@@ -741,8 +741,8 @@ const Booking = () => {
                               <span>Price:</span>
                               <span>
                                 {formData.bookingType === 'private' 
-                                  ? '£70 flat rate' 
-                                  : `£18 × ${formData.guestCount} people`}
+                                  ? `£${(pricing.private / 100).toFixed(0)} flat rate` 
+                                  : `£${(pricing.combined / 100).toFixed(0)} × ${formData.guestCount} people`}
                               </span>
                             </div>
                             <div className="flex justify-between font-semibold text-primary">
@@ -798,7 +798,7 @@ const Booking = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>Price per person:</span>
-                          <span>{canUseMembership ? 'Free with membership' : '£18'}</span>
+                          <span>{canUseMembership ? 'Free with membership' : `£${(pricing.combined / 100).toFixed(0)}`}</span>
                         </div>
                       </div>
                     </div>
