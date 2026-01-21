@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -13,12 +13,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatGBP } from "@/lib/format";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+type SortField = 'name' | 'email' | 'bookings' | 'revenue' | 'last_booking';
+type SortDirection = 'asc' | 'desc';
 
 interface Customer {
   id: string;
@@ -62,6 +65,8 @@ export default function ModernCustomerManagement() {
   const [importData, setImportData] = useState<any[]>([]);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const queryClient = useQueryClient();
 
@@ -398,15 +403,61 @@ export default function ModernCustomerManagement() {
     }
   };
 
-  const filteredCustomers = customers?.filter(customer => {
-    const matchesSearch = customer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone?.includes(searchTerm);
-    
-    const matchesType = filterByType === "all" || customer.customer_type === filterByType;
-    
-    return matchesSearch && matchesType;
-  }) || [];
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-4 w-4 ml-1" /> 
+      : <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+
+  const filteredCustomers = useMemo(() => {
+    let result = customers?.filter(customer => {
+      const matchesSearch = customer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phone?.includes(searchTerm);
+      
+      const matchesType = filterByType === "all" || customer.customer_type === filterByType;
+      
+      return matchesSearch && matchesType;
+    }) || [];
+
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        let comparison = 0;
+        switch (sortField) {
+          case 'name':
+            comparison = (a.full_name || '').localeCompare(b.full_name || '');
+            break;
+          case 'email':
+            comparison = a.email.localeCompare(b.email);
+            break;
+          case 'bookings':
+            comparison = a.total_bookings - b.total_bookings;
+            break;
+          case 'revenue':
+            comparison = a.total_spent - b.total_spent;
+            break;
+          case 'last_booking':
+            const dateA = a.last_booking_date ? new Date(a.last_booking_date).getTime() : 0;
+            const dateB = b.last_booking_date ? new Date(b.last_booking_date).getTime() : 0;
+            comparison = dateA - dateB;
+            break;
+        }
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
+    return result;
+  }, [customers, searchTerm, filterByType, sortField, sortDirection]);
 
   const formatCurrency = (amount: number) => formatGBP(amount);
 
@@ -592,11 +643,51 @@ export default function ModernCustomerManagement() {
                           onCheckedChange={toggleSelectAll}
                         />
                       </TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead className="hidden md:table-cell">Contact</TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('name')}
+                        >
+                          Customer
+                          {getSortIcon('name')}
+                        </Button>
+                      </TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('last_booking')}
+                        >
+                          Contact
+                          {getSortIcon('last_booking')}
+                        </Button>
+                      </TableHead>
                       <TableHead className="hidden lg:table-cell">Tags</TableHead>
-                      <TableHead className="text-right">Bookings</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium hover:bg-transparent ml-auto"
+                          onClick={() => handleSort('bookings')}
+                        >
+                          Bookings
+                          {getSortIcon('bookings')}
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 font-medium hover:bg-transparent ml-auto"
+                          onClick={() => handleSort('revenue')}
+                        >
+                          Revenue
+                          {getSortIcon('revenue')}
+                        </Button>
+                      </TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
