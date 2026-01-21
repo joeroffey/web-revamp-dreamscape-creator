@@ -2,19 +2,17 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, User, Mail, Phone, AlertCircle, Users, ExternalLink } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-// TODO: Replace with your actual BSport booking URL
-const BSPORT_BOOKING_URL = "https://your-studio.bsport.io/book";
 
 const Booking = () => {
   const { toast } = useToast();
@@ -34,6 +32,17 @@ const Booking = () => {
     bookingType: "communal" as "communal" | "private",
     guestCount: 1,
   });
+
+  const services = [
+    {
+      id: "combined",
+      icon: Calendar,
+      name: "Combined Session",
+      duration: "1 hour",
+      price: "£18",
+      description: "Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness"
+    }
+  ];
 
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
@@ -71,6 +80,7 @@ const Booking = () => {
       [name]: value,
     });
     
+    // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors({
         ...formErrors,
@@ -82,6 +92,7 @@ const Booking = () => {
   const handleGuestCountChange = (value: string) => {
     const newGuestCount = parseInt(value) || 1;
     
+    // Auto-convert to private if booking 4 people in communal
     if (formData.bookingType === "communal" && newGuestCount === 4) {
       setFormData(prev => ({ 
         ...prev, 
@@ -96,6 +107,7 @@ const Booking = () => {
       setFormData(prev => ({ ...prev, guestCount: newGuestCount }));
     }
     
+    // Clear error for this field
     if (formErrors.guestCount) {
       setFormErrors(prev => ({ ...prev, guestCount: "" }));
     }
@@ -104,6 +116,7 @@ const Booking = () => {
   const handleBookingTypeChange = (value: "communal" | "private") => {
     setFormData(prev => ({ ...prev, bookingType: value }));
     
+    // Adjust guest count if switching to communal and current count exceeds available spaces
     if (value === "communal" && formData.guestCount > availableSpaces) {
       setFormData(prev => ({ ...prev, guestCount: availableSpaces }));
     }
@@ -113,10 +126,12 @@ const Booking = () => {
     setSelectedTimeSlot({ id: slotId, date, time });
     setAvailableSpaces(spaces || 4);
     
+    // Auto-adjust guest count if it exceeds available spaces for communal bookings
     if (formData.bookingType === "communal" && formData.guestCount > (spaces || 4)) {
       setFormData(prev => ({ ...prev, guestCount: spaces || 4 }));
     }
     
+    // Clear time slot error
     if (formErrors.timeSlot) {
       setFormErrors({
         ...formErrors,
@@ -129,7 +144,7 @@ const Booking = () => {
     return formData.bookingType === 'private' ? 70 : (18 * formData.guestCount);
   };
 
-  const handleBookingRedirect = () => {
+  const handleBooking = async () => {
     if (!validateForm()) {
       toast({
         title: "Please Complete All Required Fields",
@@ -140,33 +155,41 @@ const Booking = () => {
     }
 
     setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-booking-payment', {
+        body: {
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          timeSlotId: selectedTimeSlot!.id,
+          specialRequests: formData.specialRequests,
+          bookingType: formData.bookingType,
+          guestCount: formData.guestCount,
+        }
+      });
 
-    // Build the BSport URL with parameters
-    const params = new URLSearchParams({
-      date: selectedTimeSlot!.date,
-      time: selectedTimeSlot!.time,
-      type: formData.bookingType,
-      guests: formData.guestCount.toString(),
-      name: formData.customerName,
-      email: formData.customerEmail,
-    });
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
 
-    if (formData.customerPhone) {
-      params.append('phone', formData.customerPhone);
+      // Redirect to Stripe checkout
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No payment URL received");
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      toast({
+        title: "Booking Failed",
+        description: `There was an error processing your booking: ${errorMessage}. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    // Redirect to BSport
-    const bsportUrl = `${BSPORT_BOOKING_URL}?${params.toString()}`;
-    
-    toast({
-      title: "Redirecting to BSport",
-      description: "You'll complete your booking on our booking platform.",
-    });
-
-    // Short delay to show the toast, then redirect
-    setTimeout(() => {
-      window.location.href = bsportUrl;
-    }, 1000);
   };
 
   return (
@@ -203,7 +226,10 @@ const Booking = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
-                              <span className="text-lg sm:text-xl font-semibold text-primary">£18</span>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-lg sm:text-xl font-semibold text-primary">£18</span>
+                                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                              </div>
                             </div>
                             <p className="text-muted-foreground text-xs sm:text-sm mb-2">Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness</p>
                             <div className="flex items-center gap-2 text-muted-foreground">
@@ -456,22 +482,13 @@ const Booking = () => {
                           <span>£{calculateTotalPrice()}</span>
                         </div>
                       </div>
-                      
-                      <div className="bg-muted/50 rounded-lg p-4 mb-4">
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <ExternalLink className="h-4 w-4" />
-                          You'll complete your booking and payment on our secure booking platform.
-                        </p>
-                      </div>
-                      
                       <Button 
                         size="lg" 
                         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                        onClick={handleBookingRedirect}
+                        onClick={handleBooking}
                         disabled={isLoading}
                       >
-                        {isLoading ? "Redirecting..." : "Continue to Book"}
-                        <ExternalLink className="ml-2 h-4 w-4" />
+                        {isLoading ? "Processing..." : "Confirm Booking & Pay"}
                       </Button>
                     </>
                   ) : (
