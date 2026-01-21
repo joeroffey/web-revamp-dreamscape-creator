@@ -1,2 +1,2 @@
-// Stripe configuration
-export const STRIPE_PUBLISHABLE_KEY = "pk_live_51QPQDMCub1817z266yObO6Yt1nTzt7yGnPekgXq0bLExfDwDfTBANedLCRkXJOLcQzRVj3FUTOeQx1m1uyWmwzrD007X8EnMT6";
+// Stripe configuration - TEST MODE
+export const STRIPE_PUBLISHABLE_KEY = "pk_test_51Rc3pwRrnZbfTPKgAwdmbcsZPmuSFlV1Aszbc16SzDjVf5MC9wKB2qONgJKCXsKMhARZYNkRB4UDBsXlNV26xcAV00xohOAKYQ";
