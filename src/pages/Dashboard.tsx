@@ -37,6 +37,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [membership, setMembership] = useState<Membership | null>(null);
+  const [firstName, setFirstName] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   console.log('Dashboard - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
@@ -75,6 +76,19 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
+      // Fetch user profile for first name
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user?.id)
+        .single();
+
+      if (profileData?.full_name) {
+        // Extract first name from full name
+        const firstNameOnly = profileData.full_name.split(' ')[0];
+        setFirstName(firstNameOnly);
+      }
+
       // Fetch user bookings
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
@@ -183,7 +197,7 @@ const Dashboard = () => {
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl font-light text-foreground mb-2">
-                  Welcome back!
+                  Welcome back{firstName ? `, ${firstName}` : ''}!
                 </h1>
                 <p className="text-muted-foreground">
                   Manage your bookings and membership
