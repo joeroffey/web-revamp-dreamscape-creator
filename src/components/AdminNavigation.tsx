@@ -12,8 +12,7 @@ import {
   Settings,
   LogOut,
   Home,
-  BarChart3,
-  Percent
+  BarChart3
 } from 'lucide-react';
 
 export const AdminNavigation = () => {
@@ -28,7 +27,6 @@ export const AdminNavigation = () => {
     { href: '/admin/gift-cards', icon: Gift, label: 'Gift Cards' },
     { href: '/admin/memberships', icon: CreditCard, label: 'Memberships' },
     { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
-    { href: '/admin/promotions', icon: Percent, label: 'Promotions' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
   ];
 

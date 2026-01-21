@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp, Star, Plus, Pencil } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp, Plus, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -276,7 +276,6 @@ export default function ModernCustomerManagement() {
     );
   }
 
-  const vipCustomers = customers?.filter(c => c.customer_type === 'vip').length || 0;
   const newCustomers = customers?.filter(c => c.customer_type === 'new').length || 0;
   const totalRevenue = customers?.reduce((sum, c) => sum + c.total_spent, 0) || 0;
   const avgBookingsPerCustomer = customers?.length ? Math.round(customers.reduce((sum, c) => sum + c.total_bookings, 0) / customers.length) : 0;
@@ -382,7 +381,6 @@ export default function ModernCustomerManagement() {
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="regular">Regular</SelectItem>
-              <SelectItem value="vip">VIP</SelectItem>
               <SelectItem value="new">New</SelectItem>
             </SelectContent>
           </Select>
@@ -407,13 +405,13 @@ export default function ModernCustomerManagement() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-purple-100 flex items-center gap-2">
-                <Star className="h-4 w-4" />
-                VIP Customers
+                <TrendingUp className="h-4 w-4" />
+                New Customers
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{vipCustomers}</div>
-              <p className="text-xs text-purple-100 mt-1">High-value customers</p>
+              <div className="text-3xl font-bold">{newCustomers}</div>
+              <p className="text-xs text-purple-100 mt-1">This month</p>
             </CardContent>
           </Card>
 

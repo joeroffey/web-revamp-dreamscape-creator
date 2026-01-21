@@ -24,6 +24,7 @@ export const MobileAdminNav = () => {
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/admin/schedule', icon: Calendar, label: 'Schedule' },
     { href: '/admin/customers', icon: Users, label: 'Customers' },
     { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
     { href: '/admin/gift-cards', icon: Gift, label: 'Gift Cards' },
