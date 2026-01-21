@@ -1,0 +1,1 @@
+UPDATE public.profiles SET full_name = 'Joe Roffey', updated_at = now() WHERE id = 'd1c18275-4cf3-40e1-ad8e-f09821eb8f23';
