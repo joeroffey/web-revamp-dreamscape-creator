@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Calendar, DollarSign, Users, Filter, Eye, X } from 'lucide-react';
+import { Search, Calendar, PoundSterling, Users, Filter, Eye, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -214,7 +214,7 @@ export default function AdminBookings() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <DollarSign className="h-4 w-4 mr-2" />
+                <PoundSterling className="h-4 w-4 mr-2" />
                 Total Revenue
               </CardTitle>
             </CardHeader>

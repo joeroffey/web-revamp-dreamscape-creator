@@ -11,7 +11,7 @@ import {
   Gift, 
   CreditCard,
   TrendingUp,
-  DollarSign,
+  PoundSterling,
   Settings
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
     {
       title: 'Total Revenue',
       value: formatCurrency(stats.totalRevenue),
-      icon: DollarSign,
+      icon: PoundSterling,
       color: 'text-emerald-600'
     }
   ];
