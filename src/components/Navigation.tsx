@@ -37,10 +37,10 @@ export const Navigation = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16">
         <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 lg:h-32">
-          {/* Logo */}
-          <Link to="/" className="flex items-center flex-shrink-0">
+          {/* Logo - pushed more to the right */}
+          <Link to="/" className="flex items-center flex-shrink-0 ml-4 lg:ml-8 xl:ml-12">
             <img 
               src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
@@ -48,9 +48,9 @@ export const Navigation = () => {
             />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center justify-center flex-1 mx-6 xl:mx-10">
-            <div className="flex items-center space-x-3 xl:space-x-5 2xl:space-x-6">
+          {/* Desktop Navigation - centered */}
+          <div className="hidden lg:flex items-center justify-center flex-1">
+            <div className="flex items-center space-x-2 xl:space-x-4 2xl:space-x-5">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -63,8 +63,8 @@ export const Navigation = () => {
             </div>
           </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center flex-shrink-0">
+          {/* Desktop CTA - pushed more to the left */}
+          <div className="hidden md:flex items-center flex-shrink-0 mr-4 lg:mr-8 xl:mr-12">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
