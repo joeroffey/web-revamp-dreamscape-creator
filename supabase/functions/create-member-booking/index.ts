@@ -13,8 +13,6 @@ interface MemberBookingRequest {
   customerPhone?: string;
   timeSlotId: string;
   specialRequests?: string;
-  bookingType: 'communal' | 'private';
-  guestCount: number;
 }
 
 serve(async (req) => {
@@ -24,7 +22,7 @@ serve(async (req) => {
 
   try {
     const body: MemberBookingRequest = await req.json();
-    const { userId, customerName, customerEmail, customerPhone, timeSlotId, specialRequests, bookingType, guestCount } = body;
+    const { userId, customerName, customerEmail, customerPhone, timeSlotId, specialRequests } = body;
 
     if (!userId || !customerName || !customerEmail || !timeSlotId) {
       throw new Error("Missing required fields");
@@ -70,7 +68,22 @@ serve(async (req) => {
       throw new Error("Time slot not found");
     }
 
-    // Check slot availability
+    // RESTRICTION: Check if member already has a booking for this date
+    const { data: existingMemberBookings, error: memberBookingsError } = await supabase
+      .from('bookings')
+      .select('id, session_date, session_time')
+      .eq('user_id', userId)
+      .eq('session_date', timeSlot.slot_date)
+      .eq('payment_status', 'paid');
+
+    if (memberBookingsError) throw memberBookingsError;
+
+    if (existingMemberBookings && existingMemberBookings.length > 0) {
+      const existingBooking = existingMemberBookings[0];
+      throw new Error(`You already have a booking on this date at ${existingBooking.session_time.slice(0, 5)}. Members can only book one session per day.`);
+    }
+
+    // Check slot availability for communal booking (members always book communal for themselves)
     const { data: existingBookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('booking_type, guest_count')
@@ -83,21 +96,16 @@ serve(async (req) => {
     const currentCommunalCount = existingBookings?.filter(b => b.booking_type === 'communal')
       .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
 
-    if (bookingType === 'private') {
-      if (currentCommunalCount > 0 || hasPrivateBooking) {
-        throw new Error("Time slot is not available for private booking");
-      }
-    } else {
-      if (hasPrivateBooking) {
-        throw new Error("Time slot has been booked privately");
-      }
-      if (currentCommunalCount + guestCount > 5) {
-        throw new Error("Not enough space available for communal booking");
-      }
+    // Members can only book 1 spot for themselves via membership
+    if (hasPrivateBooking) {
+      throw new Error("Time slot has been booked privately");
+    }
+    if (currentCommunalCount >= 5) {
+      throw new Error("No spaces available for this time slot");
     }
 
-    // Create the booking (paid via membership)
-    const priceAmount = bookingType === 'private' ? 7000 : 1800 * guestCount;
+    // Create the booking - ALWAYS 1 guest for member bookings
+    const priceAmount = 1800; // Standard communal price for reference
     
     const { data: booking, error: insertError } = await supabase
       .from('bookings')
@@ -112,8 +120,8 @@ serve(async (req) => {
         service_type: 'combined',
         duration_minutes: 60,
         price_amount: priceAmount,
-        booking_type: bookingType,
-        guest_count: guestCount,
+        booking_type: 'communal',
+        guest_count: 1, // Members can only book for themselves
         special_requests: specialRequests || null,
         payment_status: 'paid',
         booking_status: 'confirmed'
@@ -124,15 +132,13 @@ serve(async (req) => {
     if (insertError) throw insertError;
 
     // Update time slot availability
-    const newCommunalCount = bookingType === 'communal' 
-      ? currentCommunalCount + guestCount 
-      : 5; // Private takes full capacity
+    const newCommunalCount = currentCommunalCount + 1;
 
     await supabase
       .from('time_slots')
       .update({
         booked_count: newCommunalCount,
-        is_available: bookingType === 'private' ? false : newCommunalCount < 5,
+        is_available: newCommunalCount < 5,
         updated_at: new Date().toISOString()
       })
       .eq('id', timeSlotId);
