@@ -24,6 +24,14 @@ interface TimeSlot {
   }>;
 }
 
+interface BusinessHours {
+  [key: string]: {
+    open: string;
+    close: string;
+    closed: boolean;
+  };
+}
+
 interface TimeSlotPickerProps {
   serviceType: string;
   onSlotSelect: (slotId: string, date: string, time: string, availableSpaces?: number) => void;
@@ -35,9 +43,68 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [businessHours, setBusinessHours] = useState<BusinessHours>({
+    monday: { open: '09:00', close: '19:00', closed: false },
+    tuesday: { open: '09:00', close: '19:00', closed: false },
+    wednesday: { open: '09:00', close: '19:00', closed: false },
+    thursday: { open: '09:00', close: '19:00', closed: false },
+    friday: { open: '09:00', close: '19:00', closed: false },
+    saturday: { open: '10:00', close: '18:00', closed: false },
+    sunday: { open: '10:00', close: '18:00', closed: true }
+  });
+  const [businessHoursLoaded, setBusinessHoursLoaded] = useState(false);
   const { toast } = useToast();
 
-  // Get available dates for the next 14 days
+  // Fetch business hours from system_settings
+  useEffect(() => {
+    const fetchBusinessHours = async () => {
+      try {
+        const { data: settings } = await supabase
+          .from('system_settings')
+          .select('setting_value')
+          .eq('setting_key', 'business_hours')
+          .single();
+
+        if (settings?.setting_value) {
+          setBusinessHours(settings.setting_value as BusinessHours);
+        }
+      } catch (error) {
+        console.error('Error fetching business hours:', error);
+      } finally {
+        setBusinessHoursLoaded(true);
+      }
+    };
+
+    fetchBusinessHours();
+  }, []);
+
+  // Map day of week (0-6) to day name
+  const getDayName = (dayIndex: number): string => {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[dayIndex];
+  };
+
+  // Check if a day is open based on business hours
+  const isDayOpen = (date: Date): boolean => {
+    const dayName = getDayName(date.getDay());
+    const dayHours = businessHours[dayName];
+    return dayHours && !dayHours.closed;
+  };
+
+  // Get business hours for a specific date
+  const getHoursForDate = (dateString: string): { open: string; close: string } | null => {
+    const date = new Date(dateString);
+    const dayName = getDayName(date.getDay());
+    const dayHours = businessHours[dayName];
+    
+    if (!dayHours || dayHours.closed) {
+      return null;
+    }
+    
+    return { open: dayHours.open, close: dayHours.close };
+  };
+
+  // Get available dates for the next 14 days (respecting business hours)
   const getAvailableDates = () => {
     const dates = [];
     const today = new Date();
@@ -46,8 +113,8 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
-      // Skip Sundays (day 0)
-      if (date.getDay() !== 0) {
+      // Only include days that are open according to business hours
+      if (isDayOpen(date)) {
         dates.push(date.toISOString().split('T')[0]);
       }
     }
@@ -81,6 +148,29 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     const slotTimeInMinutes = hours * 60 + minutes;
     
     return slotTimeInMinutes <= currentTime;
+  };
+
+  // Check if a time slot is within business hours for that day
+  const isSlotWithinBusinessHours = (slotDate: string, slotTime: string): boolean => {
+    const hours = getHoursForDate(slotDate);
+    if (!hours) return false; // Day is closed
+    
+    const slotTimeStr = slotTime.slice(0, 5); // "HH:MM"
+    const openTime = hours.open;
+    const closeTime = hours.close;
+    
+    // Convert to minutes for comparison
+    const [slotHour, slotMin] = slotTimeStr.split(':').map(Number);
+    const [openHour, openMin] = openTime.split(':').map(Number);
+    const [closeHour, closeMin] = closeTime.split(':').map(Number);
+    
+    const slotMinutes = slotHour * 60 + slotMin;
+    const openMinutes = openHour * 60 + openMin;
+    const closeMinutes = closeHour * 60 + closeMin;
+    
+    // Slot must start at or after opening time and before closing time
+    // (session ends 1 hour later, so last bookable slot is closeTime - 60 minutes)
+    return slotMinutes >= openMinutes && slotMinutes < closeMinutes;
   };
 
   const fetchTimeSlots = async (date: string) => {
@@ -171,8 +261,13 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
         })
       );
       
-      setTimeSlots(slotsWithBookings);
-      console.log("Time slots with availability:", slotsWithBookings);
+      // Filter slots to only show those within business hours
+      const filteredSlots = slotsWithBookings.filter(slot => 
+        isSlotWithinBusinessHours(slot.slot_date, slot.slot_time)
+      );
+      
+      setTimeSlots(filteredSlots);
+      console.log("Time slots filtered by business hours:", filteredSlots);
       
     } catch (error) {
       console.error("Error fetching time slots:", error);
@@ -197,12 +292,15 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
   };
 
   useEffect(() => {
-    if (selectedDate && serviceType) {
+    if (selectedDate && serviceType && businessHoursLoaded) {
       fetchTimeSlots(selectedDate);
     }
-  }, [selectedDate, serviceType]);
+  }, [selectedDate, serviceType, businessHoursLoaded]);
 
   useEffect(() => {
+    // Wait for business hours to load before setting default date
+    if (!businessHoursLoaded) return;
+    
     // Set default date to today if available, otherwise first available date
     const availableDates = getAvailableDates();
     const today = new Date().toISOString().split('T')[0];
@@ -212,7 +310,7 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     } else if (availableDates.length > 0) {
       setSelectedDate(availableDates[0]);
     }
-  }, []);
+  }, [businessHoursLoaded]);
 
   // Real-time updates for time slots with better cleanup
   useEffect(() => {
