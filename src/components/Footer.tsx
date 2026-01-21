@@ -9,18 +9,18 @@ export const Footer = () => {
   };
 
   const quickLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Services", href: "#services" },
-    { name: "Benefits", href: "#benefits" },
-    { name: "About", href: "#about" },
-    { name: "Contact", href: "#contact" },
+    { name: "Home", href: "/" },
+    { name: "Services", href: "/booking" },
+    { name: "Benefits", href: "/fitness-recovery" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" },
   ];
 
   const services = [
-    { name: "Ice Bath Therapy", href: "#services" },
-    { name: "Sauna Sessions", href: "#services" },
-    { name: "Contrast Therapy", href: "#services" },
-    { name: "Membership Plans", href: "#services" },
+    { name: "Ice Bath Therapy", href: "/booking" },
+    { name: "Sauna Sessions", href: "/booking" },
+    { name: "Contrast Therapy", href: "/booking" },
+    { name: "Membership Plans", href: "/memberships" },
   ];
 
   return (
@@ -71,12 +71,13 @@ export const Footer = () => {
               <ul className="space-y-3">
                 {quickLinks.map((link) => (
                   <li key={link.name}>
-                    <a 
-                      href={link.href}
+                    <Link 
+                      to={link.href}
                       className="text-foreground/80 hover:text-foreground transition-colors"
+                      onClick={scrollToTop}
                     >
                       {link.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -88,12 +89,13 @@ export const Footer = () => {
               <ul className="space-y-3">
                 {services.map((service) => (
                   <li key={service.name}>
-                    <a 
-                      href={service.href}
+                    <Link 
+                      to={service.href}
                       className="text-foreground/80 hover:text-foreground transition-colors"
+                      onClick={scrollToTop}
                     >
                       {service.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
