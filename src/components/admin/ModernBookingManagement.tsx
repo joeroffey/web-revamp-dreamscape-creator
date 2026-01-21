@@ -248,6 +248,8 @@ export default function ModernBookingManagement() {
               stripe_session_id: selectedBooking.stripe_session_id || undefined,
               price_amount: selectedBooking.price_amount,
               final_amount: selectedBooking.final_amount || undefined,
+              time_slot_id: selectedBooking.time_slot_id || undefined,
+              booking_type: selectedBooking.booking_type || 'communal',
             }}
             open={editOpen}
             onOpenChange={setEditOpen}

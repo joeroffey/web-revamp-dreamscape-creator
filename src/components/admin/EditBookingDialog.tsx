@@ -72,6 +72,8 @@ interface BookingData {
   stripe_session_id?: string;
   price_amount?: number;
   final_amount?: number;
+  time_slot_id?: string;
+  booking_type?: string;
 }
 
 interface EditBookingDialogProps {
@@ -131,23 +133,144 @@ export const EditBookingDialog = ({
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          customer_name: data.customer_name,
-          customer_email: data.customer_email,
-          customer_phone: data.customer_phone || null,
-          guest_count: data.guest_count,
-          session_date: format(data.session_date, 'yyyy-MM-dd'),
-          session_time: data.session_time + ':00',
-          booking_status: data.booking_status,
-          payment_status: data.payment_status,
-          special_requests: data.special_requests || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', booking.id);
+      const newDate = format(data.session_date, 'yyyy-MM-dd');
+      const newTime = data.session_time + ':00';
+      const oldDate = booking.session_date;
+      const oldTime = booking.session_time;
+      const oldGuestCount = booking.guest_count || 1;
+      const newGuestCount = data.guest_count;
 
-      if (error) throw error;
+      // Check if date, time, or guest count changed
+      const dateTimeChanged = newDate !== oldDate || newTime !== oldTime;
+      const guestCountChanged = newGuestCount !== oldGuestCount;
+
+      // If date/time changed or guest count changed, update time slots
+      if ((dateTimeChanged || guestCountChanged) && booking.payment_status === 'paid') {
+        // First, release capacity from the old time slot
+        if (booking.time_slot_id) {
+          const { data: oldSlot } = await supabase
+            .from('time_slots')
+            .select('booked_count')
+            .eq('id', booking.time_slot_id)
+            .single();
+
+          if (oldSlot) {
+            const newBookedCount = Math.max(0, (oldSlot.booked_count || 0) - oldGuestCount);
+            await supabase
+              .from('time_slots')
+              .update({
+                booked_count: newBookedCount,
+                is_available: newBookedCount < 5,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', booking.time_slot_id);
+          }
+        }
+
+        // Find or create the new time slot
+        let newTimeSlotId = booking.time_slot_id;
+        
+        if (dateTimeChanged) {
+          // Look for existing time slot
+          const { data: existingSlot } = await supabase
+            .from('time_slots')
+            .select('id, booked_count, is_available')
+            .eq('slot_date', newDate)
+            .eq('slot_time', newTime)
+            .eq('service_type', 'combined')
+            .maybeSingle();
+
+          if (existingSlot) {
+            newTimeSlotId = existingSlot.id;
+            
+            // Update the new slot's booked count
+            const updatedBookedCount = (existingSlot.booked_count || 0) + newGuestCount;
+            await supabase
+              .from('time_slots')
+              .update({
+                booked_count: updatedBookedCount,
+                is_available: updatedBookedCount < 5,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingSlot.id);
+          } else {
+            // Create new time slot
+            const { data: newSlot, error: slotError } = await supabase
+              .from('time_slots')
+              .insert({
+                slot_date: newDate,
+                slot_time: newTime,
+                service_type: 'combined',
+                booked_count: newGuestCount,
+                is_available: newGuestCount < 5,
+              })
+              .select('id')
+              .single();
+
+            if (slotError) throw slotError;
+            newTimeSlotId = newSlot.id;
+          }
+        } else if (guestCountChanged && booking.time_slot_id) {
+          // Only guest count changed, update the same slot
+          const { data: currentSlot } = await supabase
+            .from('time_slots')
+            .select('booked_count')
+            .eq('id', booking.time_slot_id)
+            .single();
+
+          if (currentSlot) {
+            // We already decremented above, now add new guest count
+            const updatedBookedCount = (currentSlot.booked_count || 0) + newGuestCount;
+            await supabase
+              .from('time_slots')
+              .update({
+                booked_count: updatedBookedCount,
+                is_available: updatedBookedCount < 5,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', booking.time_slot_id);
+          }
+        }
+
+        // Update booking with new time slot id
+        const { error } = await supabase
+          .from('bookings')
+          .update({
+            customer_name: data.customer_name,
+            customer_email: data.customer_email,
+            customer_phone: data.customer_phone || null,
+            guest_count: data.guest_count,
+            session_date: newDate,
+            session_time: newTime,
+            time_slot_id: newTimeSlotId,
+            booking_status: data.booking_status,
+            payment_status: data.payment_status,
+            special_requests: data.special_requests || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', booking.id);
+
+        if (error) throw error;
+      } else {
+        // No time slot changes needed
+        const { error } = await supabase
+          .from('bookings')
+          .update({
+            customer_name: data.customer_name,
+            customer_email: data.customer_email,
+            customer_phone: data.customer_phone || null,
+            guest_count: data.guest_count,
+            session_date: newDate,
+            session_time: newTime,
+            booking_status: data.booking_status,
+            payment_status: data.payment_status,
+            special_requests: data.special_requests || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', booking.id);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",

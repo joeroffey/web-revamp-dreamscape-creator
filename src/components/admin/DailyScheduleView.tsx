@@ -38,6 +38,9 @@ interface BookingData {
   price_amount: number;
   special_requests?: string;
   service_type: string;
+  time_slot_id?: string;
+  stripe_session_id?: string;
+  final_amount?: number;
 }
 
 interface DailyScheduleViewProps {

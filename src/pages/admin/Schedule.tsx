@@ -27,6 +27,8 @@ interface BookingData {
   special_requests?: string;
   time_slot_id: string;
   service_type: string;
+  stripe_session_id?: string;
+  final_amount?: number;
 }
 
 export default function AdminSchedule() {
