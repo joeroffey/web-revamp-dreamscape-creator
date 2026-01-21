@@ -18,6 +18,13 @@ import { useAuth } from "@/components/AuthContext";
 interface MembershipStatus {
   hasMembership: boolean;
   canBook: boolean;
+  hasBookingForDate?: boolean;
+  bookingForDate?: {
+    id: string;
+    session_date: string;
+    session_time: string;
+    booking_type: string;
+  } | null;
   membership: {
     id: string;
     type: string;
@@ -52,6 +59,7 @@ const Booking = () => {
     specialRequests: "",
     bookingType: "communal" as "communal" | "private",
     guestCount: 1,
+    payingGuestCount: 0, // Guests that will pay separately
   });
 
   // Fetch pricing from database
@@ -75,43 +83,47 @@ const Booking = () => {
     fetchPricing();
   }, []);
 
-  // Check membership status when user is logged in
-  useEffect(() => {
-    const checkMembership = async () => {
-      if (!user?.id) {
-        setMembershipStatus(null);
-        return;
-      }
+  // Check membership status when user is logged in or when selected date changes
+  const checkMembershipForDate = async (dateToCheck?: string) => {
+    if (!user?.id) {
+      setMembershipStatus(null);
+      return;
+    }
 
-      setCheckingMembership(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('check-membership-status', {
-          body: { userId: user.id }
-        });
-
-        if (error) {
-          console.error('Error checking membership:', error);
-          setMembershipStatus(null);
-        } else {
-          setMembershipStatus(data);
-          // Pre-fill form data from membership if available
-          if (data?.membership?.customerName) {
-            setFormData(prev => ({
-              ...prev,
-              customerName: data.membership.customerName || prev.customerName,
-              customerEmail: data.membership.customerEmail || prev.customerEmail
-            }));
-          }
+    setCheckingMembership(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-membership-status', {
+        body: { 
+          userId: user.id,
+          checkDate: dateToCheck || selectedTimeSlot?.date
         }
-      } catch (err) {
-        console.error('Error checking membership:', err);
-        setMembershipStatus(null);
-      } finally {
-        setCheckingMembership(false);
-      }
-    };
+      });
 
-    checkMembership();
+      if (error) {
+        console.error('Error checking membership:', error);
+        setMembershipStatus(null);
+      } else {
+        setMembershipStatus(data);
+        // Pre-fill form data from membership if available
+        if (data?.membership?.customerName) {
+          setFormData(prev => ({
+            ...prev,
+            customerName: data.membership.customerName || prev.customerName,
+            customerEmail: data.membership.customerEmail || prev.customerEmail,
+            guestCount: 1, // Members always book for 1 (themselves)
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error checking membership:', err);
+      setMembershipStatus(null);
+    } finally {
+      setCheckingMembership(false);
+    }
+  };
+
+  useEffect(() => {
+    checkMembershipForDate();
   }, [user?.id]);
 
   // Pre-fill user data from auth and profile if no membership
@@ -249,6 +261,11 @@ const Booking = () => {
     const newAvailableSpaces = spaces ?? 5;
     setAvailableSpaces(newAvailableSpaces);
     
+    // Re-check membership status for the selected date
+    if (user?.id && membershipStatus?.hasMembership) {
+      checkMembershipForDate(date);
+    }
+    
     // If currently set to private but new slot doesn't have full availability, switch to communal
     if (formData.bookingType === "private" && newAvailableSpaces < 5) {
       setFormData(prev => ({ ...prev, bookingType: "communal", guestCount: Math.min(prev.guestCount, newAvailableSpaces) }));
@@ -273,10 +290,18 @@ const Booking = () => {
   };
 
   const calculateTotalPrice = () => {
-    return formData.bookingType === 'private' ? (pricing.private / 100) : ((pricing.combined / 100) * formData.guestCount);
+    if (formData.bookingType === 'private') {
+      return pricing.private / 100;
+    }
+    // For members with paying guests, only guests pay
+    if (canUseMembership) {
+      return (pricing.combined / 100) * formData.payingGuestCount;
+    }
+    return (pricing.combined / 100) * formData.guestCount;
   };
 
-  const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook;
+  const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook && !membershipStatus?.hasBookingForDate;
+  const hasBookingForSelectedDate = membershipStatus?.hasBookingForDate;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
@@ -290,28 +315,53 @@ const Booking = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-member-booking', {
-        body: {
-          userId: user.id,
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          customerPhone: formData.customerPhone,
-          timeSlotId: selectedTimeSlot!.id,
-          specialRequests: formData.specialRequests,
-          bookingType: formData.bookingType,
-          guestCount: formData.guestCount,
+      // If member has paying guests, we need to handle payment for them
+      if (formData.payingGuestCount > 0) {
+        // Create a paid booking for the guests via Stripe
+        const { data, error } = await supabase.functions.invoke('create-member-booking-with-guests', {
+          body: {
+            userId: user.id,
+            customerName: formData.customerName,
+            customerEmail: formData.customerEmail,
+            customerPhone: formData.customerPhone,
+            timeSlotId: selectedTimeSlot!.id,
+            specialRequests: formData.specialRequests,
+            payingGuestCount: formData.payingGuestCount,
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || "Failed to create booking");
         }
-      });
 
-      if (error) {
-        throw new Error(error.message || "Failed to create booking");
-      }
-
-      if (data?.success) {
-        // Redirect to success page
-        window.location.href = `/booking-success?membership=true&sessions=${data.sessionsRemaining}`;
+        // Redirect to Stripe for guest payment
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error("No payment URL received");
+        }
       } else {
-        throw new Error(data?.error || "Failed to create booking");
+        // No paying guests, just book the member's spot
+        const { data, error } = await supabase.functions.invoke('create-member-booking', {
+          body: {
+            userId: user.id,
+            customerName: formData.customerName,
+            customerEmail: formData.customerEmail,
+            customerPhone: formData.customerPhone,
+            timeSlotId: selectedTimeSlot!.id,
+            specialRequests: formData.specialRequests,
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || "Failed to create booking");
+        }
+
+        if (data?.success) {
+          window.location.href = `/booking-success?membership=true&sessions=${data.sessionsRemaining}`;
+        } else {
+          throw new Error(data?.error || "Failed to create booking");
+        }
       }
     } catch (error) {
       console.error('Member booking error:', error);
@@ -408,6 +458,31 @@ const Booking = () => {
                   <span className="text-muted-foreground">Checking membership status...</span>
                 </CardContent>
               </Card>
+            ) : hasBookingForSelectedDate && membershipStatus?.membership ? (
+              <Card className="mb-8 border-amber-500 bg-amber-500/5">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
+                        <AlertCircle className="h-5 w-5 text-amber-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Already Booked This Day</h3>
+                        <p className="text-sm text-muted-foreground">
+                          You have a booking at {membershipStatus.bookingForDate?.session_time?.slice(0, 5)}. 
+                          Members can only book one session per day.
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="w-fit border-amber-500 text-amber-600">
+                      Select Different Date
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Want to bring guests? You can add paying guests to your existing booking, or they can book separately.
+                  </p>
+                </CardContent>
+              </Card>
             ) : canUseMembership && membershipStatus?.membership ? (
               <Card className="mb-8 border-primary bg-primary/5">
                 <CardContent className="p-4 sm:p-6">
@@ -428,9 +503,13 @@ const Booking = () => {
                     </div>
                     <Badge variant="default" className="w-fit">
                       <CreditCard className="h-3 w-3 mr-1" />
-                      Book Free with Membership
+                      Book Free (1 Person Only)
                     </Badge>
                   </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    <Users className="h-3 w-3 inline mr-1" />
+                    Membership covers 1 person per session. Guests can be added as paying guests below.
+                  </p>
                 </CardContent>
               </Card>
             ) : user && membershipStatus && !membershipStatus.hasMembership ? (
@@ -517,76 +596,89 @@ const Booking = () => {
               <Card className="wellness-card">
                 <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4 sm:space-y-6">
-                    {/* Booking Type Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div 
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          formData.bookingType === "communal" 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border hover:bg-muted/50"
-                        }`}
-                        onClick={() => handleBookingTypeChange("communal")}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <Users className="h-5 w-5" />
-                          <h3 className="font-semibold">Communal Session</h3>
-                        </div>
+                    {/* Member-specific notice */}
+                    {canUseMembership && (
+                      <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          Share the hub with others (up to 4 people total)
+                          <Sparkles className="h-4 w-4 inline mr-1 text-primary" />
+                          <strong>Membership Booking:</strong> Your membership covers 1 communal session for yourself. 
+                          Guests joining you will need to pay the standard rate of £{(pricing.combined / 100).toFixed(0)} per person.
                         </p>
-                        <div className="mt-2">
-                          <Badge variant="secondary">
-                            {canUseMembership ? 'Included in membership' : `£${(pricing.combined / 100).toFixed(0)} per person`}
-                          </Badge>
-                        </div>
                       </div>
-                      
-                      {(() => {
-                        const privateDisabled = selectedTimeSlot && availableSpaces < 5;
-                        return (
-                          <div 
-                            className={`p-4 border rounded-lg transition-colors ${
-                              privateDisabled 
-                                ? "opacity-50 cursor-not-allowed bg-muted/30 border-border" 
-                                : formData.bookingType === "private" 
-                                  ? "border-primary bg-primary/5 cursor-pointer" 
-                                  : "border-border hover:bg-muted/50 cursor-pointer"
-                            }`}
-                            onClick={() => !privateDisabled && handleBookingTypeChange("private")}
-                          >
-                            <div className="flex items-center gap-3 mb-2">
-                              <User className="h-5 w-5" />
-                              <h3 className="font-semibold">Private Session</h3>
-                              {privateDisabled && (
-                                <Badge variant="outline" className="ml-auto text-xs">
-                                  Unavailable
-                                </Badge>
+                    )}
+
+                    {/* Booking Type Cards - Only show for non-members */}
+                    {!canUseMembership && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div 
+                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                            formData.bookingType === "communal" 
+                              ? "border-primary bg-primary/5" 
+                              : "border-border hover:bg-muted/50"
+                          }`}
+                          onClick={() => handleBookingTypeChange("communal")}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <Users className="h-5 w-5" />
+                            <h3 className="font-semibold">Communal Session</h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Share the hub with others (up to 4 people total)
+                          </p>
+                          <div className="mt-2">
+                            <Badge variant="secondary">
+                              £{(pricing.combined / 100).toFixed(0)} per person
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {(() => {
+                          const privateDisabled = selectedTimeSlot && availableSpaces < 5;
+                          return (
+                            <div 
+                              className={`p-4 border rounded-lg transition-colors ${
+                                privateDisabled 
+                                  ? "opacity-50 cursor-not-allowed bg-muted/30 border-border" 
+                                  : formData.bookingType === "private" 
+                                    ? "border-primary bg-primary/5 cursor-pointer" 
+                                    : "border-border hover:bg-muted/50 cursor-pointer"
+                              }`}
+                              onClick={() => !privateDisabled && handleBookingTypeChange("private")}
+                            >
+                              <div className="flex items-center gap-3 mb-2">
+                                <User className="h-5 w-5" />
+                                <h3 className="font-semibold">Private Session</h3>
+                                {privateDisabled && (
+                                  <Badge variant="outline" className="ml-auto text-xs">
+                                    Unavailable
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Exclusive use of the entire hub (maximum 7 people)
+                              </p>
+                              {privateDisabled ? (
+                                <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  This slot already has bookings. Select an empty slot (5/5 spaces) for private sessions.
+                                </p>
+                              ) : (
+                                <div className="mt-2">
+                                  <Badge variant="secondary">
+                                    £{(pricing.private / 100).toFixed(0)} flat rate
+                                  </Badge>
+                                </div>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              Exclusive use of the entire hub (maximum 7 people)
-                            </p>
-                            {privateDisabled ? (
-                              <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                This slot already has bookings. Select an empty slot (5/5 spaces) for private sessions.
-                              </p>
-                            ) : (
-                              <div className="mt-2">
-                                <Badge variant="secondary">
-                                  {canUseMembership ? 'Uses 1 session credit' : `£${(pricing.private / 100).toFixed(0)} flat rate`}
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
+                          );
+                        })()}
+                      </div>
+                    )}
 
-                    {/* Guest Count */}
-                    {formData.bookingType === "communal" && (
+                    {/* Guest Count - Non-members only */}
+                    {!canUseMembership && formData.bookingType === "communal" && (
                       <div className="space-y-2">
-                        <Label htmlFor="guestCount">Number of Guests</Label>
+                        <Label htmlFor="guestCount">Number of People</Label>
                         <Select 
                           value={formData.guestCount.toString()} 
                           onValueChange={handleGuestCountChange}
@@ -611,6 +703,44 @@ const Booking = () => {
                         <p className="text-sm text-muted-foreground">
                           {availableSpaces} spaces available for communal bookings
                         </p>
+                      </div>
+                    )}
+
+                    {/* Paying Guest Count - Members only */}
+                    {canUseMembership && (
+                      <div className="space-y-4">
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Check className="h-4 w-4 text-primary" />
+                            <span className="font-medium">Your spot (included with membership)</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">1 communal session for yourself</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="payingGuestCount" className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Add Paying Guests (Optional)
+                          </Label>
+                          <Select 
+                            value={formData.payingGuestCount.toString()} 
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, payingGuestCount: parseInt(value) }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: Math.min(availableSpaces, 4) }, (_, i) => i).map(num => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num === 0 ? "No additional guests" : `${num} paying guest${num > 1 ? 's' : ''} (£${(pricing.combined / 100) * num})`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-muted-foreground">
+                            {Math.max(0, availableSpaces - 1)} additional spaces available • £{(pricing.combined / 100).toFixed(0)} per guest
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

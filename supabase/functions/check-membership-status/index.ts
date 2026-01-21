@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, email } = await req.json();
+    const { userId, email, checkDate } = await req.json();
 
     if (!userId && !email) {
       throw new Error("Either userId or email is required");
@@ -47,7 +47,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           hasMembership: false,
-          membership: null 
+          membership: null,
+          todayBooking: null
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
@@ -56,12 +57,32 @@ serve(async (req) => {
     const membership = memberships[0];
     const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
     const sessionsRemaining = isUnlimited ? 999 : membership.sessions_remaining;
-    const canBook = isUnlimited || sessionsRemaining > 0;
+
+    // Check if member already has a booking for the specified date (or today)
+    const dateToCheck = checkDate || new Date().toISOString().split('T')[0];
+    
+    let bookingsForDate = null;
+    if (userId) {
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('id, session_date, session_time, booking_type')
+        .eq('user_id', userId)
+        .eq('session_date', dateToCheck)
+        .eq('payment_status', 'paid')
+        .limit(1);
+      
+      bookingsForDate = existingBookings && existingBookings.length > 0 ? existingBookings[0] : null;
+    }
+
+    // Can book if: has sessions AND hasn't booked for the checked date
+    const canBook = (isUnlimited || sessionsRemaining > 0) && !bookingsForDate;
 
     return new Response(
       JSON.stringify({
         hasMembership: true,
         canBook,
+        hasBookingForDate: !!bookingsForDate,
+        bookingForDate: bookingsForDate,
         membership: {
           id: membership.id,
           type: membership.membership_type,
