@@ -3,13 +3,16 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Sparkles } from "lucide-react";
+import { Check, Star, Sparkles, LogIn } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthContext";
+import { Link } from "react-router-dom";
 
 const Memberships = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
 
   const membershipPlans = [
@@ -68,10 +71,9 @@ const Memberships = () => {
       if (!session) {
         toast({
           title: "Authentication Required",
-          description: "Please sign in to purchase a membership.",
+          description: "Please sign in or create an account to purchase a membership.",
           variant: "destructive",
         });
-        // Redirect to auth page
         window.location.href = "/auth";
         return;
       }
@@ -119,6 +121,28 @@ const Memberships = () => {
                 Experience the life-changing benefits of contrast therapy by becoming a member of Revitalise Hub. 
                 Take advantage of substantial savings and unique perks as you seamlessly integrate this rejuvenating practice into your daily routine.
               </p>
+
+              {!user && (
+                <div className="mt-8 bg-primary/10 border border-primary/20 rounded-lg p-6 max-w-2xl mx-auto">
+                  <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                    <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <LogIn className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground mb-1">Sign in to subscribe</h3>
+                      <p className="text-sm text-muted-foreground">
+                        You'll need an account to start a membership. Sign in or create a free account to get started.
+                      </p>
+                    </div>
+                    <Link to="/auth">
+                      <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Sign In / Sign Up
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 mb-16">
