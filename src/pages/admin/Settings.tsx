@@ -16,12 +16,11 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   
-  // Pricing settings
+  // Pricing settings - only communal (combined) and private sessions
   // Prices are stored in pence in DB, but shown/edited in pounds in the UI.
-  const [pricingConfig, setPricingConfig] = useState<Record<string, { price_amount: number; duration_minutes: number }>>({
-    ice_bath: { price_amount: 3000, duration_minutes: 60 },
-    sauna: { price_amount: 2500, duration_minutes: 60 },
-    combined: { price_amount: 4500, duration_minutes: 60 }
+  const [pricingConfig, setPricingConfig] = useState<Record<string, { price_amount: number }>>({
+    combined: { price_amount: 1800 },  // £18 per person communal
+    private: { price_amount: 7000 }    // £70 flat rate private
   });
 
   // Business hours
@@ -60,12 +59,14 @@ export default function AdminSettings() {
         .eq('is_active', true);
 
       if (pricing) {
-        const pricingMap: Record<string, { price_amount: number; duration_minutes: number }> = {};
+        const pricingMap: Record<string, { price_amount: number }> = {};
         pricing.forEach(item => {
-          pricingMap[item.service_type] = {
-            price_amount: item.price_amount,
-            duration_minutes: item.duration_minutes
-          };
+          // Only load combined and private pricing
+          if (item.service_type === 'combined' || item.service_type === 'private') {
+            pricingMap[item.service_type] = {
+              price_amount: item.price_amount
+            };
+          }
         });
         setPricingConfig(prev => ({ ...prev, ...pricingMap }));
       }
@@ -103,16 +104,16 @@ export default function AdminSettings() {
   const saveSettings = async () => {
     setSaveLoading(true);
     try {
-      // Update pricing config
+      // Update pricing config - only combined and private
       for (const [serviceType, config] of Object.entries(pricingConfig)) {
         await supabase
           .from('pricing_config')
           .upsert({
             service_type: serviceType,
             price_amount: config.price_amount,
-            duration_minutes: config.duration_minutes,
+            duration_minutes: 60, // All sessions are 60 minutes
             is_active: true
-          });
+          }, { onConflict: 'service_type' });
       }
 
       // Update business hours
@@ -195,46 +196,59 @@ export default function AdminSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {Object.entries(pricingConfig).map(([serviceType, config]) => (
-                <div key={serviceType} className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border rounded-lg">
-                  <div>
-                    <Label className="font-medium capitalize">
-                      {serviceType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                    </Label>
-                  </div>
-                  <div>
-                    <Label htmlFor={`${serviceType}-price`}>Price (GBP)</Label>
-                    <Input
-                      id={`${serviceType}-price`}
-                      type="number"
-                      step="0.01"
-                      value={Number((config.price_amount / 100).toFixed(2))}
-                      onChange={(e) => {
-                        const pounds = Number(e.target.value || 0);
-                        const pence = Math.round(pounds * 100);
-                        setPricingConfig(prev => ({
-                          ...prev,
-                          [serviceType]: { ...prev[serviceType], price_amount: pence }
-                        }));
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`${serviceType}-duration`}>Duration (minutes)</Label>
-                    <Input
-                      id={`${serviceType}-duration`}
-                      type="number"
-                      value={config.duration_minutes}
-                      onChange={(e) => setPricingConfig(prev => ({
-                        ...prev,
-                        [serviceType]: { ...prev[serviceType], duration_minutes: parseInt(e.target.value) || 0 }
-                      }))}
-                      className="mt-1"
-                    />
-                  </div>
+              {/* Combined Session (Communal) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium text-base">Combined Session</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Per person price for communal bookings</p>
                 </div>
-              ))}
+                <div>
+                  <Label htmlFor="combined-price">Price per Person (£)</Label>
+                  <Input
+                    id="combined-price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={Number((pricingConfig.combined?.price_amount / 100).toFixed(2))}
+                    onChange={(e) => {
+                      const pounds = Number(e.target.value || 0);
+                      const pence = Math.round(pounds * 100);
+                      setPricingConfig(prev => ({
+                        ...prev,
+                        combined: { price_amount: pence }
+                      }));
+                    }}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Private Session */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium text-base">Private Session</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Flat rate for exclusive use</p>
+                </div>
+                <div>
+                  <Label htmlFor="private-price">Flat Rate (£)</Label>
+                  <Input
+                    id="private-price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={Number((pricingConfig.private?.price_amount / 100).toFixed(2))}
+                    onChange={(e) => {
+                      const pounds = Number(e.target.value || 0);
+                      const pence = Math.round(pounds * 100);
+                      setPricingConfig(prev => ({
+                        ...prev,
+                        private: { price_amount: pence }
+                      }));
+                    }}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 

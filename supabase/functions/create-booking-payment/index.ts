@@ -18,10 +18,10 @@ interface BookingRequest {
   discountCode?: string;
 }
 
-const serviceConfig = {
-  ice_bath: { name: "Ice Bath Session", duration: 20, price: 1800 }, // £18.00
-  sauna: { name: "Sauna Session", duration: 30, price: 1800 }, // £18.00
-  combined: { name: "Combined Session", duration: 50, price: 1800 }, // £18.00 per person communal
+// Default prices - will be overridden by database values
+const defaultPricing = {
+  combined: 1800, // £18.00 per person communal
+  private: 7000,  // £70.00 flat rate private
 };
 
 serve(async (req) => {
@@ -71,9 +71,24 @@ serve(async (req) => {
       throw new Error("Time slot not available or does not exist");
     }
 
-    const service = serviceConfig[timeSlot.service_type as keyof typeof serviceConfig];
-    if (!service) {
-      throw new Error("Invalid service type");
+    // Fetch pricing from database
+    const { data: pricingData } = await supabase
+      .from("pricing_config")
+      .select("service_type, price_amount")
+      .eq("is_active", true)
+      .in("service_type", ["combined", "private"]);
+
+    // Build pricing map with database values or fallback to defaults
+    const pricing = {
+      combined: defaultPricing.combined,
+      private: defaultPricing.private,
+    };
+    
+    if (pricingData) {
+      pricingData.forEach((p) => {
+        if (p.service_type === "combined") pricing.combined = p.price_amount;
+        if (p.service_type === "private") pricing.private = p.price_amount;
+      });
     }
 
     // Check booking conflicts based on type
@@ -103,8 +118,8 @@ serve(async (req) => {
       }
     }
 
-    // Calculate original amount (pence)
-    const originalAmount = bookingType === 'private' ? 7000 : (service.price * guestCount);
+    // Calculate original amount (pence) using database pricing
+    const originalAmount = bookingType === 'private' ? pricing.private : (pricing.combined * guestCount);
 
     // Optional: validate and apply discount code
     let discountCodeRow: any = null;
@@ -141,6 +156,7 @@ serve(async (req) => {
     const finalAmount = Math.max(0, originalAmount - discountAmount);
 
     // Create Stripe checkout session
+    const sessionName = bookingType === 'private' ? 'Private Session' : 'Combined Session';
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
       line_items: [
@@ -148,8 +164,8 @@ serve(async (req) => {
           price_data: {
             currency: "gbp",
             product_data: {
-              name: `${service.name} (${bookingType === 'private' ? 'Private' : 'Communal'})`,
-              description: `${service.duration} minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}${discountCodeRow ? ` (Discount: ${discountCodeRow.code})` : ''}`,
+              name: `${sessionName} (${bookingType === 'private' ? 'Exclusive' : 'Communal'})`,
+              description: `60 minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}${discountCodeRow ? ` (Discount: ${discountCodeRow.code})` : ''}`,
             },
             unit_amount: finalAmount,
           },
@@ -181,10 +197,10 @@ serve(async (req) => {
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
-        service_type: timeSlot.service_type,
+        service_type: "combined",
         session_date: timeSlot.slot_date,
         session_time: timeSlot.slot_time,
-        duration_minutes: service.duration,
+        duration_minutes: 60,
         price_amount: originalAmount,
         discount_code_id: discountCodeRow?.id || null,
         discount_amount: discountAmount,
