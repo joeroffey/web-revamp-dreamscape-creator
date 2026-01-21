@@ -1,10 +1,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Calendar, User, LogOut, Settings } from "lucide-react";
+import { Menu, X, User, LogOut, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/components/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +15,6 @@ import {
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdmin();
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -77,9 +75,9 @@ export const Navigation = () => {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} className="flex items-center">
+                    <Link to="/dashboard" className="flex items-center">
                       <Settings className="h-4 w-4 mr-2" />
-                      {isAdmin ? "Admin Dashboard" : "Dashboard"}
+                      Dashboard
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -127,10 +125,10 @@ export const Navigation = () => {
               <div className="pt-4 space-y-3">
                 {user ? (
                   <>
-                    <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
+                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
                       <Button variant="outline" className="w-full rounded-full">
                         <Settings className="h-4 w-4 mr-2" />
-                        {isAdmin ? "Admin Dashboard" : "Dashboard"}
+                        Dashboard
                       </Button>
                     </Link>
                     <Button 

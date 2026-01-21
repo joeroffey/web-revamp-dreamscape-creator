@@ -5,11 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, User, CreditCard, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 interface Booking {
   id: string;
@@ -32,46 +30,20 @@ interface Membership {
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdmin();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [membership, setMembership] = useState<Membership | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('Dashboard - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
-
-  // Redirect admin users to admin dashboard
   useEffect(() => {
-    console.log('Dashboard redirect useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin);
-    if (!adminLoading && isAdmin) {
-      console.log('Redirecting admin user to admin dashboard');
-      navigate('/admin/dashboard');
-      return;
+    if (user) {
+      fetchUserData();
+    } else {
+      setLoading(false);
     }
-  }, [isAdmin, adminLoading, navigate]);
-
-  useEffect(() => {
-    console.log('Dashboard data fetch useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin, 'user:', !!user);
-    
-    // Handle loading state immediately based on admin check
-    if (!adminLoading) {
-      if (isAdmin) {
-        console.log('Admin user detected, stopping loading (will redirect)');
-        setLoading(false);
-        return;
-      } else if (user) {
-        console.log('Regular user detected, fetching data');
-        fetchUserData();
-      } else {
-        console.log('No user detected, stopping loading');
-        setLoading(false);
-      }
-    }
-  }, [user, isAdmin, adminLoading]);
+  }, [user]);
 
   const fetchUserData = async () => {
-    console.log('fetchUserData called for user:', user?.id);
     try {
       setLoading(true);
       
@@ -133,15 +105,14 @@ const Dashboard = () => {
     }
   };
 
-  // Show loading only while checking admin status or loading user data for regular users
-  if (adminLoading || (loading && !isAdmin)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gallery">
         <Navigation />
         <main className="pt-20">
           <div className="max-w-4xl mx-auto px-6 py-24">
             <div className="text-center">
-              {adminLoading ? "Checking access..." : "Loading your dashboard..."}
+              Loading your dashboard...
             </div>
           </div>
         </main>
@@ -149,12 +120,6 @@ const Dashboard = () => {
     );
   }
 
-  // Don't render if user is admin (they'll be redirected)
-  if (isAdmin) {
-    return null;
-  }
-
-  // If no user and not loading, show sign in prompt
   if (!user) {
     return (
       <div className="min-h-screen bg-gallery">
