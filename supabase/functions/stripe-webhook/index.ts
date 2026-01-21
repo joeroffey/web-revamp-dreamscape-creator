@@ -36,7 +36,7 @@ serve(async (req) => {
       throw new Error("Webhook secret not configured");
     }
 
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     console.log("Webhook event received:", event.type);
 
     if (event.type === "checkout.session.completed") {
