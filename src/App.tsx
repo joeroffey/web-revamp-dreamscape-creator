@@ -27,7 +27,6 @@ import ModernCustomerManagement from "./components/admin/ModernCustomerManagemen
 import ModernGiftCardManagement from "./components/admin/ModernGiftCardManagement";
 import AdminMemberships from "./pages/admin/Memberships";
 import ModernReports from "./pages/admin/ModernReports";
-import ModernPromotions from "./pages/admin/ModernPromotions";
 import AdminSettings from "./pages/admin/Settings";
 import ModernScheduleManagement from "./components/admin/ModernScheduleManagement";
 
@@ -65,7 +64,6 @@ const App = () => (
             <Route path="/admin/gift-cards" element={<ModernGiftCardManagement />} />
             <Route path="/admin/memberships" element={<AdminMemberships />} />
             <Route path="/admin/reports" element={<ModernReports />} />
-            <Route path="/admin/promotions" element={<ModernPromotions />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
