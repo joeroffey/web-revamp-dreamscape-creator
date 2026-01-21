@@ -343,6 +343,7 @@ export type Database = {
           discount_percentage: number | null
           end_date: string | null
           id: string
+          is_auto_renew: boolean | null
           last_session_reset: string | null
           membership_type: string
           price_amount: number | null
@@ -363,6 +364,7 @@ export type Database = {
           discount_percentage?: number | null
           end_date?: string | null
           id?: string
+          is_auto_renew?: boolean | null
           last_session_reset?: string | null
           membership_type: string
           price_amount?: number | null
@@ -383,6 +385,7 @@ export type Database = {
           discount_percentage?: number | null
           end_date?: string | null
           id?: string
+          is_auto_renew?: boolean | null
           last_session_reset?: string | null
           membership_type?: string
           price_amount?: number | null

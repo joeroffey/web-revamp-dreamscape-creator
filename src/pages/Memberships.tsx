@@ -3,7 +3,9 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Sparkles, LogIn } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Check, Star, Sparkles, LogIn, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +16,7 @@ const Memberships = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
+  const [autoRenew, setAutoRenew] = useState<{ [key: string]: boolean }>({});
 
   const membershipPlans = [
     {
@@ -82,6 +85,7 @@ const Memberships = () => {
         body: {
           membershipType,
           userId: session.user.id,
+          autoRenew: autoRenew[membershipType] || false,
         }
       });
 
@@ -101,6 +105,13 @@ const Memberships = () => {
     } finally {
       setLoading(null);
     }
+  };
+
+  const toggleAutoRenew = (planId: string) => {
+    setAutoRenew(prev => ({
+      ...prev,
+      [planId]: !prev[planId]
+    }));
   };
 
   return (
@@ -181,6 +192,21 @@ const Memberships = () => {
                       ))}
                     </div>
 
+                    {/* Auto-renewal toggle */}
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-4">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`auto-renew-${plan.id}`} className="text-sm font-medium cursor-pointer">
+                          Auto-renew monthly
+                        </Label>
+                      </div>
+                      <Switch
+                        id={`auto-renew-${plan.id}`}
+                        checked={autoRenew[plan.id] || false}
+                        onCheckedChange={() => toggleAutoRenew(plan.id)}
+                      />
+                    </div>
+
                     <Button 
                       className={`w-full ${
                         plan.popular 
@@ -190,7 +216,7 @@ const Memberships = () => {
                       onClick={() => handleSubscribe(plan.id)}
                       disabled={loading === plan.id}
                     >
-                      {loading === plan.id ? "Processing..." : "Subscribe"}
+                      {loading === plan.id ? "Processing..." : autoRenew[plan.id] ? "Subscribe" : "Purchase"}
                     </Button>
                   </CardContent>
                 </Card>
