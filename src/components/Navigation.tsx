@@ -37,10 +37,10 @@ export const Navigation = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="w-full px-2 sm:px-4">
         <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 lg:h-32">
           {/* Logo */}
-          <Link to="/" className="flex items-center flex-shrink-0 -ml-8">
+          <Link to="/" className="flex items-center flex-shrink-0">
             <img 
               src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
