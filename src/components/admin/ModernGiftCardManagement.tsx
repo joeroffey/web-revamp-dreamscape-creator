@@ -15,7 +15,6 @@ import { formatGBP } from "@/lib/format";
 
 export default function ModernGiftCardManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedGiftCard, setSelectedGiftCard] = useState<any>(null);
   const [showGiftCardDetails, setShowGiftCardDetails] = useState(false);
   const [giftCards, setGiftCards] = useState<any[]>([]);
@@ -53,20 +52,12 @@ export default function ModernGiftCardManagement() {
       giftCard.purchaser_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (giftCard.recipient_email && giftCard.recipient_email.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const now = new Date();
-    const expiresAt = new Date(giftCard.expires_at);
-    const isExpired = expiresAt < now;
-    const status = giftCard.is_redeemed ? 'redeemed' : isExpired ? 'expired' : 'active';
-    
-    const matchesStatus = statusFilter === "all" || status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   const formatCurrency = formatGBP;
 
   const totalValue = giftCards.reduce((sum, gc) => sum + gc.amount, 0);
-  const activeCards = giftCards.filter(gc => !gc.is_redeemed && new Date(gc.expires_at) >= new Date()).length;
   const redeemedCards = giftCards.filter(gc => gc.is_redeemed).length;
   const redeemedValue = giftCards.filter(gc => gc.is_redeemed).reduce((sum, gc) => sum + gc.amount, 0);
 
@@ -94,8 +85,7 @@ export default function ModernGiftCardManagement() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader title="Gift Cards" description="Manage and track all gift cards." />
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-gradient-to-br from-pink-500 to-pink-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
@@ -124,20 +114,6 @@ export default function ModernGiftCardManagement() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-100 flex items-center gap-2">
-                <Star className="h-4 w-4" />
-                Active Cards
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{activeCards}</div>
-              <p className="text-xs text-blue-100 mt-1">Currently active</p>
-            </CardContent>
-          </Card>
-
           <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-xl text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
             <CardHeader className="pb-2">
@@ -148,12 +124,12 @@ export default function ModernGiftCardManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{formatCurrency(redeemedValue)}</div>
-              <p className="text-xs text-purple-100 mt-1">Total redeemed</p>
+              <p className="text-xs text-purple-100 mt-1">{redeemedCards} cards redeemed</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="flex items-center mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -163,20 +139,6 @@ export default function ModernGiftCardManagement() {
               className="pl-10 border-0 shadow-md bg-white/80 backdrop-blur-sm"
             />
           </div>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 border-0 shadow-md bg-white/80 backdrop-blur-sm">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="partially_used">Partially Used</SelectItem>
-              <SelectItem value="fully_used">Fully Used</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
