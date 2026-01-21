@@ -58,31 +58,38 @@ serve(async (req) => {
     const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
     const sessionsRemaining = isUnlimited ? 999 : membership.sessions_remaining;
 
-    // Check if member already has a booking for the specified date (or today)
-    const dateToCheck = checkDate || new Date().toISOString().split('T')[0];
+    // Check if member already used their membership credit for the specified date
+    // A membership booking is one where final_amount is 0 or null (free via membership)
+    const dateToCheck = checkDate || null;
     
-    let bookingsForDate = null;
-    if (userId) {
-      const { data: existingBookings } = await supabase
+    let membershipBookingForDate = null;
+    if (userId && dateToCheck) {
+      const { data: existingMembershipBookings } = await supabase
         .from('bookings')
-        .select('id, session_date, session_time, booking_type')
+        .select('id, session_date, session_time, booking_type, final_amount')
         .eq('user_id', userId)
         .eq('session_date', dateToCheck)
         .eq('payment_status', 'paid')
+        .or('final_amount.eq.0,final_amount.is.null')
         .limit(1);
       
-      bookingsForDate = existingBookings && existingBookings.length > 0 ? existingBookings[0] : null;
+      membershipBookingForDate = existingMembershipBookings && existingMembershipBookings.length > 0 
+        ? existingMembershipBookings[0] 
+        : null;
     }
 
-    // Can book if: has sessions AND hasn't booked for the checked date
-    const canBook = (isUnlimited || sessionsRemaining > 0) && !bookingsForDate;
+    // Member has used their credit for the day if they have a free booking
+    const hasUsedCreditForDate = !!membershipBookingForDate;
+    
+    // Can use membership credit if: has sessions AND hasn't used credit for this date
+    const canBook = (isUnlimited || sessionsRemaining > 0) && !hasUsedCreditForDate;
 
     return new Response(
       JSON.stringify({
         hasMembership: true,
         canBook,
-        hasBookingForDate: !!bookingsForDate,
-        bookingForDate: bookingsForDate,
+        hasUsedCreditForDate,
+        membershipBookingForDate,
         membership: {
           id: membership.id,
           type: membership.membership_type,

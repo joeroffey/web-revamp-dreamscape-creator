@@ -68,19 +68,21 @@ serve(async (req) => {
       throw new Error("Time slot not found");
     }
 
-    // RESTRICTION: Check if member already has a booking for this date
-    const { data: existingMemberBookings, error: memberBookingsError } = await supabase
+    // RESTRICTION: Check if member already used their FREE membership credit for this date
+    // A membership-used booking has final_amount = 0 or null
+    const { data: existingMembershipBookings, error: memberBookingsError } = await supabase
       .from('bookings')
-      .select('id, session_date, session_time')
+      .select('id, session_date, session_time, final_amount')
       .eq('user_id', userId)
       .eq('session_date', timeSlot.slot_date)
-      .eq('payment_status', 'paid');
+      .eq('payment_status', 'paid')
+      .or('final_amount.eq.0,final_amount.is.null');
 
     if (memberBookingsError) throw memberBookingsError;
 
-    if (existingMemberBookings && existingMemberBookings.length > 0) {
-      const existingBooking = existingMemberBookings[0];
-      throw new Error(`You already have a booking on this date at ${existingBooking.session_time.slice(0, 5)}. Members can only book one session per day.`);
+    if (existingMembershipBookings && existingMembershipBookings.length > 0) {
+      const existingBooking = existingMembershipBookings[0];
+      throw new Error(`You've already used your free membership session on this date at ${existingBooking.session_time.slice(0, 5)}. You can still book another session but will need to pay the standard rate.`);
     }
 
     // Check slot availability for communal booking (members always book communal for themselves)
@@ -104,7 +106,7 @@ serve(async (req) => {
       throw new Error("No spaces available for this time slot");
     }
 
-    // Create the booking - ALWAYS 1 guest for member bookings
+    // Create the booking - ALWAYS 1 guest for member bookings, FREE (final_amount = 0)
     const priceAmount = 1800; // Standard communal price for reference
     
     const { data: booking, error: insertError } = await supabase
@@ -120,6 +122,8 @@ serve(async (req) => {
         service_type: 'combined',
         duration_minutes: 60,
         price_amount: priceAmount,
+        final_amount: 0, // Free via membership
+        discount_amount: priceAmount, // Full discount applied
         booking_type: 'communal',
         guest_count: 1, // Members can only book for themselves
         special_requests: specialRequests || null,
