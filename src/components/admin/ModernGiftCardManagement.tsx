@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Search, Eye, Filter, PoundSterling, Calendar, TrendingUp, Star } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Gift, Search, Eye, PoundSterling, Calendar, TrendingUp, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,8 @@ export default function ModernGiftCardManagement() {
   const [showGiftCardDetails, setShowGiftCardDetails] = useState(false);
   const [giftCards, setGiftCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [giftCardToDelete, setGiftCardToDelete] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,6 +46,33 @@ export default function ModernGiftCardManagement() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteGiftCard = async () => {
+    if (!giftCardToDelete) return;
+    try {
+      const { error } = await supabase
+        .from('gift_cards')
+        .delete()
+        .eq('id', giftCardToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Gift card deleted successfully",
+      });
+      fetchGiftCards();
+      setDeleteDialogOpen(false);
+      setGiftCardToDelete(null);
+    } catch (error: any) {
+      console.error('Error deleting gift card:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete gift card",
+        variant: "destructive",
+      });
     }
   };
 
@@ -205,18 +234,31 @@ export default function ModernGiftCardManagement() {
                         Expires: {format(new Date(giftCard.expires_at), "MMM d, yyyy")}
                       </div>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedGiftCard(giftCard);
-                          setShowGiftCardDetails(true);
-                        }}
-                        className="hover:bg-pink-50 hover:text-pink-700 hover:border-pink-200"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Details
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedGiftCard(giftCard);
+                            setShowGiftCardDetails(true);
+                          }}
+                          className="hover:bg-pink-50 hover:text-pink-700 hover:border-pink-200"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setGiftCardToDelete(giftCard);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -274,6 +316,24 @@ export default function ModernGiftCardManagement() {
             )}
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Gift Card</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete gift card <strong>{giftCardToDelete?.gift_code}</strong>? 
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setGiftCardToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={deleteGiftCard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
