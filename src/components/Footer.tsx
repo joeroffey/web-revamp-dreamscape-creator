@@ -141,7 +141,7 @@ export const Footer = () => {
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
             <iframe
-              src="https://www.google.com/maps?q=Unit+7+Ensign+Yard+670+Ampress+Lane+Lymington+SO41+8QY&output=embed"
+              src="https://www.google.com/maps?q=Revitalise+Hub+Ensign+Yard+Lymington&output=embed"
               width="100%"
               height="100%"
               style={{ border: 0 }}
