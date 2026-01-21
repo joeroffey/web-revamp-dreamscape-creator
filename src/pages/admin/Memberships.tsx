@@ -310,7 +310,7 @@ export default function AdminMemberships() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                         {/* Customer Info */}
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-muted-foreground">
@@ -362,12 +362,6 @@ export default function AdminMemberships() {
                               ? format(parseISO(membership.end_date), 'dd MMM yyyy')
                               : 'Not set'}
                           </div>
-                        </div>
-                        
-                        {/* Discount */}
-                        <div className="space-y-1">
-                          <div className="text-muted-foreground">Discount</div>
-                          <div className="font-medium">{membership.discount_percentage}%</div>
                         </div>
                       </div>
 
