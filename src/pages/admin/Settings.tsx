@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings2, Clock, DollarSign, Save } from 'lucide-react';
+import { Settings2, Clock, PoundSterling, Save } from 'lucide-react';
 
 export default function AdminSettings() {
   const { toast } = useToast();
@@ -190,7 +190,7 @@ export default function AdminSettings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <PoundSterling className="h-5 w-5" />
                 Pricing Configuration
               </CardTitle>
             </CardHeader>

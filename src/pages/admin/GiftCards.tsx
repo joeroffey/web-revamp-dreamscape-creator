@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Gift, Mail, User, Calendar, DollarSign } from 'lucide-react';
+import { Search, Gift, Mail, User, Calendar, PoundSterling } from 'lucide-react';
 
 interface GiftCard {
   id: string;

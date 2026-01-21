@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Eye, Phone, Mail, Calendar, DollarSign, MessageSquare, Tag, Filter, TrendingUp } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, MessageSquare, Tag, Filter, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 
 interface Customer {
@@ -235,7 +235,7 @@ export default function EnhancedCustomers() {
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <PoundSterling className="h-4 w-4" />
                 Total Revenue
               </CardTitle>
             </CardHeader>
