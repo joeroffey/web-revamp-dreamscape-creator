@@ -144,7 +144,7 @@ const YourVisit = () => {
                   <img
                     src={img.src}
                     alt={img.alt}
-                    className="w-full h-72 md:h-80 object-cover object-center"
+                    className="w-full h-72 md:h-80 object-cover object-[70%_center]"
                     loading="lazy"
                   />
                 </div>
