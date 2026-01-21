@@ -272,25 +272,32 @@ export default function ModernCustomerManagement() {
 
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
         const emailIndex = headers.findIndex(h => h.includes('email'));
-        const nameIndex = headers.findIndex(h => h.includes('name') || h.includes('full'));
+        const firstNameIndex = headers.findIndex(h => h === 'first name' || h === 'firstname' || h === 'first_name');
+        const lastNameIndex = headers.findIndex(h => h === 'last name' || h === 'lastname' || h === 'last_name');
         const phoneIndex = headers.findIndex(h => h.includes('phone') || h.includes('tel'));
-        const tagsIndex = headers.findIndex(h => h.includes('tag'));
-        const notesIndex = headers.findIndex(h => h.includes('note'));
 
         if (emailIndex === -1) {
           toast.error('CSV must have an email column');
           return;
         }
 
+        if (firstNameIndex === -1 || lastNameIndex === -1) {
+          toast.error('CSV must have first name and last name columns');
+          return;
+        }
+
         const parsedData = lines.slice(1).map((line, idx) => {
           const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+          const firstName = values[firstNameIndex] || '';
+          const lastName = values[lastNameIndex] || '';
+          const fullName = [firstName, lastName].filter(Boolean).join(' ');
           return {
             row: idx + 2,
             email: values[emailIndex] || '',
-            full_name: nameIndex !== -1 ? values[nameIndex] : '',
+            first_name: firstName,
+            last_name: lastName,
+            full_name: fullName,
             phone: phoneIndex !== -1 ? values[phoneIndex] : '',
-            tags: tagsIndex !== -1 ? values[tagsIndex] : '',
-            notes: notesIndex !== -1 ? values[notesIndex] : '',
             valid: !!values[emailIndex] && values[emailIndex].includes('@'),
           };
         }).filter(d => d.email);
@@ -319,8 +326,6 @@ export default function ModernCustomerManagement() {
         full_name: d.full_name || null,
         email: d.email.trim().toLowerCase(),
         phone: d.phone || null,
-        notes: d.notes || null,
-        tags: d.tags ? d.tags.split(';').map((t: string) => t.trim()).filter(Boolean) : [],
       }));
 
       const { error } = await supabase.from('customers').upsert(payload, { onConflict: 'email' });
