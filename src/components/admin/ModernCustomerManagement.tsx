@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -7,14 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, MessageSquare, Tag, Filter, TrendingUp, Plus, Pencil } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatGBP } from "@/lib/format";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Customer {
   id: string;
@@ -50,13 +54,20 @@ export default function ModernCustomerManagement() {
   const [createCustomerOpen, setCreateCustomerOpen] = useState(false);
   const [editCustomerOpen, setEditCustomerOpen] = useState(false);
   const [customerForm, setCustomerForm] = useState({ full_name: "", email: "", phone: "", notes: "", tags: "" });
+  const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importData, setImportData] = useState<any[]>([]);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const queryClient = useQueryClient();
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["modern-customers"],
     queryFn: async () => {
-      // Load CRM customers (Admin-managed) and enrich with booking metrics.
       const [{ data: customerRows }, { data: bookingData }] = await Promise.all([
         supabase.from('customers').select('id, full_name, email, phone, notes, tags').order('created_at', { ascending: false }),
         supabase
@@ -79,7 +90,6 @@ export default function ModernCustomerManagement() {
         }
       });
 
-      // Derive customers from bookings (useful for guest bookings or before CRM rows exist).
       const derivedMap = new Map<string, Customer>();
       (bookingData || []).forEach((booking) => {
         const email = booking.customer_email;
@@ -95,7 +105,7 @@ export default function ModernCustomerManagement() {
             last_booking_date: null,
             membership_status: null,
             customer_type: 'new',
-            tags: ['New Customer'],
+            tags: [],
             isDerived: true,
           });
         }
@@ -104,16 +114,11 @@ export default function ModernCustomerManagement() {
       const baseCustomers: Customer[] = (customerRows || []).map((c) => {
         const m = metrics.get(c.email) || { total_bookings: 0, total_spent: 0, last_booking_date: null };
         let customer_type: string = 'new';
-        let tags: string[] = (c.tags as any) || [];
+        const tags: string[] = (c.tags as any) || [];
         if (m.total_spent > 50000) {
           customer_type = 'vip';
-          tags = tags.length ? tags : ['VIP', 'High Value'];
         } else if (m.total_bookings >= 5) {
           customer_type = 'regular';
-          tags = tags.length ? tags : ['Regular'];
-        } else {
-          customer_type = 'new';
-          tags = tags.length ? tags : ['New Customer'];
         }
         return {
           id: c.id,
@@ -130,7 +135,6 @@ export default function ModernCustomerManagement() {
         };
       });
 
-      // Union: CRM customers + derived customers for emails not yet in CRM.
       const emailsInCrm = new Set(baseCustomers.map(c => c.email));
       const derivedCustomers = Array.from(derivedMap.values())
         .filter(c => !emailsInCrm.has(c.email))
@@ -151,7 +155,6 @@ export default function ModernCustomerManagement() {
   };
 
   const openEditCustomer = (customer: Customer) => {
-    // Derived customers come from bookings; "editing" should promote them into the CRM.
     if (customer.isDerived) {
       setCustomerForm({
         full_name: customer.full_name || "",
@@ -210,6 +213,153 @@ export default function ModernCustomerManagement() {
     }
   };
 
+  const deleteCustomer = async (customer: Customer) => {
+    if (customer.isDerived) {
+      toast.error("Cannot delete a derived customer. They only exist in booking records.");
+      return;
+    }
+    try {
+      const { error } = await supabase.from('customers').delete().eq('id', customer.id);
+      if (error) throw error;
+      toast.success('Customer deleted');
+      queryClient.invalidateQueries({ queryKey: ['modern-customers'] });
+      setDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    } catch (e: any) {
+      console.error('Delete error:', e);
+      toast.error(e?.message || 'Failed to delete customer');
+    }
+  };
+
+  const bulkDeleteCustomers = async () => {
+    const crmCustomerIds = Array.from(selectedCustomers).filter(id => !id.startsWith('derived:'));
+    if (crmCustomerIds.length === 0) {
+      toast.error("No CRM customers selected to delete");
+      setBulkDeleteDialogOpen(false);
+      return;
+    }
+    try {
+      const { error } = await supabase.from('customers').delete().in('id', crmCustomerIds);
+      if (error) throw error;
+      toast.success(`Deleted ${crmCustomerIds.length} customer(s)`);
+      setSelectedCustomers(new Set());
+      queryClient.invalidateQueries({ queryKey: ['modern-customers'] });
+      setBulkDeleteDialogOpen(false);
+    } catch (e: any) {
+      console.error('Bulk delete error:', e);
+      toast.error(e?.message || 'Failed to delete customers');
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        if (lines.length < 2) {
+          toast.error('CSV file must have a header row and at least one data row');
+          return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+        const emailIndex = headers.findIndex(h => h.includes('email'));
+        const nameIndex = headers.findIndex(h => h.includes('name') || h.includes('full'));
+        const phoneIndex = headers.findIndex(h => h.includes('phone') || h.includes('tel'));
+        const tagsIndex = headers.findIndex(h => h.includes('tag'));
+        const notesIndex = headers.findIndex(h => h.includes('note'));
+
+        if (emailIndex === -1) {
+          toast.error('CSV must have an email column');
+          return;
+        }
+
+        const parsedData = lines.slice(1).map((line, idx) => {
+          const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+          return {
+            row: idx + 2,
+            email: values[emailIndex] || '',
+            full_name: nameIndex !== -1 ? values[nameIndex] : '',
+            phone: phoneIndex !== -1 ? values[phoneIndex] : '',
+            tags: tagsIndex !== -1 ? values[tagsIndex] : '',
+            notes: notesIndex !== -1 ? values[notesIndex] : '',
+            valid: !!values[emailIndex] && values[emailIndex].includes('@'),
+          };
+        }).filter(d => d.email);
+
+        setImportData(parsedData);
+        setImportDialogOpen(true);
+      } catch (err) {
+        console.error('CSV parse error:', err);
+        toast.error('Failed to parse CSV file');
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const importCustomers = async () => {
+    const validData = importData.filter(d => d.valid);
+    if (validData.length === 0) {
+      toast.error('No valid rows to import');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const payload = validData.map(d => ({
+        full_name: d.full_name || null,
+        email: d.email.trim().toLowerCase(),
+        phone: d.phone || null,
+        notes: d.notes || null,
+        tags: d.tags ? d.tags.split(';').map((t: string) => t.trim()).filter(Boolean) : [],
+      }));
+
+      const { error } = await supabase.from('customers').upsert(payload, { onConflict: 'email' });
+      if (error) throw error;
+
+      toast.success(`Imported ${validData.length} customer(s)`);
+      queryClient.invalidateQueries({ queryKey: ['modern-customers'] });
+      setImportDialogOpen(false);
+      setImportData([]);
+    } catch (e: any) {
+      console.error('Import error:', e);
+      toast.error(e?.message || 'Failed to import customers');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const exportCustomers = () => {
+    if (!customers || customers.length === 0) {
+      toast.error('No customers to export');
+      return;
+    }
+    const headers = ['Name', 'Email', 'Phone', 'Tags', 'Total Bookings', 'Total Spent', 'Last Booking'];
+    const rows = customers.map(c => [
+      c.full_name || '',
+      c.email,
+      c.phone || '',
+      (c.tags || []).join(';'),
+      c.total_bookings,
+      (c.total_spent / 100).toFixed(2),
+      c.last_booking_date || ''
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customers-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Customers exported');
+  };
+
   const fetchCustomerBookings = async (customerEmail: string) => {
     try {
       const { data } = await supabase
@@ -230,6 +380,24 @@ export default function ModernCustomerManagement() {
     await fetchCustomerBookings(customer.email);
   };
 
+  const toggleSelectCustomer = (id: string) => {
+    setSelectedCustomers(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!filteredCustomers) return;
+    if (selectedCustomers.size === filteredCustomers.length) {
+      setSelectedCustomers(new Set());
+    } else {
+      setSelectedCustomers(new Set(filteredCustomers.map(c => c.id)));
+    }
+  };
+
   const filteredCustomers = customers?.filter(customer => {
     const matchesSearch = customer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -240,9 +408,7 @@ export default function ModernCustomerManagement() {
     return matchesSearch && matchesType;
   }) || [];
 
-  const formatCurrency = (amount: number) => {
-    return formatGBP(amount);
-  };
+  const formatCurrency = (amount: number) => formatGBP(amount);
 
   const formatServiceType = (serviceType: string) => {
     switch (serviceType) {
@@ -279,6 +445,7 @@ export default function ModernCustomerManagement() {
   const newCustomers = customers?.filter(c => c.customer_type === 'new').length || 0;
   const totalRevenue = customers?.reduce((sum, c) => sum + c.total_spent, 0) || 0;
   const avgBookingsPerCustomer = customers?.length ? Math.round(customers.reduce((sum, c) => sum + c.total_bookings, 0) / customers.length) : 0;
+  const crmSelectedCount = Array.from(selectedCustomers).filter(id => !id.startsWith('derived:')).length;
 
   return (
     <AdminLayout>
@@ -287,108 +454,48 @@ export default function ModernCustomerManagement() {
           title="Customers"
           description="Manage customers, view booking history, and track spend."
           right={
-            <Button onClick={openCreateCustomer} className="min-h-[44px]">
-              <Plus className="h-4 w-4 mr-2" />
-              Create customer
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="min-h-[44px]">
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportCustomers} className="min-h-[44px]">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button onClick={openCreateCustomer} className="min-h-[44px]">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
+            </div>
           }
         />
 
-        <Dialog open={createCustomerOpen} onOpenChange={setCreateCustomerOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Customer</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">Full name</label>
-                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email *</label>
-                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tags (comma separated)</label>
-                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setCreateCustomerOpen(false)}>Cancel</Button>
-                <Button onClick={() => saveCustomer('create')}>Save</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Bulk Actions */}
+        {selectedCustomers.size > 0 && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="p-4 flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {selectedCustomers.size} customer(s) selected {crmSelectedCount < selectedCustomers.size && `(${selectedCustomers.size - crmSelectedCount} derived)`}
+              </span>
+              <Button variant="destructive" size="sm" onClick={() => setBulkDeleteDialogOpen(true)} disabled={crmSelectedCount === 0}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected ({crmSelectedCount})
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-        <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Edit Customer</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">Full name</label>
-                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email *</label>
-                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tags (comma separated)</label>
-                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setEditCustomerOpen(false)}>Cancel</Button>
-                <Button onClick={() => saveCustomer('edit')}>Save changes</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search customers by name, email, or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-0 shadow-md bg-white/80 backdrop-blur-sm"
-            />
-          </div>
-          
-          <Select value={filterByType} onValueChange={setFilterByType}>
-            <SelectTrigger className="w-40 border-0 shadow-md bg-white/80 backdrop-blur-sm">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="regular">Regular</SelectItem>
-              <SelectItem value="new">New</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-blue-100 flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -397,12 +504,10 @@ export default function ModernCustomerManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{customers?.length || 0}</div>
-              <p className="text-xs text-blue-100 mt-1">Active customer base</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-xl text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-xl text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-purple-100 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
@@ -411,12 +516,10 @@ export default function ModernCustomerManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{newCustomers}</div>
-              <p className="text-xs text-purple-100 mt-1">This month</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 border-0 shadow-xl text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 border-0 shadow-xl text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-green-100 flex items-center gap-2">
                 <PoundSterling className="h-4 w-4" />
@@ -425,138 +528,327 @@ export default function ModernCustomerManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
-              <p className="text-xs text-green-100 mt-1">From all customers</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 shadow-xl text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
+          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 shadow-xl text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-orange-100 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+                <Calendar className="h-4 w-4" />
                 Avg. Bookings
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{avgBookingsPerCustomer}</div>
-              <p className="text-xs text-orange-100 mt-1">Per customer</p>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        {/* Search & Filter */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search by name, email, or phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filterByType} onValueChange={setFilterByType}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="vip">VIP</SelectItem>
+              <SelectItem value="regular">Regular</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Customer Table */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span className="text-xl font-semibold">Customers ({filteredCustomers.length})</span>
-              <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200">
-                {newCustomers} new this month
-              </Badge>
+              <span>Customers ({filteredCustomers.length})</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {filteredCustomers.length === 0 ? (
               <div className="text-center py-16">
-                <div className="h-16 w-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="text-gray-500 text-lg">No customers found</p>
-                <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
+                <UserX className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No customers found</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredCustomers.map((customer) => (
-                  <div 
-                    key={customer.id} 
-                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-blue-200 bg-white/60 backdrop-blur-sm gap-4"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                          {customer.full_name?.charAt(0) || customer.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-gray-900">{customer.full_name || "No name"}</h3>
-                          {customer.customer_type && customer.customer_type !== 'regular' && (
-                            <Badge 
-                              variant={customer.customer_type === 'vip' ? 'default' : 'secondary'} 
-                              className={`text-xs ${customer.customer_type === 'vip' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : ''}`}
-                            >
-                              {customer.customer_type.toUpperCase()}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center text-sm text-gray-600 gap-6">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-blue-500" />
-                          <span className="break-all">{customer.email}</span>
-                        </div>
-                        {customer.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-green-500" />
-                            <span>{customer.phone}</span>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedCustomers.size === filteredCustomers.length && filteredCustomers.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead className="hidden md:table-cell">Contact</TableHead>
+                      <TableHead className="hidden lg:table-cell">Tags</TableHead>
+                      <TableHead className="text-right">Bookings</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCustomers.map((customer) => (
+                      <TableRow key={customer.id} className="group">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedCustomers.has(customer.id)}
+                            onCheckedChange={() => toggleSelectCustomer(customer.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0">
+                              {customer.full_name?.charAt(0) || customer.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium truncate">{customer.full_name || "No name"}</div>
+                              <div className="text-sm text-muted-foreground truncate">{customer.email}</div>
+                              {customer.isDerived && (
+                                <Badge variant="outline" className="text-xs mt-1">From Bookings</Badge>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      
-                      {customer.tags && customer.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {customer.tags.slice(0, 3).map((tag: string) => (
-                            <Badge key={tag} variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {customer.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">
-                              +{customer.tags.length - 3} more
-                            </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {customer.phone && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              {customer.phone}
+                            </div>
                           )}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600 mb-1">
-                        {customer.total_bookings} booking{customer.total_bookings !== 1 ? 's' : ''}
-                      </div>
-                      <div className="text-2xl font-bold text-green-600 mb-1">
-                        {formatCurrency(customer.total_spent)}
-                      </div>
-                      {customer.last_booking_date && (
-                        <div className="text-xs text-gray-500 mb-3">
-                          Last: {new Date(customer.last_booking_date).toLocaleDateString()}
-                        </div>
-                      )}
-                      
-                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCustomerDialog(customer)}
-                          className="group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200 transition-colors"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditCustomer(customer)}
-                        >
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                          {customer.last_booking_date && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Last: {format(new Date(customer.last_booking_date), 'dd MMM yyyy')}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex flex-wrap gap-1">
+                            {customer.customer_type === 'vip' && (
+                              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">VIP</Badge>
+                            )}
+                            {customer.tags?.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                            ))}
+                            {(customer.tags?.length || 0) > 2 && (
+                              <Badge variant="outline" className="text-xs">+{(customer.tags?.length || 0) - 2}</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{customer.total_bookings}</TableCell>
+                        <TableCell className="text-right font-medium text-green-600">{formatCurrency(customer.total_spent)}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openCustomerDialog(customer)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditCustomer(customer)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              {!customer.isDerived && (
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => {
+                                    setCustomerToDelete(customer);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Create Customer Dialog */}
+        <Dialog open={createCustomerOpen} onOpenChange={setCreateCustomerOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Add Customer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Full name</label>
+                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email *</label>
+                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone</label>
+                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Tags (comma separated)</label>
+                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} placeholder="VIP, Regular, etc." />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Notes</label>
+                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateCustomerOpen(false)}>Cancel</Button>
+              <Button onClick={() => saveCustomer('create')}>Save Customer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Customer Dialog */}
+        <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Customer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Full name</label>
+                <Input value={customerForm.full_name} onChange={(e) => setCustomerForm(prev => ({ ...prev, full_name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email *</label>
+                <Input type="email" value={customerForm.email} onChange={(e) => setCustomerForm(prev => ({ ...prev, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone</label>
+                <Input value={customerForm.phone} onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Tags (comma separated)</label>
+                <Input value={customerForm.tags} onChange={(e) => setCustomerForm(prev => ({ ...prev, tags: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Notes</label>
+                <Textarea value={customerForm.notes} onChange={(e) => setCustomerForm(prev => ({ ...prev, notes: e.target.value }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditCustomerOpen(false)}>Cancel</Button>
+              <Button onClick={() => saveCustomer('edit')}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{customerToDelete?.full_name || customerToDelete?.email}</strong>? 
+                This will remove them from the CRM but their booking history will remain.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => customerToDelete && deleteCustomer(customerToDelete)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Delete Dialog */}
+        <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {crmSelectedCount} Customer(s)</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the selected customers? Their booking history will remain.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={bulkDeleteCustomers} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete All
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Import Dialog */}
+        <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Import Customers</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {importData.length} row(s) found. {importData.filter(d => d.valid).length} valid for import.
+              </p>
+              <ScrollArea className="h-64 border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Row</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importData.map((row, idx) => (
+                      <TableRow key={idx} className={!row.valid ? 'bg-destructive/10' : ''}>
+                        <TableCell>{row.row}</TableCell>
+                        <TableCell>{row.full_name || '-'}</TableCell>
+                        <TableCell>{row.email}</TableCell>
+                        <TableCell>{row.phone || '-'}</TableCell>
+                        <TableCell>
+                          {row.valid ? (
+                            <Badge variant="outline" className="text-green-600">Valid</Badge>
+                          ) : (
+                            <Badge variant="destructive">Invalid email</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Cancel</Button>
+              <Button onClick={importCustomers} disabled={importing || importData.filter(d => d.valid).length === 0}>
+                {importing ? 'Importing...' : `Import ${importData.filter(d => d.valid).length} Customer(s)`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Customer Details Dialog */}
         <Dialog open={showCustomerDetails} onOpenChange={setShowCustomerDetails}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -576,7 +868,7 @@ export default function ModernCustomerManagement() {
                       <div><strong>Name:</strong> {selectedCustomer.full_name || 'No name provided'}</div>
                       <div><strong>Email:</strong> {selectedCustomer.email}</div>
                       <div><strong>Phone:</strong> {selectedCustomer.phone || 'No phone provided'}</div>
-                      <div><strong>Customer Type:</strong> {selectedCustomer.customer_type || "Regular"}</div>
+                      <div><strong>Type:</strong> <Badge variant={selectedCustomer.customer_type === 'vip' ? 'default' : 'secondary'}>{selectedCustomer.customer_type?.toUpperCase() || 'NEW'}</Badge></div>
                     </CardContent>
                   </Card>
                   
@@ -587,23 +879,19 @@ export default function ModernCustomerManagement() {
                     <CardContent className="space-y-2">
                       <div><strong>Total Bookings:</strong> {selectedCustomer.total_bookings}</div>
                       <div><strong>Total Spent:</strong> {formatCurrency(selectedCustomer.total_spent)}</div>
-                      <div><strong>Average per Booking:</strong> {selectedCustomer.total_bookings ? formatCurrency(selectedCustomer.total_spent / selectedCustomer.total_bookings) : "£0.00"}</div>
-                      <div><strong>Customer Since:</strong> {selectedCustomer.last_booking_date ? format(new Date(selectedCustomer.last_booking_date), "MMM yyyy") : "Unknown"}</div>
+                      <div><strong>Avg per Booking:</strong> {selectedCustomer.total_bookings ? formatCurrency(selectedCustomer.total_spent / selectedCustomer.total_bookings) : "£0.00"}</div>
+                      <div><strong>Last Booking:</strong> {selectedCustomer.last_booking_date ? format(new Date(selectedCustomer.last_booking_date), "dd MMM yyyy") : "Never"}</div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {selectedCustomer.tags && selectedCustomer.tags.length > 0 && (
+                {selectedCustomer.notes && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Tags</CardTitle>
+                      <CardTitle className="text-lg">Notes</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCustomer.tags.map((tag: string) => (
-                          <Badge key={tag} variant="outline">{tag}</Badge>
-                        ))}
-                      </div>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedCustomer.notes}</p>
                     </CardContent>
                   </Card>
                 )}
@@ -623,15 +911,12 @@ export default function ModernCustomerManagement() {
                               <div>
                                 <p className="font-medium">{formatServiceType(booking.service_type)}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
+                                  {format(new Date(booking.session_date), 'dd MMM yyyy')} at {booking.session_time}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge variant={booking.payment_status === 'paid' ? 'default' : 'secondary'}>
                                   {booking.payment_status}
-                                </Badge>
-                                <Badge variant={booking.booking_status === 'completed' ? 'secondary' : 'outline'}>
-                                  {booking.booking_status}
                                 </Badge>
                                 <span className="font-medium">{formatCurrency(booking.price_amount)}</span>
                               </div>
