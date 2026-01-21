@@ -83,7 +83,58 @@ export default function AdminSettings() {
         });
         
         if (settingsMap.business_hours) {
-          setBusinessHours(settingsMap.business_hours);
+          // Normalize business hours to ensure all days have complete structure
+          const loadedHours = settingsMap.business_hours;
+          
+          const defaultHours = {
+            monday: { open: '09:00', close: '19:00', closed: false },
+            tuesday: { open: '09:00', close: '19:00', closed: false },
+            wednesday: { open: '09:00', close: '19:00', closed: false },
+            thursday: { open: '09:00', close: '19:00', closed: false },
+            friday: { open: '09:00', close: '19:00', closed: false },
+            saturday: { open: '10:00', close: '18:00', closed: false },
+            sunday: { open: '10:00', close: '18:00', closed: true }
+          };
+          
+          const normalizedHours = {
+            monday: {
+              open: loadedHours.monday?.open || defaultHours.monday.open,
+              close: loadedHours.monday?.close || defaultHours.monday.close,
+              closed: loadedHours.monday?.closed ?? defaultHours.monday.closed
+            },
+            tuesday: {
+              open: loadedHours.tuesday?.open || defaultHours.tuesday.open,
+              close: loadedHours.tuesday?.close || defaultHours.tuesday.close,
+              closed: loadedHours.tuesday?.closed ?? defaultHours.tuesday.closed
+            },
+            wednesday: {
+              open: loadedHours.wednesday?.open || defaultHours.wednesday.open,
+              close: loadedHours.wednesday?.close || defaultHours.wednesday.close,
+              closed: loadedHours.wednesday?.closed ?? defaultHours.wednesday.closed
+            },
+            thursday: {
+              open: loadedHours.thursday?.open || defaultHours.thursday.open,
+              close: loadedHours.thursday?.close || defaultHours.thursday.close,
+              closed: loadedHours.thursday?.closed ?? defaultHours.thursday.closed
+            },
+            friday: {
+              open: loadedHours.friday?.open || defaultHours.friday.open,
+              close: loadedHours.friday?.close || defaultHours.friday.close,
+              closed: loadedHours.friday?.closed ?? defaultHours.friday.closed
+            },
+            saturday: {
+              open: loadedHours.saturday?.open || defaultHours.saturday.open,
+              close: loadedHours.saturday?.close || defaultHours.saturday.close,
+              closed: loadedHours.saturday?.closed ?? defaultHours.saturday.closed
+            },
+            sunday: {
+              open: loadedHours.sunday?.open || defaultHours.sunday.open,
+              close: loadedHours.sunday?.close || defaultHours.sunday.close,
+              closed: loadedHours.sunday?.closed ?? defaultHours.sunday.closed
+            }
+          };
+          
+          setBusinessHours(normalizedHours);
         }
         if (settingsMap.business_info) {
           setSystemSettings(prev => ({ ...prev, ...settingsMap.business_info }));
@@ -116,23 +167,43 @@ export default function AdminSettings() {
           }, { onConflict: 'service_type' });
       }
 
-      // Update business hours
-      await supabase
+      // Update business hours - ensure all days have complete structure
+      const normalizedBusinessHours: Record<string, { open: string; close: string; closed: boolean }> = {};
+      for (const [day, hours] of Object.entries(businessHours)) {
+        normalizedBusinessHours[day] = {
+          open: hours.open || '09:00',
+          close: hours.close || '19:00',
+          closed: hours.closed ?? false
+        };
+      }
+      
+      const { error: businessHoursError } = await supabase
         .from('system_settings')
         .upsert({
           setting_key: 'business_hours',
-          setting_value: businessHours,
-          description: 'Business operating hours'
-        });
+          setting_value: normalizedBusinessHours,
+          description: 'Business operating hours',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'setting_key' });
+      
+      if (businessHoursError) {
+        console.error('Error saving business hours:', businessHoursError);
+        throw businessHoursError;
+      }
 
-      // Update business info
-      await supabase
+      const { error: businessInfoError } = await supabase
         .from('system_settings')
         .upsert({
           setting_key: 'business_info',
           setting_value: systemSettings,
-          description: 'Business contact information and settings'
-        });
+          description: 'Business contact information and settings',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'setting_key' });
+      
+      if (businessInfoError) {
+        console.error('Error saving business info:', businessInfoError);
+        throw businessInfoError;
+      }
 
       toast({
         title: "Settings Saved",
