@@ -114,15 +114,35 @@ const Booking = () => {
     checkMembership();
   }, [user?.id]);
 
-  // Pre-fill user data from auth if no membership
+  // Pre-fill user data from auth and profile if no membership
   useEffect(() => {
-    if (user && !membershipStatus?.membership) {
-      setFormData(prev => ({
-        ...prev,
-        customerEmail: user.email || prev.customerEmail,
-        customerName: user.user_metadata?.full_name || user.user_metadata?.name || prev.customerName
-      }));
-    }
+    const fetchUserProfile = async () => {
+      if (user && !membershipStatus?.membership) {
+        // First set what we have from auth metadata
+        setFormData(prev => ({
+          ...prev,
+          customerEmail: user.email || prev.customerEmail,
+          customerName: user.user_metadata?.full_name || user.user_metadata?.name || prev.customerName
+        }));
+
+        // Then fetch additional profile data (like phone)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            customerName: profile.full_name || prev.customerName,
+            customerPhone: profile.phone || prev.customerPhone
+          }));
+        }
+      }
+    };
+
+    fetchUserProfile();
   }, [user, membershipStatus]);
 
   const services = [
