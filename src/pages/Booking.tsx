@@ -42,6 +42,13 @@ interface TokenStatus {
   hasTokens: boolean;
   tokensRemaining: number;
   isIntroOffer?: boolean;
+  canBook?: boolean;
+  hasUsedTokenForDate?: boolean;
+  tokenBookingForDate?: {
+    id: string;
+    session_date: string;
+    session_time: string;
+  } | null;
   tokenDetails?: {
     id: string;
     expiresAt: string | null;
@@ -136,8 +143,8 @@ const Booking = () => {
     }
   };
 
-  // Check token status when user is logged in
-  const checkTokenStatus = async () => {
+  // Check token status when user is logged in or when selected date changes
+  const checkTokenStatusForDate = async (dateToCheck?: string) => {
     if (!user?.email) {
       setTokenStatus(null);
       return;
@@ -146,7 +153,10 @@ const Booking = () => {
     setCheckingTokens(true);
     try {
       const { data, error } = await supabase.functions.invoke('check-token-status', {
-        body: { email: user.email }
+        body: { 
+          email: user.email,
+          checkDate: dateToCheck || selectedTimeSlot?.date
+        }
       });
 
       if (error) {
@@ -165,7 +175,7 @@ const Booking = () => {
 
   useEffect(() => {
     checkMembershipForDate();
-    checkTokenStatus();
+    checkTokenStatusForDate();
   }, [user?.id, user?.email]);
 
   // Pre-fill user data from auth and profile if no membership
@@ -308,6 +318,11 @@ const Booking = () => {
       checkMembershipForDate(date);
     }
     
+    // Re-check token status for the selected date
+    if (user?.email && tokenStatus?.hasTokens) {
+      checkTokenStatusForDate(date);
+    }
+    
     // If currently set to private but new slot doesn't have full availability, switch to communal
     if (formData.bookingType === "private" && newAvailableSpaces < 5) {
       setFormData(prev => ({ ...prev, bookingType: "communal", guestCount: Math.min(prev.guestCount, newAvailableSpaces) }));
@@ -343,8 +358,9 @@ const Booking = () => {
   };
 
   const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook && !membershipStatus?.hasUsedCreditForDate;
-  const canUseTokens = !canUseMembership && tokenStatus?.hasTokens && tokenStatus.tokensRemaining > 0;
+  const canUseTokens = !canUseMembership && tokenStatus?.hasTokens && tokenStatus.tokensRemaining > 0 && tokenStatus?.canBook !== false;
   const hasUsedCreditForSelectedDate = selectedTimeSlot && membershipStatus?.hasUsedCreditForDate;
+  const hasUsedTokenForSelectedDate = selectedTimeSlot && tokenStatus?.hasUsedTokenForDate;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
@@ -449,7 +465,7 @@ const Booking = () => {
 
       if (data?.success) {
         // Refresh token status after booking
-        await checkTokenStatus();
+        await checkTokenStatusForDate();
         
         const successUrl = data.isIntroOffer 
           ? `/booking-success?tokens=true&intro=true&remaining=${data.tokensRemaining}`
@@ -605,6 +621,31 @@ const Booking = () => {
                   </p>
                 </CardContent>
               </Card>
+            ) : hasUsedTokenForSelectedDate && tokenStatus ? (
+              <Card className="mb-8 border-amber-500 bg-amber-500/5">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
+                        <AlertCircle className="h-5 w-5 text-amber-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Token Already Used Today</h3>
+                        <p className="text-sm text-muted-foreground">
+                          You've already used a token for {selectedTimeSlot?.date ? new Date(selectedTimeSlot.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : 'this day'}.
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="w-fit border-amber-500 text-amber-600">
+                      <Gift className="h-3 w-3 mr-1" />
+                      {tokenStatus.tokensRemaining} {tokenStatus.tokensRemaining === 1 ? 'token' : 'tokens'} remaining
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    You can only use 1 token per day. Select a different date to use your tokens, or book at the standard rate of £{(pricing.combined / 100).toFixed(0)}.
+                  </p>
+                </CardContent>
+              </Card>
             ) : canUseTokens && tokenStatus ? (
               <Card className="mb-8 border-emerald-500 bg-emerald-500/5">
                 <CardContent className="p-4 sm:p-6">
@@ -631,7 +672,7 @@ const Booking = () => {
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-3">
-                    Use your {tokenStatus.isIntroOffer ? 'introductory offer' : ''} tokens for free communal sessions. One token = one person.
+                    Use your {tokenStatus.isIntroOffer ? 'introductory offer' : ''} tokens for free communal sessions. One token = one person per day.
                   </p>
                 </CardContent>
               </Card>
