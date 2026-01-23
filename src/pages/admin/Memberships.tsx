@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag } from 'lucide-react';
+import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag, Plus } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
+import { CreateMembershipDialog } from '@/components/admin/CreateMembershipDialog';
 
 interface Membership {
   id: string;
@@ -35,6 +35,7 @@ export default function AdminMemberships() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'cancelled' | 'expired'>('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
     fetchMemberships();
@@ -166,9 +167,21 @@ export default function AdminMemberships() {
 
   return (
     <AdminLayout>
+      <CreateMembershipDialog 
+        open={showCreateDialog} 
+        onOpenChange={setShowCreateDialog}
+        onMembershipCreated={fetchMemberships}
+      />
+      
       <div className="space-y-6 p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold">Membership Management</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl md:text-3xl font-bold">Membership Management</h1>
+            <Button onClick={() => setShowCreateDialog(true)} className="hidden sm:flex">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Membership
+            </Button>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-80">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -191,6 +204,10 @@ export default function AdminMemberships() {
                 <SelectItem value="expired">Expired</SelectItem>
               </SelectContent>
             </Select>
+            <Button onClick={() => setShowCreateDialog(true)} className="sm:hidden w-full">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Membership
+            </Button>
           </div>
         </div>
 
