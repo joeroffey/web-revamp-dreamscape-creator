@@ -247,7 +247,20 @@ const Memberships = () => {
           throw signUpError;
         }
 
-        // Small delay to ensure auth state updates
+        // If no session was created (email confirmation is enabled), sign in immediately
+        if (!signUpData.session) {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: introForm.email.trim(),
+            password: introForm.password,
+          });
+          
+          if (signInError) {
+            console.log("Auto sign-in note:", signInError.message);
+            // Continue anyway - they can sign in manually after payment
+          }
+        }
+
+        // Wait for session to be established
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
