@@ -1,19 +1,45 @@
-
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Sparkles, LogIn } from "lucide-react";
-import { useState } from "react";
+import { Check, Star, Sparkles, LogIn, Gift, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/AuthContext";
 import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const Memberships = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
+  
+  // Intro offer state
+  const [introDialogOpen, setIntroDialogOpen] = useState(false);
+  const [introForm, setIntroForm] = useState({ name: "", email: "", phone: "" });
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+  const [isEligible, setIsEligible] = useState<boolean | null>(null);
+  const [eligibilityReason, setEligibilityReason] = useState<string | null>(null);
+
+  // Pre-fill form if user is logged in
+  useEffect(() => {
+    if (user) {
+      setIntroForm(prev => ({
+        ...prev,
+        email: user.email || "",
+        name: user.user_metadata?.full_name || user.user_metadata?.name || ""
+      }));
+    }
+  }, [user]);
 
   const membershipPlans = [
     {
@@ -106,6 +132,83 @@ const Memberships = () => {
     }
   };
 
+  const checkIntroEligibility = async (email: string) => {
+    if (!email) return;
+    
+    setCheckingEligibility(true);
+    setIsEligible(null);
+    setEligibilityReason(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('check-intro-eligibility', {
+        body: { email: email.trim() }
+      });
+
+      if (error) throw error;
+
+      setIsEligible(data.isEligible);
+      setEligibilityReason(data.reason);
+    } catch (error) {
+      console.error('Eligibility check error:', error);
+      setIsEligible(null);
+    } finally {
+      setCheckingEligibility(false);
+    }
+  };
+
+  const handleIntroEmailBlur = () => {
+    if (introForm.email) {
+      checkIntroEligibility(introForm.email);
+    }
+  };
+
+  const handleIntroOfferPurchase = async () => {
+    if (!introForm.name || !introForm.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in your name and email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isEligible === false) {
+      toast({
+        title: "Not Eligible",
+        description: eligibilityReason || "You are not eligible for this offer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading('intro_offer');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-intro-offer-payment', {
+        body: {
+          email: introForm.email.trim(),
+          name: introForm.name.trim(),
+          phone: introForm.phone.trim()
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        setIntroDialogOpen(false);
+      }
+    } catch (error: any) {
+      console.error('Intro offer purchase error:', error);
+      toast({
+        title: "Purchase Failed",
+        description: error.message || "There was an error processing your purchase. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -147,6 +250,45 @@ const Memberships = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Introductory Offer Card */}
+            <div className="mb-12">
+              <Card className="wellness-card border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                <CardContent className="p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                        <Gift className="h-8 w-8 text-primary" />
+                      </div>
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                        <h3 className="text-xl font-semibold text-foreground">Introductory Offer</h3>
+                        <Badge variant="secondary" className="bg-primary/10 text-primary">First-Timers Only</Badge>
+                      </div>
+                      <p className="text-muted-foreground mb-2">
+                        New to contrast therapy? Try <strong>3 sessions for just £35</strong> – use them anytime within 3 months.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Available exclusively for first-time customers with no previous bookings.
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 text-center">
+                      <div className="mb-2">
+                        <span className="text-3xl font-bold text-primary">£35</span>
+                        <span className="text-muted-foreground text-sm block">for 3 sessions</span>
+                      </div>
+                      <Button 
+                        className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={() => setIntroDialogOpen(true)}
+                      >
+                        Get Started
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 mb-16">
@@ -221,6 +363,106 @@ const Memberships = () => {
           </div>
         </section>
       </main>
+
+      {/* Introductory Offer Dialog */}
+      <Dialog open={introDialogOpen} onOpenChange={setIntroDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Introductory Offer
+            </DialogTitle>
+            <DialogDescription>
+              3 sessions for £35 – available for first-time customers only
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="intro-name">Full Name *</Label>
+              <Input
+                id="intro-name"
+                placeholder="Enter your full name"
+                value={introForm.name}
+                onChange={(e) => setIntroForm({ ...introForm, name: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="intro-email">Email Address *</Label>
+              <Input
+                id="intro-email"
+                type="email"
+                placeholder="Enter your email"
+                value={introForm.email}
+                onChange={(e) => setIntroForm({ ...introForm, email: e.target.value })}
+                onBlur={handleIntroEmailBlur}
+              />
+              {checkingEligibility && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Checking eligibility...
+                </div>
+              )}
+              {isEligible === true && !checkingEligibility && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <Check className="h-3 w-3" />
+                  You're eligible for this offer!
+                </div>
+              )}
+              {isEligible === false && !checkingEligibility && (
+                <div className="text-sm text-destructive">
+                  {eligibilityReason || "You are not eligible for this offer."}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="intro-phone">Phone Number (optional)</Label>
+              <Input
+                id="intro-phone"
+                type="tel"
+                placeholder="Enter your phone number"
+                value={introForm.phone}
+                onChange={(e) => setIntroForm({ ...introForm, phone: e.target.value })}
+              />
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 text-sm">
+              <p className="font-medium mb-1">What you get:</p>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• 3 communal session credits</li>
+                <li>• Valid for 3 months from purchase</li>
+                <li>• Use anytime during opening hours</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIntroDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={handleIntroOfferPurchase}
+              disabled={loading === 'intro_offer' || isEligible === false || !introForm.name || !introForm.email}
+            >
+              {loading === 'intro_offer' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Pay £35"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
