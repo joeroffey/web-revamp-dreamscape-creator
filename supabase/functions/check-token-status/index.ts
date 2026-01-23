@@ -61,39 +61,23 @@ serve(async (req) => {
     // Check if it's an introductory offer
     const isIntroOffer = primaryToken.notes?.includes('Introductory Offer');
 
-    // Check if user already used a token for the specified date
-    // A token booking is one where final_amount is 0 or null (free via token) AND no membership
+    // Check if user already used a free session (token OR membership) for the specified date
+    // Any free booking (final_amount = 0 or null) blocks additional token usage
     let hasUsedTokenForDate = false;
     let tokenBookingForDate = null;
     
     if (checkDate) {
-      const { data: existingTokenBookings } = await supabase
+      const { data: existingFreeBookings } = await supabase
         .from('bookings')
-        .select('id, session_date, session_time, booking_type, final_amount, customer_email')
+        .select('id, session_date, session_time, booking_type, final_amount')
         .eq('customer_email', normalizedEmail)
         .eq('session_date', checkDate)
         .eq('payment_status', 'paid')
         .or('final_amount.eq.0,final_amount.is.null');
       
-      // Filter to only token bookings (not membership - membership has user_id set)
-      if (existingTokenBookings && existingTokenBookings.length > 0) {
-        // Check if any of these bookings are token bookings (no user_id means it's likely a token booking)
-        const { data: membershipBookings } = await supabase
-          .from('bookings')
-          .select('id')
-          .eq('customer_email', normalizedEmail)
-          .eq('session_date', checkDate)
-          .eq('payment_status', 'paid')
-          .or('final_amount.eq.0,final_amount.is.null')
-          .not('user_id', 'is', null);
-        
-        const membershipBookingIds = new Set(membershipBookings?.map(b => b.id) || []);
-        const tokenOnlyBookings = existingTokenBookings.filter(b => !membershipBookingIds.has(b.id));
-        
-        if (tokenOnlyBookings.length > 0) {
-          hasUsedTokenForDate = true;
-          tokenBookingForDate = tokenOnlyBookings[0];
-        }
+      if (existingFreeBookings && existingFreeBookings.length > 0) {
+        hasUsedTokenForDate = true;
+        tokenBookingForDate = existingFreeBookings[0];
       }
     }
 

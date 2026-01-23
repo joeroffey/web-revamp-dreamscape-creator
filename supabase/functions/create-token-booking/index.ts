@@ -63,22 +63,21 @@ serve(async (req) => {
     }
 
     // RESTRICTION: Check if user already used a token for this date (1 token per day)
-    const { data: existingTokenBookings, error: tokenBookingsError } = await supabase
+    // Any free booking (final_amount = 0 or null) counts as a token usage for this restriction
+    const { data: existingFreeBookings, error: freeBookingsError } = await supabase
       .from('bookings')
-      .select('id, session_date, session_time, final_amount, user_id')
+      .select('id, session_date, session_time, final_amount')
       .eq('customer_email', normalizedEmail)
       .eq('session_date', timeSlot.slot_date)
       .eq('payment_status', 'paid')
       .or('final_amount.eq.0,final_amount.is.null');
 
-    if (tokenBookingsError) throw tokenBookingsError;
+    if (freeBookingsError) throw freeBookingsError;
 
-    // Filter to only token bookings (bookings without user_id or with null user_id are token bookings)
-    const tokenOnlyBookings = existingTokenBookings?.filter(b => !b.user_id) || [];
-    
-    if (tokenOnlyBookings.length > 0) {
-      const existingBooking = tokenOnlyBookings[0];
-      throw new Error(`You've already used a token on this date at ${existingBooking.session_time.slice(0, 5)}. You can only use 1 token per day. Select a different date or pay the standard rate.`);
+    // If any free booking exists for this date, block the token booking
+    if (existingFreeBookings && existingFreeBookings.length > 0) {
+      const existingBooking = existingFreeBookings[0];
+      throw new Error(`You've already used a free session on this date at ${existingBooking.session_time.slice(0, 5)}. You can only use 1 token per day. Select a different date or pay the standard rate.`);
     }
 
     // Check slot availability for communal booking (tokens are only for communal)
