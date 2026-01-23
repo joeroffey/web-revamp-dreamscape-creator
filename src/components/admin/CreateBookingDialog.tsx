@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -24,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -35,7 +35,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, Clock, Coins } from 'lucide-react';
+import { CalendarIcon, Clock, Coins, Search, User, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
@@ -52,7 +52,6 @@ const formSchema = z.object({
   price_amount: z.number().min(0),
   payment_status: z.enum(['paid', 'pending', 'comp', 'token']),
   special_requests: z.string().optional(),
-  use_token: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -63,6 +62,13 @@ interface TokenRecord {
   tokens_remaining: number;
   expires_at: string | null;
   notes: string | null;
+}
+
+interface CustomerResult {
+  id: string;
+  full_name: string | null;
+  email: string;
+  phone: string | null;
 }
 
 interface CreateBookingDialogProps {
@@ -82,6 +88,10 @@ export const CreateBookingDialog = ({
   const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<CustomerResult[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResult | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -95,15 +105,49 @@ export const CreateBookingDialog = ({
       booking_type: 'communal',
       guest_count: 1,
       service_type: 'combined',
-      price_amount: 3500, // £35.00 in pence
+      price_amount: 1800, // £18.00 communal price
       payment_status: 'paid',
       special_requests: '',
-      use_token: false,
     },
   });
 
   const watchedEmail = form.watch('customer_email');
   const watchedGuestCount = form.watch('guest_count');
+  const watchedBookingType = form.watch('booking_type');
+
+  // Update price based on booking type
+  useEffect(() => {
+    if (watchedBookingType === 'private') {
+      form.setValue('price_amount', 7500); // £75 private
+    } else {
+      form.setValue('price_amount', 1800 * watchedGuestCount); // £18 per person communal
+    }
+  }, [watchedBookingType, watchedGuestCount, form]);
+
+  // Search customers
+  useEffect(() => {
+    const searchCustomers = async () => {
+      if (customerSearch.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, full_name, email, phone')
+        .or(`full_name.ilike.%${customerSearch}%,email.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
+        .limit(5);
+
+      if (!error && data) {
+        setSearchResults(data);
+      }
+      setIsSearching(false);
+    };
+
+    const debounce = setTimeout(searchCustomers, 300);
+    return () => clearTimeout(debounce);
+  }, [customerSearch]);
 
   // Fetch available tokens when email changes
   useEffect(() => {
@@ -140,6 +184,25 @@ export const CreateBookingDialog = ({
       setUseToken(false);
     }
   }, [watchedGuestCount, totalTokens, useToken]);
+
+  const handleSelectCustomer = (customer: CustomerResult) => {
+    setSelectedCustomer(customer);
+    form.setValue('customer_name', customer.full_name || '');
+    form.setValue('customer_email', customer.email);
+    form.setValue('customer_phone', customer.phone || '');
+    setCustomerSearch('');
+    setSearchResults([]);
+  };
+
+  const handleClearCustomer = () => {
+    setSelectedCustomer(null);
+    form.setValue('customer_name', '');
+    form.setValue('customer_email', '');
+    form.setValue('customer_phone', '');
+    setAvailableTokens([]);
+    setTotalTokens(0);
+    setUseToken(false);
+  };
 
   // Generate time slots
   const timeSlots = Array.from({ length: 11 }, (_, i) => {
@@ -194,7 +257,7 @@ export const CreateBookingDialog = ({
       const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          user_id: null, // Admin created booking
+          user_id: null,
           customer_name: data.customer_name,
           customer_email: data.customer_email,
           customer_phone: data.customer_phone,
@@ -262,8 +325,7 @@ export const CreateBookingDialog = ({
       });
 
       onBookingCreated();
-      form.reset();
-      setUseToken(false);
+      resetForm();
       
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -277,8 +339,21 @@ export const CreateBookingDialog = ({
     }
   };
 
+  const resetForm = () => {
+    form.reset();
+    setUseToken(false);
+    setSelectedCustomer(null);
+    setCustomerSearch('');
+    setSearchResults([]);
+    setAvailableTokens([]);
+    setTotalTokens(0);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) resetForm();
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Booking</DialogTitle>
@@ -286,50 +361,162 @@ export const CreateBookingDialog = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="customer_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Customer Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter customer name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="customer_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="customer@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            
+            {/* Customer Selection Section */}
+            <Card className="border-2 border-dashed">
+              <CardContent className="pt-4">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Customer</span>
+                    {totalTokens > 0 && (
+                      <Badge variant="secondary" className="ml-auto flex items-center gap-1">
+                        <Coins className="h-3 w-3" />
+                        {totalTokens} token(s) available
+                      </Badge>
+                    )}
+                  </div>
 
-            <FormField
-              control={form.control}
-              name="customer_phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Phone number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  {!selectedCustomer ? (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search existing customers by name, email, or phone..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
 
+                      {searchResults.length > 0 && (
+                        <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                          {searchResults.map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => handleSelectCustomer(customer)}
+                              className="w-full p-3 text-left hover:bg-muted/50 transition-colors flex items-center justify-between"
+                            >
+                              <div>
+                                <p className="font-medium">{customer.full_name || 'No name'}</p>
+                                <p className="text-sm text-muted-foreground">{customer.email}</p>
+                              </div>
+                              <Check className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="text-center text-sm text-muted-foreground">
+                        — or enter new customer details below —
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{selectedCustomer.full_name || 'No name'}</p>
+                        <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
+                      </div>
+                      <Button type="button" variant="ghost" size="sm" onClick={handleClearCustomer}>
+                        Change
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="customer_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Customer name" {...field} disabled={!!selectedCustomer} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="customer_email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="customer@example.com" {...field} disabled={!!selectedCustomer} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="customer_phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Phone number" {...field} disabled={!!selectedCustomer} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Token Payment Option - Show prominently if tokens available */}
+            {totalTokens > 0 && (
+              <Card className={cn(
+                "border-2 transition-colors",
+                useToken ? "border-primary bg-primary/5" : "border-dashed"
+              )}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-full",
+                        useToken ? "bg-primary text-primary-foreground" : "bg-muted"
+                      )}>
+                        <Coins className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="use_token" className="text-base font-medium cursor-pointer">
+                          Pay with Session Tokens
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Customer has {totalTokens} token(s) • Will use {watchedGuestCount} for this booking
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="use_token"
+                      checked={useToken}
+                      onCheckedChange={(checked) => {
+                        setUseToken(checked);
+                        if (checked) {
+                          form.setValue('payment_status', 'paid');
+                        }
+                      }}
+                      disabled={watchedGuestCount > totalTokens}
+                    />
+                  </div>
+                  {watchedGuestCount > totalTokens && (
+                    <p className="text-sm text-destructive mt-2">
+                      Not enough tokens. Need {watchedGuestCount}, have {totalTokens}.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Session Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -449,7 +636,11 @@ export const CreateBookingDialog = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={useToken}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -467,25 +658,27 @@ export const CreateBookingDialog = ({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="price_amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price (£)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) * 100) || 0)}
-                      value={field.value / 100}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!useToken && (
+              <FormField
+                control={form.control}
+                name="price_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price (£)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) * 100) || 0)}
+                        value={(field.value / 100).toFixed(2)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
@@ -501,58 +694,22 @@ export const CreateBookingDialog = ({
               )}
             />
 
-            {/* Token Payment Option */}
-            {totalTokens > 0 && (
-              <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-primary" />
-                    <div>
-                      <Label htmlFor="use_token" className="font-medium">Use Session Tokens</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Customer has {totalTokens} token(s) available
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="use_token"
-                    checked={useToken}
-                    onCheckedChange={(checked) => {
-                      setUseToken(checked);
-                      if (checked) {
-                        form.setValue('payment_status', 'paid');
-                      }
-                    }}
-                    disabled={watchedGuestCount > totalTokens}
-                  />
-                </div>
-                {watchedGuestCount > totalTokens && (
-                  <p className="text-sm text-destructive">
-                    Not enough tokens. Need {watchedGuestCount}, have {totalTokens}.
-                  </p>
-                )}
-                {useToken && (
-                  <Badge variant="default" className="mt-2">
-                    Will deduct {watchedGuestCount} token(s)
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  resetForm();
                   onOpenChange(false);
-                  setUseToken(false);
                 }}
                 disabled={loading}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Creating...' : useToken ? `Create (Use ${watchedGuestCount} Token${watchedGuestCount > 1 ? 's' : ''})` : 'Create Booking'}
+              <Button type="submit" disabled={loading} size="lg">
+                {loading ? 'Creating...' : useToken 
+                  ? `Create Booking (Use ${watchedGuestCount} Token${watchedGuestCount > 1 ? 's' : ''})` 
+                  : 'Create Booking'}
               </Button>
             </div>
           </form>
