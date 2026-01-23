@@ -82,7 +82,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/membership-success?session_id={CHECKOUT_SESSION_ID}&type=intro`,
+      success_url: `${req.headers.get("origin")}/intro-offer-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/memberships`,
       metadata: {
         type: "intro_offer",
