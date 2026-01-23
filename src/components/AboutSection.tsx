@@ -66,7 +66,7 @@ export const AboutSection = () => {
           </h2>
           
           <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
-            {benefits.map((benefit) => (
+            {benefits.slice(0, 6).map((benefit) => (
               <div 
                 key={benefit.number}
                 className="flex items-start gap-6 pb-6 border-b border-white/30"
@@ -84,6 +84,23 @@ export const AboutSection = () => {
                 </div>
               </div>
             ))}
+          </div>
+          
+          {/* Centered 7th benefit */}
+          <div className="flex justify-center mt-8">
+            <div className="flex items-start gap-6 pb-6 border-b border-white/30 max-w-md">
+              <span className="text-4xl md:text-5xl font-bold text-white/90">
+                {benefits[6].number}
+              </span>
+              <div className="pt-2">
+                <h3 className="text-xl md:text-2xl font-medium text-white mb-1">
+                  {benefits[6].title}
+                </h3>
+                <p className="text-white/70 text-sm md:text-base">
+                  {benefits[6].description}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
