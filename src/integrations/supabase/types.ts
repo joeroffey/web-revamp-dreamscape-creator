@@ -137,6 +137,36 @@ export type Database = {
           },
         ]
       }
+      customer_tokens: {
+        Row: {
+          created_at: string
+          customer_email: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          tokens_remaining: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          tokens_remaining?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          tokens_remaining?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
