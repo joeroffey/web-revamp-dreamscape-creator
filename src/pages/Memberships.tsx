@@ -2,7 +2,7 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Sparkles, LogIn, Gift, Loader2 } from "lucide-react";
+import { Check, Star, Sparkles, LogIn, Gift, Loader2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,10 +25,12 @@ const Memberships = () => {
   
   // Intro offer state
   const [introDialogOpen, setIntroDialogOpen] = useState(false);
-  const [introForm, setIntroForm] = useState({ name: "", email: "", phone: "" });
+  const [introForm, setIntroForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
   const [checkingEligibility, setCheckingEligibility] = useState(false);
   const [isEligible, setIsEligible] = useState<boolean | null>(null);
   const [eligibilityReason, setEligibilityReason] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Pre-fill form and check eligibility if user is logged in
   useEffect(() => {
@@ -165,6 +167,7 @@ const Memberships = () => {
   };
 
   const handleIntroOfferPurchase = async () => {
+    // Validate required fields
     if (!introForm.name || !introForm.email) {
       toast({
         title: "Missing Information",
@@ -172,6 +175,36 @@ const Memberships = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // For non-logged-in users, validate password fields
+    if (!user) {
+      if (!introForm.password) {
+        toast({
+          title: "Password Required",
+          description: "Please create a password for your account.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (introForm.password.length < 6) {
+        toast({
+          title: "Password Too Short",
+          description: "Password must be at least 6 characters.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (introForm.password !== introForm.confirmPassword) {
+        toast({
+          title: "Passwords Don't Match",
+          description: "Please make sure your passwords match.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (isEligible === false) {
@@ -186,6 +219,39 @@ const Memberships = () => {
     setLoading('intro_offer');
 
     try {
+      // If user is not logged in, create their account first
+      if (!user) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: introForm.email.trim(),
+          password: introForm.password,
+          options: {
+            data: {
+              full_name: introForm.name.trim(),
+              phone: introForm.phone.trim()
+            },
+            emailRedirectTo: window.location.origin
+          }
+        });
+
+        if (signUpError) {
+          // Check if user already exists
+          if (signUpError.message.includes('already registered')) {
+            toast({
+              title: "Account Exists",
+              description: "An account with this email already exists. Please sign in instead.",
+              variant: "destructive",
+            });
+            setLoading(null);
+            return;
+          }
+          throw signUpError;
+        }
+
+        // Small delay to ensure auth state updates
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Now proceed with payment
       const { data, error } = await supabase.functions.invoke('create-intro-offer-payment', {
         body: {
           email: introForm.email.trim(),
@@ -197,8 +263,7 @@ const Memberships = () => {
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
-        setIntroDialogOpen(false);
+        window.location.href = data.url;
       }
     } catch (error: any) {
       console.error('Intro offer purchase error:', error);
@@ -432,6 +497,70 @@ const Memberships = () => {
               />
             </div>
 
+            {/* Password fields - only show for non-logged-in users */}
+            {!user && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="intro-password">Create Password *</Label>
+                  <div className="relative">
+                    <Input
+                      id="intro-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password (min 6 characters)"
+                      value={introForm.password}
+                      onChange={(e) => setIntroForm({ ...introForm, password: e.target.value })}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="intro-confirm-password">Confirm Password *</Label>
+                  <div className="relative">
+                    <Input
+                      id="intro-confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      value={introForm.confirmPassword}
+                      onChange={(e) => setIntroForm({ ...introForm, confirmPassword: e.target.value })}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                  {introForm.password && introForm.confirmPassword && introForm.password !== introForm.confirmPassword && (
+                    <p className="text-sm text-destructive">Passwords don't match</p>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  An account will be created for you to manage your sessions.
+                </p>
+              </>
+            )}
+
             <div className="bg-muted/50 rounded-lg p-4 text-sm">
               <p className="font-medium mb-1">What you get:</p>
               <ul className="space-y-1 text-muted-foreground">
@@ -465,12 +594,18 @@ const Memberships = () => {
               <Button
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={handleIntroOfferPurchase}
-                disabled={loading === 'intro_offer' || checkingEligibility || !introForm.name || !introForm.email}
+                disabled={
+                  loading === 'intro_offer' || 
+                  checkingEligibility || 
+                  !introForm.name || 
+                  !introForm.email ||
+                  (!user && (!introForm.password || introForm.password.length < 6 || introForm.password !== introForm.confirmPassword))
+                }
               >
                 {loading === 'intro_offer' ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
+                    {!user ? "Creating Account..." : "Processing..."}
                   </>
                 ) : checkingEligibility ? (
                   <>
@@ -478,7 +613,7 @@ const Memberships = () => {
                     Checking...
                   </>
                 ) : (
-                  "Pay £35"
+                  !user ? "Create Account & Pay £35" : "Pay £35"
                 )}
               </Button>
             )}
