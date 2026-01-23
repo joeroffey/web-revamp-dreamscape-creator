@@ -43,7 +43,13 @@ serve(async (req) => {
       .limit(1);
 
     if ((previousBookings && previousBookings.length > 0) || (introTokens && introTokens.length > 0)) {
-      throw new Error("You are not eligible for the Introductory Offer");
+      const reason = previousBookings && previousBookings.length > 0
+        ? "You have previous bookings with us"
+        : "You have already used the Introductory Offer";
+      return new Response(
+        JSON.stringify({ error: reason }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
     }
 
     // Initialize Stripe
