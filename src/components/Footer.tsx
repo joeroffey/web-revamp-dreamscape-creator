@@ -28,40 +28,41 @@ export const Footer = () => {
       <div className="max-w-7xl mx-auto px-6">
         {/* Main Footer Content */}
         <div className="py-16">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Brand */}
-            <div className="lg:col-span-1">
-              <Link to="/" className="flex items-center mb-6">
-                <img 
-                  src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
-                  alt="Revitalise Hub Logo" 
-                  className="h-32 w-auto"
-                />
-              </Link>
-              <p className="text-foreground/80 mb-6 leading-relaxed">
-                Your premier destination for thermal therapy and wellness. 
-                Experience the power of ice and heat for optimal health and recovery.
-              </p>
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="bg-transparent border-foreground/20 hover:bg-foreground/10"
-                  onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
-                >
-                  <Instagram className="h-5 w-5" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="bg-transparent border-foreground/20 hover:bg-foreground/10"
-                  onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
-                >
-                  <Facebook className="h-5 w-5" />
-                </Button>
-              </div>
+          {/* Logo and Description - Centered */}
+          <div className="flex flex-col items-center text-center mb-12">
+            <Link to="/" className="mb-6">
+              <img 
+                src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
+                alt="Revitalise Hub Logo" 
+                className="h-32 w-auto"
+              />
+            </Link>
+            <p className="text-foreground/80 max-w-md leading-relaxed mb-6">
+              Your premier destination for thermal therapy and wellness. 
+              Experience the power of ice and heat for optimal health and recovery.
+            </p>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="bg-transparent border-foreground/20 hover:bg-foreground/10"
+                onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
+              >
+                <Instagram className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="bg-transparent border-foreground/20 hover:bg-foreground/10"
+                onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
+              >
+                <Facebook className="h-5 w-5" />
+              </Button>
             </div>
+          </div>
 
+          {/* Links Grid - 3 Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
             {/* Quick Links */}
             <div>
               <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
@@ -102,15 +103,15 @@ export const Footer = () => {
             <div>
               <h3 className="text-lg font-semibold mb-6">Contact</h3>
               <ul className="space-y-4">
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-3 justify-center md:justify-start">
                   <MapPin className="h-5 w-5 text-foreground/70 mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground/80 text-sm">
+                  <span className="text-foreground/80 text-sm text-left">
                     Unit 7, Ensign yard<br />
                     670 Ampress Ln<br />
                     Lymington SO41 8QY
                   </span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-3 justify-center md:justify-start">
                   <Phone className="h-5 w-5 text-foreground/70 flex-shrink-0" />
                   <a 
                     href="tel:01590698691"
@@ -119,7 +120,7 @@ export const Footer = () => {
                     01590 698 691 / 0754 696 5111
                   </a>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-3 justify-center md:justify-start">
                   <Mail className="h-5 w-5 text-foreground/70 flex-shrink-0" />
                   <a 
                     href="mailto:info@revitalisehub.co.uk"
