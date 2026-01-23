@@ -25,7 +25,6 @@ const YourVisit = () => {
   const heroImages = [
     { src: "/visit/DSC09637.jpg", alt: "Revitalise Hub ice bath recovery" },
     { src: "/visit/DSC09659.jpg", alt: "Revitalise Hub sauna experience" },
-    { src: "/visit/DSC09740.jpg", alt: "Revitalise Hub welcome and guidance" },
     { src: "/visit/DSC09792.jpg", alt: "Revitalise Hub reception and check-in" },
   ];
 
