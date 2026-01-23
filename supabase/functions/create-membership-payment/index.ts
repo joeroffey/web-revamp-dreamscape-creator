@@ -39,25 +39,38 @@ serve(async (req) => {
 
     const user = userData.user;
 
-    // Define membership pricing and details
+    // Define membership pricing and details (sessions are now MONTHLY allocations)
     const membershipPlans = {
-      "1_session_week": {
+      "4_sessions_month": {
         price: 4800, // £48 in pence
-        name: "1 Session Per Week",
-        sessions_per_week: 1,
+        name: "4 Sessions Per Month",
+        sessions_per_month: 4,
         discount_percentage: 10
       },
-      "2_sessions_week": {
+      "8_sessions_month": {
         price: 7500, // £75 in pence
-        name: "2 Sessions Per Week", 
-        sessions_per_week: 2,
+        name: "8 Sessions Per Month", 
+        sessions_per_month: 8,
         discount_percentage: 10
       },
       "unlimited": {
         price: 10000, // £100 in pence
         name: "Unlimited Membership",
-        sessions_per_week: 999,
+        sessions_per_month: 999,
         discount_percentage: 15
+      },
+      // Legacy support for old membership types
+      "1_session_week": {
+        price: 4800,
+        name: "4 Sessions Per Month (Legacy)",
+        sessions_per_month: 4,
+        discount_percentage: 10
+      },
+      "2_sessions_week": {
+        price: 7500,
+        name: "8 Sessions Per Month (Legacy)",
+        sessions_per_month: 8,
+        discount_percentage: 10
       }
     };
 
@@ -135,7 +148,7 @@ serve(async (req) => {
         metadata: {
           userId: userId,
           membershipType: membershipType,
-          sessions_per_week: plan.sessions_per_week.toString(),
+          sessions_per_month: plan.sessions_per_month.toString(),
           discount_percentage: plan.discount_percentage.toString(),
           discountCode: discountCodeRow?.code || "",
           discountCodeId: discountCodeRow?.id || "",
@@ -175,7 +188,7 @@ serve(async (req) => {
           type: "membership_onetime",
           userId: userId,
           membershipType: membershipType,
-          sessions_per_week: plan.sessions_per_week.toString(),
+          sessions_per_month: plan.sessions_per_month.toString(),
           discount_percentage: plan.discount_percentage.toString(),
           discountCode: discountCodeRow?.code || "",
           discountCodeId: discountCodeRow?.id || "",

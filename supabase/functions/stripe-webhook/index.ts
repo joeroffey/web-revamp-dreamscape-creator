@@ -125,7 +125,8 @@ serve(async (req) => {
       if (session.mode === 'subscription' && session.metadata?.membershipType && session.metadata?.userId) {
         const userId = session.metadata.userId;
         const membershipType = session.metadata.membershipType;
-        const sessionsPerWeek = Number(session.metadata.sessions_per_week || 0);
+        // Support both old (sessions_per_week) and new (sessions_per_month) metadata
+        const sessionsPerMonth = Number(session.metadata.sessions_per_month || session.metadata.sessions_per_week || 0);
         const discountPercentage = Number(session.metadata.discount_percentage || 0);
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : null;
         const originalAmount = Number(session.metadata?.originalAmount || 0);
@@ -149,8 +150,8 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             membership_type: membershipType,
-            sessions_per_week: sessionsPerWeek,
-            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerWeek,
+            sessions_per_week: sessionsPerMonth, // Column still named sessions_per_week but now stores monthly allocation
+            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerMonth,
             status: 'active',
             stripe_subscription_id: subscriptionId,
             discount_percentage: discountPercentage,
@@ -188,7 +189,8 @@ serve(async (req) => {
       if (session.mode === 'payment' && session.metadata?.type === 'membership_onetime' && session.metadata?.userId) {
         const userId = session.metadata.userId;
         const membershipType = session.metadata.membershipType;
-        const sessionsPerWeek = Number(session.metadata.sessions_per_week || 0);
+        // Support both old (sessions_per_week) and new (sessions_per_month) metadata
+        const sessionsPerMonth = Number(session.metadata.sessions_per_month || session.metadata.sessions_per_week || 0);
         const discountPercentage = Number(session.metadata.discount_percentage || 0);
         const originalAmount = Number(session.metadata?.originalAmount || 0);
         const discountAmount = Number(session.metadata?.discountAmount || 0);
@@ -210,8 +212,8 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             membership_type: membershipType,
-            sessions_per_week: sessionsPerWeek,
-            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerWeek,
+            sessions_per_week: sessionsPerMonth, // Column still named sessions_per_week but now stores monthly allocation
+            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerMonth,
             status: 'active',
             stripe_subscription_id: null,
             discount_percentage: discountPercentage,
@@ -263,13 +265,14 @@ serve(async (req) => {
           .single();
 
         if (existingMembership) {
-          // Extend the membership by 30 days
+          // Extend the membership by 30 days and reset sessions to monthly allocation
           const newEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           
           await supabase
             .from('memberships')
             .update({
               end_date: newEndDate,
+              // Reset sessions to their monthly allocation (stored in sessions_per_week column)
               sessions_remaining: existingMembership.membership_type === 'unlimited' ? 999 : existingMembership.sessions_per_week,
               updated_at: new Date().toISOString()
             })

@@ -54,7 +54,7 @@ serve(async (req) => {
 
     // Check if member has remaining credits (unless unlimited)
     if (!isUnlimited && membership.sessions_remaining < 1) {
-      throw new Error("No sessions remaining this week. Your credits reset every Monday.");
+      throw new Error("No sessions remaining this month. Your sessions reset when your membership renews.");
     }
 
     // Get time slot details

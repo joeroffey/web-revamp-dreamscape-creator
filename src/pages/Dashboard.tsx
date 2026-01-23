@@ -177,8 +177,10 @@ const Dashboard = () => {
 
   const formatMembershipType = (membershipType: string) => {
     switch (membershipType) {
-      case '1_session_week': return '1 Session Per Week';
-      case '2_sessions_week': return '2 Sessions Per Week';
+      case '1_session_week': return '4 Sessions/Month';
+      case '2_sessions_week': return '8 Sessions/Month';
+      case '4_sessions_month': return '4 Sessions/Month';
+      case '8_sessions_month': return '8 Sessions/Month';
       case 'unlimited': return 'Unlimited';
       default: return membershipType;
     }
@@ -287,7 +289,7 @@ const Dashboard = () => {
                         </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground space-y-1">
-                        <p>{membership.sessions_per_week === 999 ? 'Unlimited' : `${membership.sessions_per_week} sessions/week`}</p>
+                        <p>{membership.sessions_per_week === 999 ? 'Unlimited sessions' : `${membership.sessions_remaining} of ${membership.sessions_per_week} sessions remaining this month`}</p>
                         <p>{membership.discount_percentage}% discount on products</p>
                         {membership.end_date && (
                           <p>Expires: {new Date(membership.end_date).toLocaleDateString()}</p>
