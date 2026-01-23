@@ -35,7 +35,7 @@ export const Footer = () => {
                 <img 
                   src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
                   alt="Revitalise Hub Logo" 
-                  className="h-20 w-auto"
+                  className="h-32 w-auto"
                 />
               </Link>
               <p className="text-foreground/80 mb-6 leading-relaxed">
