@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles, Gift } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,18 @@ interface MembershipStatus {
   } | null;
 }
 
+interface TokenStatus {
+  hasTokens: boolean;
+  tokensRemaining: number;
+  isIntroOffer?: boolean;
+  tokenDetails?: {
+    id: string;
+    expiresAt: string | null;
+    notes: string | null;
+    tokensInFirstBatch: number;
+  } | null;
+}
+
 const Booking = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -50,7 +62,9 @@ const Booking = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
   const [checkingMembership, setCheckingMembership] = useState(false);
+  const [checkingTokens, setCheckingTokens] = useState(false);
   const [pricing, setPricing] = useState({ combined: 1800, private: 7000 }); // pence
   const [formData, setFormData] = useState({
     customerName: "",
@@ -122,9 +136,37 @@ const Booking = () => {
     }
   };
 
+  // Check token status when user is logged in
+  const checkTokenStatus = async () => {
+    if (!user?.email) {
+      setTokenStatus(null);
+      return;
+    }
+
+    setCheckingTokens(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-token-status', {
+        body: { email: user.email }
+      });
+
+      if (error) {
+        console.error('Error checking tokens:', error);
+        setTokenStatus(null);
+      } else {
+        setTokenStatus(data);
+      }
+    } catch (err) {
+      console.error('Error checking tokens:', err);
+      setTokenStatus(null);
+    } finally {
+      setCheckingTokens(false);
+    }
+  };
+
   useEffect(() => {
     checkMembershipForDate();
-  }, [user?.id]);
+    checkTokenStatus();
+  }, [user?.id, user?.email]);
 
   // Pre-fill user data from auth and profile if no membership
   useEffect(() => {
@@ -301,6 +343,7 @@ const Booking = () => {
   };
 
   const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook && !membershipStatus?.hasUsedCreditForDate;
+  const canUseTokens = !canUseMembership && tokenStatus?.hasTokens && tokenStatus.tokensRemaining > 0;
   const hasUsedCreditForSelectedDate = selectedTimeSlot && membershipStatus?.hasUsedCreditForDate;
 
   const handleMemberBooking = async () => {
@@ -365,6 +408,59 @@ const Booking = () => {
       }
     } catch (error) {
       console.error('Member booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      toast({
+        title: "Booking Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTokenBooking = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Please Complete All Required Fields",
+        description: "Check the form for any missing information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-token-booking', {
+        body: {
+          userId: user?.id || null,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          timeSlotId: selectedTimeSlot!.id,
+          specialRequests: formData.specialRequests,
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
+
+      if (data?.success) {
+        // Refresh token status after booking
+        await checkTokenStatus();
+        
+        const successUrl = data.isIntroOffer 
+          ? `/booking-success?tokens=true&intro=true&remaining=${data.tokensRemaining}`
+          : `/booking-success?tokens=true&remaining=${data.tokensRemaining}`;
+        
+        window.location.href = successUrl;
+      } else {
+        throw new Error(data?.error || "Failed to create booking");
+      }
+    } catch (error) {
+      console.error('Token booking error:', error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       
       toast({
@@ -509,21 +605,51 @@ const Booking = () => {
                   </p>
                 </CardContent>
               </Card>
-            ) : user && membershipStatus && !membershipStatus.hasMembership ? (
+            ) : canUseTokens && tokenStatus ? (
+              <Card className="mb-8 border-emerald-500 bg-emerald-500/5">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                        <Gift className="h-5 w-5 text-emerald-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">
+                          {tokenStatus.isIntroOffer ? 'Introductory Offer' : 'Session Tokens'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {tokenStatus.tokensRemaining} {tokenStatus.tokensRemaining === 1 ? 'session' : 'sessions'} remaining
+                          {tokenStatus.tokenDetails?.expiresAt && (
+                            <> • Expires {new Date(tokenStatus.tokenDetails.expiresAt).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="w-fit bg-emerald-500 hover:bg-emerald-600">
+                      <Gift className="h-3 w-3 mr-1" />
+                      Book Free (1 Person)
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Use your {tokenStatus.isIntroOffer ? 'introductory offer' : ''} tokens for free communal sessions. One token = one person.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : user && membershipStatus && !membershipStatus.hasMembership && !canUseTokens ? (
               <Card className="mb-8 border-muted">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-semibold text-foreground">No Active Membership</h3>
+                      <h3 className="font-semibold text-foreground">No Active Membership or Tokens</h3>
                       <p className="text-sm text-muted-foreground">
-                        Get unlimited sessions or weekly credits with a membership plan.
+                        Get unlimited sessions, weekly credits, or try our introductory offer.
                       </p>
                     </div>
                     <Button 
                       variant="outline" 
                       onClick={() => window.location.href = '/memberships'}
                     >
-                      View Memberships
+                      View Options
                     </Button>
                   </div>
                 </CardContent>
@@ -550,7 +676,7 @@ const Booking = () => {
                               <h4 className="text-base sm:text-lg font-semibold truncate">Combined Session</h4>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className="text-lg sm:text-xl font-semibold text-primary">
-                                  {canUseMembership ? 'Free' : `£${(pricing.combined / 100).toFixed(0)}`}
+                                  {canUseMembership || canUseTokens ? 'Free' : `£${(pricing.combined / 100).toFixed(0)}`}
                                 </span>
                                 <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               </div>
@@ -604,8 +730,19 @@ const Booking = () => {
                       </div>
                     )}
 
-                    {/* Booking Type Cards - Only show for non-members */}
-                    {!canUseMembership && (
+                    {/* Token-specific notice */}
+                    {canUseTokens && tokenStatus && (
+                      <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          <Gift className="h-4 w-4 inline mr-1 text-emerald-500" />
+                          <strong>{tokenStatus.isIntroOffer ? 'Introductory Offer' : 'Token'} Booking:</strong> Your tokens can only be used for communal sessions (1 person per token). 
+                          You have {tokenStatus.tokensRemaining} {tokenStatus.tokensRemaining === 1 ? 'session' : 'sessions'} remaining.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Booking Type Cards - Only show for non-members and non-token users */}
+                    {!canUseMembership && !canUseTokens && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div 
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -882,6 +1019,23 @@ const Booking = () => {
                               <span>£0 (Free with membership)</span>
                             </div>
                           </>
+                        ) : canUseTokens && tokenStatus ? (
+                          <>
+                            <div className="flex justify-between text-emerald-600 font-medium pt-2 border-t">
+                              <span>Payment:</span>
+                              <span className="flex items-center gap-1">
+                                <Gift className="h-4 w-4" />
+                                {tokenStatus.isIntroOffer ? 'Intro Offer Token' : 'Session Token'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-semibold text-emerald-600">
+                              <span>Total:</span>
+                              <span>£0 (1 token will be used)</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {tokenStatus.tokensRemaining - 1} {tokenStatus.tokensRemaining - 1 === 1 ? 'session' : 'sessions'} remaining after this booking
+                            </p>
+                          </>
                         ) : (
                           <>
                             <div className="flex justify-between">
@@ -911,6 +1065,20 @@ const Booking = () => {
                             <>
                               <Sparkles className="h-4 w-4 mr-2" />
                               Confirm Booking with Membership
+                            </>
+                          )}
+                        </Button>
+                      ) : canUseTokens ? (
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-emerald-500 text-white hover:bg-emerald-600 rounded-full"
+                          onClick={handleTokenBooking}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Processing..." : (
+                            <>
+                              <Gift className="h-4 w-4 mr-2" />
+                              Confirm Booking with Token
                             </>
                           )}
                         </Button>
@@ -945,7 +1113,13 @@ const Booking = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>Price per person:</span>
-                          <span>{canUseMembership ? 'Free with membership' : `£${(pricing.combined / 100).toFixed(0)}`}</span>
+                          <span>
+                            {canUseMembership 
+                              ? 'Free with membership' 
+                              : canUseTokens 
+                                ? 'Free with tokens' 
+                                : `£${(pricing.combined / 100).toFixed(0)}`}
+                          </span>
                         </div>
                       </div>
                     </div>
