@@ -350,7 +350,12 @@ export default function AdminMemberships() {
                           <div className="font-medium">
                             {membership.sessions_per_week === 999 || membership.membership_type === 'unlimited' 
                               ? 'Unlimited' 
-                              : `${membership.sessions_remaining} / ${membership.sessions_per_week} remaining this month`}
+                              : (() => {
+                                  // Legacy memberships stored 1 or 2 for weekly, need to show as 4 or 8 monthly
+                                  const isLegacy = membership.membership_type === '1_session_week' || membership.membership_type === '2_sessions_week';
+                                  const monthlyTotal = isLegacy ? membership.sessions_per_week * 4 : membership.sessions_per_week;
+                                  return `${membership.sessions_remaining} / ${monthlyTotal} remaining this month`;
+                                })()}
                           </div>
                         </div>
                         
