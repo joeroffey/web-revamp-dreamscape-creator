@@ -89,18 +89,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         return;
       }
 
-      // Look up customer to get user_id if they have an account
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('full_name', form.customerName.trim())
-        .single();
-
-      // Create the membership
+      // Create the membership (user_id is null for manual/cash memberships)
       const { error } = await supabase
         .from('memberships')
         .insert({
-          user_id: profile?.id || '00000000-0000-0000-0000-000000000000', // Placeholder if no account
+          user_id: null, // Manual memberships don't require a linked account
           customer_name: form.customerName.trim(),
           customer_email: form.customerEmail.trim().toLowerCase(),
           membership_type: form.membershipType,
