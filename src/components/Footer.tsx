@@ -30,31 +30,33 @@ export const Footer = () => {
         <div className="py-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand */}
-            <div className="lg:col-span-1 flex flex-col items-center">
-              <Link to="/" className="flex items-center mb-6">
-                <img 
-                  src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
-                  alt="Revitalise Hub Logo" 
-                  className="h-32 w-auto"
-                />
-              </Link>
-              <div className="flex gap-3 justify-center">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="bg-transparent border-foreground/20 hover:bg-foreground/10"
-                  onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
-                >
-                  <Instagram className="h-5 w-5" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="bg-transparent border-foreground/20 hover:bg-foreground/10"
-                  onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
-                >
-                  <Facebook className="h-5 w-5" />
-                </Button>
+            <div className="lg:col-span-1">
+              <div className="flex flex-col items-center w-fit">
+                <Link to="/" className="mb-4">
+                  <img 
+                    src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
+                    alt="Revitalise Hub Logo" 
+                    className="h-32 w-auto"
+                  />
+                </Link>
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="bg-transparent border-foreground/20 hover:bg-foreground/10"
+                    onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
+                  >
+                    <Instagram className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="bg-transparent border-foreground/20 hover:bg-foreground/10"
+                    onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
+                  >
+                    <Facebook className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
             </div>
 
