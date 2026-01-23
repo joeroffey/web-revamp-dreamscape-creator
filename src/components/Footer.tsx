@@ -30,7 +30,7 @@ export const Footer = () => {
         <div className="py-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col items-center">
               <Link to="/" className="flex items-center mb-6">
                 <img 
                   src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
@@ -38,7 +38,7 @@ export const Footer = () => {
                   className="h-32 w-auto"
                 />
               </Link>
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-center">
                 <Button 
                   variant="outline" 
                   size="icon" 
