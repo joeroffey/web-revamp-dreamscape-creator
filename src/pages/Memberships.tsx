@@ -17,32 +17,34 @@ const Memberships = () => {
 
   const membershipPlans = [
     {
-      id: "1_session_week",
-      name: "1 Session Per Week",
+      id: "4_sessions_month",
+      name: "4 Sessions Per Month",
       price: 48,
       sessions: 4,
       period: "month",
       popular: false,
       features: [
         "4 sessions per month",
+        "Use anytime within your billing period",
         "Flexible 30-day cancellation",
         "Personal use only"
       ],
       description: "Perfect for establishing a consistent wellness routine with structured contrast therapy sessions."
     },
     {
-      id: "2_sessions_week", 
-      name: "2 Sessions Per Week",
+      id: "8_sessions_month", 
+      name: "8 Sessions Per Month",
       price: 75,
       sessions: 8,
       period: "month",
       popular: true,
       features: [
         "8 sessions per month",
+        "Use anytime within your billing period",
         "Flexible 30-day cancellation",
         "Personal use only"
       ],
-      description: "Elevate your wellness journey with twice-weekly contrast therapy sessions."
+      description: "Elevate your wellness journey with regular contrast therapy sessions."
     },
     {
       id: "unlimited",

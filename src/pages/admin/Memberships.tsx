@@ -106,8 +106,10 @@ export default function AdminMemberships() {
 
   const formatMembershipType = (membershipType: string) => {
     switch (membershipType) {
-      case '1_session_week': return '1 Session Per Week';
-      case '2_sessions_week': return '2 Sessions Per Week';
+      case '1_session_week': return '4 Sessions/Month (Legacy)';
+      case '2_sessions_week': return '8 Sessions/Month (Legacy)';
+      case '4_sessions_month': return '4 Sessions Per Month';
+      case '8_sessions_month': return '8 Sessions Per Month';
       case 'unlimited': return 'Unlimited';
       default: return membershipType;
     }
@@ -344,11 +346,11 @@ export default function AdminMemberships() {
                         
                         {/* Sessions Info */}
                         <div className="space-y-1">
-                          <div className="text-muted-foreground">Sessions</div>
+                          <div className="text-muted-foreground">Monthly Sessions</div>
                           <div className="font-medium">
                             {membership.sessions_per_week === 999 || membership.membership_type === 'unlimited' 
                               ? 'Unlimited' 
-                              : `${membership.sessions_remaining} / ${membership.sessions_per_week} remaining`}
+                              : `${membership.sessions_remaining} / ${membership.sessions_per_week} remaining this month`}
                           </div>
                         </div>
                         
