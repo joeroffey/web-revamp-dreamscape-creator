@@ -123,12 +123,12 @@ export function EnhancedCreateBookingDialog({
     fetchTokens();
   }, [bookingForm.customer_email]);
 
-  // Reset useToken when guest count exceeds available tokens
+  // Reset useToken when guest count exceeds available tokens OR when switching to private session
   useEffect(() => {
-    if (useToken && bookingForm.guest_count > totalTokens) {
+    if (useToken && (bookingForm.guest_count > totalTokens || bookingForm.service_type === 'Private Session')) {
       setUseToken(false);
     }
-  }, [bookingForm.guest_count, totalTokens, useToken]);
+  }, [bookingForm.guest_count, totalTokens, useToken, bookingForm.service_type]);
 
   const createBookingMutation = useMutation({
     mutationFn: async (booking: any) => {
@@ -426,8 +426,8 @@ export function EnhancedCreateBookingDialog({
               </Button>
             </div>
 
-            {/* Token Payment Option */}
-            {totalTokens > 0 && (
+            {/* Token Payment Option - Only for communal sessions */}
+            {totalTokens > 0 && bookingForm.service_type === 'Communal Session' && (
               <Card className={cn(
                 "border-2 transition-colors",
                 useToken ? "border-primary bg-primary/5" : "border-dashed"
@@ -459,6 +459,23 @@ export function EnhancedCreateBookingDialog({
                       Not enough tokens. Customer has {totalTokens} but needs {bookingForm.guest_count}.
                     </p>
                   )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Show message when tokens available but private selected */}
+            {totalTokens > 0 && bookingForm.service_type === 'Private Session' && (
+              <Card className="border-dashed border-muted-foreground/30">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <Coins className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Session Tokens ({totalTokens} available)</p>
+                      <p className="text-sm text-muted-foreground">Tokens can only be used for communal sessions</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
