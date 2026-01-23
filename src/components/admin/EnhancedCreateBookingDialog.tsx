@@ -10,10 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, Phone, Mail, Calendar, Clock, PoundSterling, Plus, Coins } from "lucide-react";
-import { format } from "date-fns";
+import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AdminTimeSlotPicker } from "./AdminTimeSlotPicker";
 
 interface TokenRecord {
   id: string;
@@ -471,9 +471,8 @@ export function EnhancedCreateBookingDialog({
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ice_bath">Ice Bath</SelectItem>
-                    <SelectItem value="sauna">Sauna</SelectItem>
-                    <SelectItem value="combined">Combined Session</SelectItem>
+                    <SelectItem value="Communal Session">Communal Session</SelectItem>
+                    <SelectItem value="Private Session">Private Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -493,27 +492,25 @@ export function EnhancedCreateBookingDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="session_date">Date *</Label>
-                <Input
-                  id="session_date"
-                  type="date"
-                  value={bookingForm.session_date}
-                  onChange={(e) => setBookingForm({ ...bookingForm, session_date: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="session_time">Time *</Label>
-                <Input
-                  id="session_time"
-                  type="time"
-                  value={bookingForm.session_time}
-                  onChange={(e) => setBookingForm({ ...bookingForm, session_time: e.target.value })}
-                />
-              </div>
-            </div>
+            {/* Date and Time Slot Picker */}
+            {bookingForm.service_type && (
+              <AdminTimeSlotPicker
+                serviceType={bookingForm.service_type}
+                selectedDate={bookingForm.session_date}
+                selectedTime={bookingForm.session_time}
+                onDateChange={(date) => setBookingForm({ ...bookingForm, session_date: date })}
+                onTimeChange={(time) => setBookingForm({ ...bookingForm, session_time: time })}
+              />
+            )}
+
+            {!bookingForm.service_type && (
+              <Card className="border-dashed">
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Select a service type to see available dates and times</p>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
