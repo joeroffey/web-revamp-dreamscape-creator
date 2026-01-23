@@ -164,7 +164,7 @@ const Booking = () => {
       name: "Communal Session",
       duration: "1 hour",
       price: "£18",
-      description: "Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness"
+      description: "Complete contrast therapy experience with both ice bath and sauna for optimal recovery and wellness"
     }
   ];
 
@@ -555,7 +555,7 @@ const Booking = () => {
                                 <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               </div>
                             </div>
-                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">Complete thermal therapy experience with both ice bath and sauna for optimal recovery and wellness</p>
+                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">Complete contrast therapy experience with both ice bath and sauna for optimal recovery and wellness</p>
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                               <span className="text-xs sm:text-sm">1 hour</span>
