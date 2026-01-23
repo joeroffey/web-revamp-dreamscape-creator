@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Snowflake, Flame, Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
+import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const Footer = () => {
@@ -31,15 +31,12 @@ export const Footer = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand */}
             <div className="lg:col-span-1">
-              <Link to="/" className="flex items-center space-x-3 mb-6">
-                <div className="flex items-center space-x-2">
-                  <Snowflake className="h-8 w-8 text-accent-light" />
-                  <Flame className="h-8 w-8 text-wellness-heat" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold">Revitalise</span>
-                  <span className="text-sm text-foreground/70 -mt-1">Hub</span>
-                </div>
+              <Link to="/" className="flex items-center mb-6">
+                <img 
+                  src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
+                  alt="Revitalise Hub Logo" 
+                  className="h-20 w-auto"
+                />
               </Link>
               <p className="text-foreground/80 mb-6 leading-relaxed">
                 Your premier destination for thermal therapy and wellness. 
