@@ -405,7 +405,7 @@ const Memberships = () => {
                 </div>
               )}
               {isEligible === true && !checkingEligibility && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
+                <div className="flex items-center gap-2 text-sm text-primary">
                   <Check className="h-3 w-3" />
                   You're eligible for this offer!
                 </div>
@@ -438,6 +438,17 @@ const Memberships = () => {
             </div>
           </div>
 
+          {isEligible === false && !checkingEligibility && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-center">
+              <p className="text-sm text-destructive font-medium">
+                {eligibilityReason || "You are not eligible for this offer."}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                This offer is only available for first-time customers.
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -446,20 +457,27 @@ const Memberships = () => {
             >
               Cancel
             </Button>
-            <Button
-              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={handleIntroOfferPurchase}
-              disabled={loading === 'intro_offer' || isEligible === false || !introForm.name || !introForm.email}
-            >
-              {loading === 'intro_offer' ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Pay £35"
-              )}
-            </Button>
+            {isEligible !== false && (
+              <Button
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={handleIntroOfferPurchase}
+                disabled={loading === 'intro_offer' || checkingEligibility || !introForm.name || !introForm.email}
+              >
+                {loading === 'intro_offer' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : checkingEligibility ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  "Pay £35"
+                )}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
