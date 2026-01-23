@@ -158,18 +158,26 @@ export const CreateBookingDialog = ({
         return;
       }
 
+      const now = new Date().toISOString();
+      
+      // First get all tokens for this customer with remaining balance
       const { data, error } = await supabase
         .from('customer_tokens')
         .select('*')
-        .eq('customer_email', watchedEmail)
-        .gt('tokens_remaining', 0)
-        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
+        .eq('customer_email', watchedEmail.toLowerCase().trim())
+        .gt('tokens_remaining', 0);
 
       if (!error && data) {
-        setAvailableTokens(data);
-        const total = data.reduce((sum, t) => sum + t.tokens_remaining, 0);
+        // Filter client-side: tokens that never expire OR haven't expired yet
+        const validTokens = data.filter(token => 
+          !token.expires_at || new Date(token.expires_at) > new Date()
+        );
+        setAvailableTokens(validTokens);
+        const total = validTokens.reduce((sum, t) => sum + t.tokens_remaining, 0);
         setTotalTokens(total);
+        console.log('Fetched tokens for', watchedEmail, ':', validTokens.length, 'valid tokens, total:', total);
       } else {
+        console.log('Token fetch error or no data:', error);
         setAvailableTokens([]);
         setTotalTokens(0);
       }
