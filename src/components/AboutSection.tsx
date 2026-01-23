@@ -104,8 +104,50 @@ export const AboutSection = () => {
               </div>
             </div>
           </div>
+      </div>
+    </section>
+
+    {/* How It Started Section */}
+    <section className="py-24 bg-gallery">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          {/* Image */}
+          <div className="rounded-2xl overflow-hidden shadow-lg">
+            <img
+              src="/lovable-uploads/founders-lewis-tommy.png"
+              alt="Lewis and Tommy, founders of Revitalise Hub"
+              className="w-full h-auto object-cover"
+              loading="lazy"
+            />
+          </div>
+          
+          {/* Content */}
+          <div className="space-y-6">
+            <h2 className="text-3xl md:text-5xl font-light text-foreground tracking-tight">
+              How It Started
+            </h2>
+            
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed font-light">
+              <p>
+                Revitalise Hub was founded by Lewis and Tommy, two friends with a shared passion for the power of cold water and its ability to reset both body and mind. What started as a personal journey has grown into a space where others can experience the same sense of renewal, resilience, and clarity.
+              </p>
+              
+              <p>
+                Step into the contrast of ice baths and sauna sessions, designed to invigorate, challenge, and restore. The sharp energy of cold immersion meets the deep relaxation of heat therapy, leaving you refreshed, balanced, and ready to take on life with a clearer mind.
+              </p>
+              
+              <p className="font-medium text-foreground">
+                Revitalise Hub is your space to pause, reset, and recharge.
+              </p>
+              
+              <p>
+                Our facility will feature two ice baths and an eight-person sauna, allowing us to accommodate up to five customers per hour for personalised and impactful sessions.
+              </p>
+            </div>
+          </div>
         </div>
-      </section>
-    </>
-  );
+      </div>
+    </section>
+  </>
+);
 };
