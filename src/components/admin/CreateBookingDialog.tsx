@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -32,7 +35,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { CalendarIcon, Clock, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
@@ -47,11 +50,20 @@ const formSchema = z.object({
   guest_count: z.number().min(1).max(5),
   service_type: z.enum(['combined']),
   price_amount: z.number().min(0),
-  payment_status: z.enum(['paid', 'pending', 'comp']),
+  payment_status: z.enum(['paid', 'pending', 'comp', 'token']),
   special_requests: z.string().optional(),
+  use_token: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+interface TokenRecord {
+  id: string;
+  customer_email: string;
+  tokens_remaining: number;
+  expires_at: string | null;
+  notes: string | null;
+}
 
 interface CreateBookingDialogProps {
   open: boolean;
@@ -67,7 +79,9 @@ export const CreateBookingDialog = ({
   preselectedDate
 }: CreateBookingDialogProps) => {
   const [loading, setLoading] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
+  const [totalTokens, setTotalTokens] = useState(0);
+  const [useToken, setUseToken] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -84,10 +98,48 @@ export const CreateBookingDialog = ({
       price_amount: 3500, // £35.00 in pence
       payment_status: 'paid',
       special_requests: '',
+      use_token: false,
     },
   });
 
-  const watchedDate = form.watch('session_date');
+  const watchedEmail = form.watch('customer_email');
+  const watchedGuestCount = form.watch('guest_count');
+
+  // Fetch available tokens when email changes
+  useEffect(() => {
+    const fetchTokens = async () => {
+      if (!watchedEmail || !watchedEmail.includes('@')) {
+        setAvailableTokens([]);
+        setTotalTokens(0);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('customer_tokens')
+        .select('*')
+        .eq('customer_email', watchedEmail)
+        .gt('tokens_remaining', 0)
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
+
+      if (!error && data) {
+        setAvailableTokens(data);
+        const total = data.reduce((sum, t) => sum + t.tokens_remaining, 0);
+        setTotalTokens(total);
+      } else {
+        setAvailableTokens([]);
+        setTotalTokens(0);
+      }
+    };
+
+    fetchTokens();
+  }, [watchedEmail]);
+
+  // Reset useToken when guest count exceeds available tokens
+  useEffect(() => {
+    if (useToken && watchedGuestCount > totalTokens) {
+      setUseToken(false);
+    }
+  }, [watchedGuestCount, totalTokens, useToken]);
 
   // Generate time slots
   const timeSlots = Array.from({ length: 11 }, (_, i) => {
@@ -153,13 +205,42 @@ export const CreateBookingDialog = ({
           guest_count: data.guest_count,
           duration_minutes: 60,
           price_amount: data.price_amount,
-          payment_status: data.payment_status,
+          final_amount: useToken ? 0 : data.price_amount,
+          payment_status: useToken ? 'paid' : data.payment_status,
           booking_status: 'confirmed',
-          special_requests: data.special_requests,
+          special_requests: useToken 
+            ? `${data.special_requests || ''} [Paid with ${data.guest_count} token(s)]`.trim()
+            : data.special_requests,
           time_slot_id: timeSlot.id,
         });
 
       if (bookingError) throw bookingError;
+
+      // Deduct tokens if using token payment
+      if (useToken) {
+        let tokensToDeduct = data.guest_count;
+        
+        // Sort tokens by expiry (soonest first, never-expire last)
+        const sortedTokens = [...availableTokens].sort((a, b) => {
+          if (!a.expires_at) return 1;
+          if (!b.expires_at) return -1;
+          return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+        });
+
+        for (const token of sortedTokens) {
+          if (tokensToDeduct <= 0) break;
+          
+          const deductFromThis = Math.min(tokensToDeduct, token.tokens_remaining);
+          tokensToDeduct -= deductFromThis;
+          
+          await supabase
+            .from('customer_tokens')
+            .update({ 
+              tokens_remaining: token.tokens_remaining - deductFromThis,
+            })
+            .eq('id', token.id);
+        }
+      }
 
       // Update time slot availability
       const newBookedCount = timeSlot.booked_count + data.guest_count;
@@ -173,8 +254,16 @@ export const CreateBookingDialog = ({
         })
         .eq('id', timeSlot.id);
 
+      toast({
+        title: "Booking created",
+        description: useToken 
+          ? `Booking created using ${data.guest_count} token(s)`
+          : "Booking created successfully",
+      });
+
       onBookingCreated();
       form.reset();
+      setUseToken(false);
       
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -412,17 +501,58 @@ export const CreateBookingDialog = ({
               )}
             />
 
+            {/* Token Payment Option */}
+            {totalTokens > 0 && (
+              <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-primary" />
+                    <div>
+                      <Label htmlFor="use_token" className="font-medium">Use Session Tokens</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Customer has {totalTokens} token(s) available
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="use_token"
+                    checked={useToken}
+                    onCheckedChange={(checked) => {
+                      setUseToken(checked);
+                      if (checked) {
+                        form.setValue('payment_status', 'paid');
+                      }
+                    }}
+                    disabled={watchedGuestCount > totalTokens}
+                  />
+                </div>
+                {watchedGuestCount > totalTokens && (
+                  <p className="text-sm text-destructive">
+                    Not enough tokens. Need {watchedGuestCount}, have {totalTokens}.
+                  </p>
+                )}
+                {useToken && (
+                  <Badge variant="default" className="mt-2">
+                    Will deduct {watchedGuestCount} token(s)
+                  </Badge>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-end space-x-2">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  onOpenChange(false);
+                  setUseToken(false);
+                }}
                 disabled={loading}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Booking'}
+                {loading ? 'Creating...' : useToken ? `Create (Use ${watchedGuestCount} Token${watchedGuestCount > 1 ? 's' : ''})` : 'Create Booking'}
               </Button>
             </div>
           </form>

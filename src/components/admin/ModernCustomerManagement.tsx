@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatGBP } from "@/lib/format";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { CustomerTokensSection } from "@/components/admin/CustomerTokensSection";
 
 type SortField = 'name' | 'email' | 'bookings' | 'revenue' | 'last_booking';
 type SortDirection = 'asc' | 'desc';
@@ -991,6 +992,11 @@ export default function ModernCustomerManagement() {
                     </CardContent>
                   </Card>
                 )}
+                {/* Session Tokens Section */}
+                <CustomerTokensSection 
+                  customerEmail={selectedCustomer.email} 
+                  customerName={selectedCustomer.full_name || selectedCustomer.email} 
+                />
 
                 <Card>
                   <CardHeader>
