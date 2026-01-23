@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -59,64 +58,20 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      // Fetch profiles - these are users who have accounts
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .order('full_name', { ascending: true });
+      const { data, error } = await supabase.functions.invoke('get-users-with-accounts');
 
       if (error) throw error;
 
-      // We need to get emails from auth - but we can't access auth.users directly
-      // Instead, we'll check memberships and bookings for email associations
-      // Or use customers table if they exist there
-      
-      // For now, let's fetch from customers table and cross-reference with profiles
-      const { data: customers } = await supabase
-        .from('customers')
-        .select('email, full_name');
-
-      // Also check bookings for email associations with user_ids
-      const { data: bookingsWithUsers } = await supabase
-        .from('bookings')
-        .select('user_id, customer_email, customer_name')
-        .not('user_id', 'is', null);
-
-      // Build a map of user_id to email from bookings
-      const userEmailMap = new Map<string, { email: string; name: string }>();
-      bookingsWithUsers?.forEach(b => {
-        if (b.user_id && b.customer_email) {
-          userEmailMap.set(b.user_id, { email: b.customer_email, name: b.customer_name });
-        }
-      });
-
-      // Also check existing memberships for email associations
-      const { data: membershipsWithUsers } = await supabase
-        .from('memberships')
-        .select('user_id, customer_email, customer_name')
-        .not('user_id', 'is', null);
-
-      membershipsWithUsers?.forEach(m => {
-        if (m.user_id && m.customer_email) {
-          userEmailMap.set(m.user_id, { email: m.customer_email, name: m.customer_name || '' });
-        }
-      });
-
-      // Combine profiles with email info
-      const usersWithEmails: UserProfile[] = (profiles || [])
-        .map(profile => {
-          const emailInfo = userEmailMap.get(profile.id);
-          return {
-            id: profile.id,
-            full_name: profile.full_name || emailInfo?.name || 'Unknown',
-            email: emailInfo?.email || '',
-          };
-        })
-        .filter(u => u.email); // Only show users where we have an email
-
-      setUsers(usersWithEmails);
+      if (data?.users) {
+        setUsers(data.users);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load customers",
+        variant: "destructive",
+      });
     } finally {
       setLoadingUsers(false);
     }
@@ -234,11 +189,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
                   variant="outline"
                   role="combobox"
                   aria-expanded={userSearchOpen}
-                  className="w-full justify-between"
+                  className="w-full justify-between h-auto min-h-[40px]"
                 >
                   {selectedUser ? (
                     <div className="flex items-center gap-2 text-left">
-                      <User className="h-4 w-4 text-muted-foreground" />
+                      <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <div className="flex flex-col">
                         <span className="font-medium">{selectedUser.full_name}</span>
                         <span className="text-xs text-muted-foreground">{selectedUser.email}</span>
@@ -252,7 +207,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
               </PopoverTrigger>
               <PopoverContent className="w-[350px] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder="Search customers..." />
+                  <CommandInput placeholder="Search by name or email..." />
                   <CommandList>
                     <CommandEmpty>
                       {loadingUsers ? (
@@ -261,10 +216,10 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
                           <span className="ml-2">Loading customers...</span>
                         </div>
                       ) : (
-                        "No customers found with accounts."
+                        "No customers found."
                       )}
                     </CommandEmpty>
-                    <CommandGroup>
+                    <CommandGroup heading={`${users.length} customers with accounts`}>
                       {users.map((user) => (
                         <CommandItem
                           key={user.id}
@@ -291,11 +246,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
                 </Command>
               </PopoverContent>
             </Popover>
-            {users.length === 0 && !loadingUsers && (
-              <p className="text-xs text-muted-foreground">
-                No customers with accounts found. Customers need to sign up first.
-              </p>
-            )}
           </div>
 
           <div className="space-y-2">
