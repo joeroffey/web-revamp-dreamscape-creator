@@ -246,6 +246,49 @@ serve(async (req) => {
             });
         }
       }
+
+      // Handle intro offer purchase (adds tokens to customer_tokens)
+      if (session.mode === 'payment' && session.metadata?.type === 'intro_offer') {
+        const customerEmail = session.metadata.customerEmail?.toLowerCase().trim();
+        const customerName = session.metadata.customerName || '';
+
+        if (customerEmail) {
+          // Calculate expiry date (3 months from now)
+          const expiresAt = new Date();
+          expiresAt.setMonth(expiresAt.getMonth() + 3);
+
+          // Insert tokens for the customer
+          const { error: tokenError } = await supabase
+            .from('customer_tokens')
+            .insert({
+              customer_email: customerEmail,
+              tokens_remaining: 3,
+              expires_at: expiresAt.toISOString(),
+              notes: `Introductory Offer - 3 Sessions for £35 (purchased by ${customerName})`
+            });
+
+          if (tokenError) {
+            console.error('Error inserting intro offer tokens:', tokenError);
+          } else {
+            console.log('Intro offer tokens created for:', customerEmail);
+          }
+
+          // Also add/update customer record if not exists
+          const { data: existingCustomer } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('email', customerEmail)
+            .maybeSingle();
+
+          if (!existingCustomer) {
+            await supabase.from('customers').insert({
+              email: customerEmail,
+              full_name: customerName,
+              phone: session.metadata.customerPhone || null
+            });
+          }
+        }
+      }
     }
 
     // Handle subscription renewal (invoice paid for recurring subscriptions)
