@@ -35,7 +35,7 @@ export const BookingCards = () => {
               onClick={() => navigate('/booking')}
               className="bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 font-medium"
             >
-              BOOK A SESSION
+              BOOK NOW
             </Button>
           </div>
           
