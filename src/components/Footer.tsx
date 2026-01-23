@@ -38,12 +38,6 @@ export const Footer = () => {
                   className="h-32 w-auto"
                 />
               </Link>
-              {/* Spacer to align with heading height of other columns */}
-              <div className="h-[calc(1.125rem*1.75+1.5rem)]" />
-              <p className="text-foreground/80 mb-6 leading-relaxed">
-                Your premier destination for thermal therapy and wellness. 
-                Experience the power of ice and heat for optimal health and recovery.
-              </p>
               <div className="flex gap-3">
                 <Button 
                   variant="outline" 
