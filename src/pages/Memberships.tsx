@@ -30,14 +30,16 @@ const Memberships = () => {
   const [isEligible, setIsEligible] = useState<boolean | null>(null);
   const [eligibilityReason, setEligibilityReason] = useState<string | null>(null);
 
-  // Pre-fill form if user is logged in
+  // Pre-fill form and check eligibility if user is logged in
   useEffect(() => {
-    if (user) {
+    if (user?.email) {
       setIntroForm(prev => ({
         ...prev,
         email: user.email || "",
         name: user.user_metadata?.full_name || user.user_metadata?.name || ""
       }));
+      // Auto-check eligibility for logged-in users
+      checkIntroEligibility(user.email);
     }
   }, [user]);
 
@@ -252,44 +254,46 @@ const Memberships = () => {
               )}
             </div>
 
-            {/* Introductory Offer Card */}
-            <div className="mb-12">
-              <Card className="wellness-card border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
-                <CardContent className="p-8">
-                  <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex-shrink-0">
-                      <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
-                        <Gift className="h-8 w-8 text-primary" />
+            {/* Introductory Offer Card - Only show if not signed in, or signed in and eligible */}
+            {(!user || isEligible === true || isEligible === null) && (
+              <div className="mb-12">
+                <Card className="wellness-card border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                  <CardContent className="p-8">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                          <Gift className="h-8 w-8 text-primary" />
+                        </div>
+                      </div>
+                      <div className="flex-1 text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                          <h3 className="text-xl font-semibold text-foreground">Introductory Offer</h3>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary">First-Timers Only</Badge>
+                        </div>
+                        <p className="text-muted-foreground mb-2">
+                          New to contrast therapy? Try <strong>3 sessions for just £35</strong> – use them anytime within 3 months.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Available exclusively for first-time customers with no previous bookings.
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0 text-center">
+                        <div className="mb-2">
+                          <span className="text-3xl font-bold text-primary">£35</span>
+                          <span className="text-muted-foreground text-sm block">for 3 sessions</span>
+                        </div>
+                        <Button 
+                          className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                          onClick={() => setIntroDialogOpen(true)}
+                        >
+                          Get Started
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                        <h3 className="text-xl font-semibold text-foreground">Introductory Offer</h3>
-                        <Badge variant="secondary" className="bg-primary/10 text-primary">First-Timers Only</Badge>
-                      </div>
-                      <p className="text-muted-foreground mb-2">
-                        New to contrast therapy? Try <strong>3 sessions for just £35</strong> – use them anytime within 3 months.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Available exclusively for first-time customers with no previous bookings.
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 text-center">
-                      <div className="mb-2">
-                        <span className="text-3xl font-bold text-primary">£35</span>
-                        <span className="text-muted-foreground text-sm block">for 3 sessions</span>
-                      </div>
-                      <Button 
-                        className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                        onClick={() => setIntroDialogOpen(true)}
-                      >
-                        Get Started
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             <div className="grid md:grid-cols-3 gap-8 mb-16">
               {membershipPlans.map((plan) => (
