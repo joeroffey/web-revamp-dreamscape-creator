@@ -135,7 +135,7 @@ const YourVisit = () => {
 
             {/* Image grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {heroImages.map((img) => (
+              {heroImages.slice(0, 2).map((img) => (
                 <div
                   key={img.src}
                   className="rounded-2xl overflow-hidden shadow-sm border border-border bg-muted"
@@ -149,6 +149,18 @@ const YourVisit = () => {
                 </div>
               ))}
             </div>
+            {heroImages.length > 2 && (
+              <div className="mt-6 flex justify-center">
+                <div className="w-full md:w-1/2 rounded-2xl overflow-hidden shadow-sm border border-border bg-muted">
+                  <img
+                    src={heroImages[2].src}
+                    alt={heroImages[2].alt}
+                    className="w-full h-72 md:h-80 object-cover object-[70%_center]"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
