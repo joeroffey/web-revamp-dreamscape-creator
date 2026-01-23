@@ -6,11 +6,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, Phone, Mail, Calendar, Clock, PoundSterling, Plus } from "lucide-react";
+import { Search, User, Phone, Mail, Calendar, Clock, PoundSterling, Plus, Coins } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+interface TokenRecord {
+  id: string;
+  customer_email: string;
+  tokens_remaining: number;
+  expires_at: string | null;
+  notes: string | null;
+}
 
 interface EnhancedCreateBookingDialogProps {
   open: boolean;
@@ -29,6 +40,9 @@ export function EnhancedCreateBookingDialog({
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
+  const [totalTokens, setTotalTokens] = useState(0);
+  const [useToken, setUseToken] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     customer_name: "",
     customer_email: "",
@@ -51,8 +65,6 @@ export function EnhancedCreateBookingDialog({
     queryFn: async () => {
       if (!customerSearch.trim()) return [];
       
-      // CRM uses public.customers (separate from auth users). This keeps Admin operations working
-      // even for guest bookings.
       const { data, error } = await supabase
         .from("customers")
         .select("id, full_name, email, phone, tags")
@@ -77,6 +89,47 @@ export function EnhancedCreateBookingDialog({
     },
   });
 
+  // Fetch tokens when email changes
+  useEffect(() => {
+    const fetchTokens = async () => {
+      const email = bookingForm.customer_email?.toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        setAvailableTokens([]);
+        setTotalTokens(0);
+        setUseToken(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('customer_tokens')
+        .select('*')
+        .eq('customer_email', email)
+        .gt('tokens_remaining', 0);
+
+      if (!error && data) {
+        // Filter: tokens that never expire OR haven't expired yet
+        const validTokens = data.filter(token => 
+          !token.expires_at || new Date(token.expires_at) > new Date()
+        );
+        setAvailableTokens(validTokens);
+        const total = validTokens.reduce((sum, t) => sum + t.tokens_remaining, 0);
+        setTotalTokens(total);
+      } else {
+        setAvailableTokens([]);
+        setTotalTokens(0);
+      }
+    };
+
+    fetchTokens();
+  }, [bookingForm.customer_email]);
+
+  // Reset useToken when guest count exceeds available tokens
+  useEffect(() => {
+    if (useToken && bookingForm.guest_count > totalTokens) {
+      setUseToken(false);
+    }
+  }, [bookingForm.guest_count, totalTokens, useToken]);
+
   const createBookingMutation = useMutation({
     mutationFn: async (booking: any) => {
       // If creating a new customer or if no customer is selected, upsert the customer record first.
@@ -94,19 +147,61 @@ export function EnhancedCreateBookingDialog({
         if (customerErr) throw customerErr;
       }
 
+      // Adjust payment if using tokens
+      const finalBooking = {
+        ...booking,
+        payment_status: useToken ? 'paid' : 'pending',
+        final_amount: useToken ? 0 : booking.price_amount,
+        special_requests: useToken 
+          ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
+          : booking.special_requests,
+      };
+
       const { data, error } = await supabase
         .from("bookings")
-        .insert(booking)
+        .insert(finalBooking)
         .select()
         .single();
 
       if (error) throw error;
+
+      // Deduct tokens if using token payment
+      if (useToken) {
+        let tokensToDeduct = booking.guest_count;
+        
+        // Sort tokens by expiry (soonest first, never-expire last)
+        const sortedTokens = [...availableTokens].sort((a, b) => {
+          if (!a.expires_at) return 1;
+          if (!b.expires_at) return -1;
+          return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+        });
+
+        for (const token of sortedTokens) {
+          if (tokensToDeduct <= 0) break;
+          
+          const deductFromThis = Math.min(tokensToDeduct, token.tokens_remaining);
+          tokensToDeduct -= deductFromThis;
+          
+          await supabase
+            .from('customer_tokens')
+            .update({ 
+              tokens_remaining: token.tokens_remaining - deductFromThis,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', token.id);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["daily-bookings"] });
-      toast.success("Booking created successfully");
+      queryClient.invalidateQueries({ queryKey: ["customer-tokens"] });
+      toast.success(useToken 
+        ? `Booking created using ${bookingForm.guest_count} token(s)`
+        : "Booking created successfully"
+      );
       resetForm();
     },
     onError: (error) => {
@@ -144,6 +239,9 @@ export function EnhancedCreateBookingDialog({
     setCustomerSearch("");
     setSelectedCustomer(null);
     setIsNewCustomer(false);
+    setAvailableTokens([]);
+    setTotalTokens(0);
+    setUseToken(false);
     setBookingForm({
       customer_name: "",
       customer_email: "",
@@ -203,7 +301,7 @@ export function EnhancedCreateBookingDialog({
             <div className="space-y-2">
               <Label>Search for existing customer</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search by name, email, or phone..."
                   value={customerSearch}
@@ -220,7 +318,7 @@ export function EnhancedCreateBookingDialog({
                   {existingCustomers.map((customer) => (
                     <div
                       key={customer.id}
-                      className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => handleCustomerSelect(customer)}
                     >
                       <div className="flex items-center justify-between">
@@ -296,6 +394,23 @@ export function EnhancedCreateBookingDialog({
               />
             </div>
 
+            {/* Show token balance if customer has tokens */}
+            {totalTokens > 0 && (
+              <Card className="border-primary/50 bg-primary/5">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary text-primary-foreground">
+                      <Coins className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Customer has {totalTokens} session token(s)</p>
+                      <p className="text-sm text-muted-foreground">Can be used for payment in the next step</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Button onClick={() => setStep(3)} className="w-full">
               Continue to Booking Details
             </Button>
@@ -310,6 +425,43 @@ export function EnhancedCreateBookingDialog({
                 Back
               </Button>
             </div>
+
+            {/* Token Payment Option */}
+            {totalTokens > 0 && (
+              <Card className={cn(
+                "border-2 transition-colors",
+                useToken ? "border-primary bg-primary/5" : "border-dashed"
+              )}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-full",
+                        useToken ? "bg-primary text-primary-foreground" : "bg-muted"
+                      )}>
+                        <Coins className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Pay with Session Tokens</p>
+                        <p className="text-sm text-muted-foreground">
+                          {totalTokens} token(s) available • Uses {bookingForm.guest_count} token(s)
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={useToken}
+                      onCheckedChange={setUseToken}
+                      disabled={bookingForm.guest_count > totalTokens}
+                    />
+                  </div>
+                  {bookingForm.guest_count > totalTokens && (
+                    <p className="text-sm text-destructive mt-2">
+                      Not enough tokens. Customer has {totalTokens} but needs {bookingForm.guest_count}.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -401,18 +553,23 @@ export function EnhancedCreateBookingDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price_amount">Price (£)</Label>
+                <Label htmlFor="price_amount">
+                  Price (pence) {useToken && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
+                </Label>
                 <div className="relative">
-                  <PoundSterling className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <PoundSterling className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     id="price_amount"
                     type="number"
-                    step="0.01"
                     value={bookingForm.price_amount}
                     onChange={(e) => setBookingForm({ ...bookingForm, price_amount: parseFloat(e.target.value) || 0 })}
-                    className="pl-10"
+                    className={cn("pl-10", useToken && "opacity-50")}
+                    disabled={useToken}
                   />
                 </div>
+                {useToken && (
+                  <p className="text-xs text-muted-foreground">Price will be £0.00 (paid with tokens)</p>
+                )}
               </div>
             </div>
 
@@ -435,7 +592,7 @@ export function EnhancedCreateBookingDialog({
                 onClick={handleCreateBooking}
                 disabled={createBookingMutation.isPending}
               >
-                Create Booking
+                {useToken ? `Create Booking (${bookingForm.guest_count} Token${bookingForm.guest_count > 1 ? 's' : ''})` : 'Create Booking'}
               </Button>
             </div>
           </div>
