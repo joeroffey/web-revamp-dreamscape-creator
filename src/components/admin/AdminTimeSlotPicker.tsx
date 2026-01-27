@@ -31,7 +31,7 @@ interface AdminTimeSlotPickerProps {
   selectedDate: string;
   selectedTime: string;
   onDateChange: (date: string) => void;
-  onTimeChange: (time: string, timeSlotId?: string) => void;
+  onTimeChange: (time: string, timeSlotId?: string, slotInfo?: { hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number }) => void;
 }
 
 export function AdminTimeSlotPicker({
@@ -366,7 +366,11 @@ export function AdminTimeSlotPicker({
                     <div key={slot.id} className="relative">
                       <Button
                         variant={isSelected ? "default" : "outline"}
-                        onClick={() => !isDisabled && onTimeChange(slot.slot_time, slot.id)}
+                        onClick={() => !isDisabled && onTimeChange(slot.slot_time, slot.id, {
+                          hasCommunalBookings: (slot.total_communal_guests || 0) > 0,
+                          hasPrivateBooking: slot.has_private_booking || false,
+                          availableSpaces: slot.available_spaces || 0
+                        })}
                         disabled={isDisabled}
                         className={`w-full p-2 h-auto text-xs flex flex-col gap-0.5 ${
                           isPastSlot ? "opacity-40 cursor-not-allowed" : ""
