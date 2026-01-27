@@ -530,6 +530,13 @@ export function EnhancedCreateBookingDialog({
                     <SelectItem value="Private Session">Private Session</SelectItem>
                   </SelectContent>
                 </Select>
+                {/* Warning when private selected but slot has communal bookings */}
+                {bookingForm.service_type === 'Private Session' && selectedSlotInfo?.hasCommunalBookings && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Slot has communal bookings - private unavailable
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
