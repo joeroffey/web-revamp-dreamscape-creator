@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins } from "lucide-react";
+import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminTimeSlotPicker } from "./AdminTimeSlotPicker";
@@ -43,6 +43,7 @@ export function EnhancedCreateBookingDialog({
   const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
+  const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number } | null>(null);
   const [bookingForm, setBookingForm] = useState({
     customer_name: "",
     customer_email: "",
@@ -270,6 +271,7 @@ export function EnhancedCreateBookingDialog({
     setAvailableTokens([]);
     setTotalTokens(0);
     setUseToken(false);
+    setSelectedSlotInfo(null);
     setBookingForm({
       customer_name: "",
       customer_email: "",
@@ -309,6 +311,12 @@ export function EnhancedCreateBookingDialog({
   const handleCreateBooking = () => {
     if (!bookingForm.customer_name || !bookingForm.customer_email || !bookingForm.service_type || !bookingForm.session_date) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Prevent private booking if communal bookings exist in this slot
+    if (bookingForm.service_type === 'Private Session' && selectedSlotInfo?.hasCommunalBookings) {
+      toast.error("Cannot book a private session - this slot already has communal bookings");
       return;
     }
 
@@ -522,6 +530,13 @@ export function EnhancedCreateBookingDialog({
                     <SelectItem value="Private Session">Private Session</SelectItem>
                   </SelectContent>
                 </Select>
+                {/* Warning when private selected but slot has communal bookings */}
+                {bookingForm.service_type === 'Private Session' && selectedSlotInfo?.hasCommunalBookings && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Slot has communal bookings - private unavailable
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -560,8 +575,20 @@ export function EnhancedCreateBookingDialog({
                 serviceType={bookingForm.service_type}
                 selectedDate={bookingForm.session_date}
                 selectedTime={bookingForm.session_time}
-                onDateChange={(date) => setBookingForm({ ...bookingForm, session_date: date, time_slot_id: "" })}
-                onTimeChange={(time, timeSlotId) => setBookingForm({ ...bookingForm, session_time: time, time_slot_id: timeSlotId || "" })}
+                onDateChange={(date) => {
+                  setBookingForm({ ...bookingForm, session_date: date, time_slot_id: "" });
+                  setSelectedSlotInfo(null);
+                }}
+                onTimeChange={(time, timeSlotId, slotInfo) => {
+                  setBookingForm({ ...bookingForm, session_time: time, time_slot_id: timeSlotId || "" });
+                  if (slotInfo) {
+                    setSelectedSlotInfo(slotInfo);
+                    // If selecting private but slot has communal bookings, show warning
+                    if (bookingForm.service_type === 'Private Session' && slotInfo.hasCommunalBookings) {
+                      toast.error("This slot has communal bookings - private session not available");
+                    }
+                  }
+                }}
               />
             )}
 
