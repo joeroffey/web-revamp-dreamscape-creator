@@ -621,7 +621,7 @@ export function EnhancedCreateBookingDialog({
                     id="price_amount"
                     type="number"
                     min="0"
-                    value={bookingForm.price_amount / 100}
+                    value={bookingForm.price_amount === 0 ? '' : bookingForm.price_amount / 100}
                     onChange={(e) => setBookingForm({ ...bookingForm, price_amount: Math.round(parseFloat(e.target.value || '0') * 100) })}
                     className={cn("pl-8", useToken && "opacity-50")}
                     disabled={useToken}
