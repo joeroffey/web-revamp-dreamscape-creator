@@ -473,6 +473,36 @@ export type Database = {
           },
         ]
       }
+      partner_codes: {
+        Row: {
+          company_name: string
+          created_at: string
+          discount_percentage: number
+          id: string
+          is_active: boolean
+          promo_code: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          discount_percentage: number
+          id?: string
+          is_active?: boolean
+          promo_code: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          is_active?: boolean
+          promo_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pricing_config: {
         Row: {
           created_at: string

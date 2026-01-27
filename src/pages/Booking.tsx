@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles, Gift } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles, Gift, Tag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -73,6 +73,14 @@ const Booking = () => {
   const [checkingMembership, setCheckingMembership] = useState(false);
   const [checkingTokens, setCheckingTokens] = useState(false);
   const [pricing, setPricing] = useState({ combined: 1800, private: 7000 }); // pence
+  const [promoCode, setPromoCode] = useState("");
+  const [promoCodeStatus, setPromoCodeStatus] = useState<{
+    isValid: boolean | null;
+    message: string;
+    discountPercentage?: number;
+    companyName?: string;
+  }>({ isValid: null, message: "" });
+  const [validatingPromo, setValidatingPromo] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -347,14 +355,86 @@ const Booking = () => {
   };
 
   const calculateTotalPrice = () => {
+    let basePrice = 0;
     if (formData.bookingType === 'private') {
-      return pricing.private / 100;
+      basePrice = pricing.private / 100;
+    } else if (canUseMembership) {
+      basePrice = (pricing.combined / 100) * formData.payingGuestCount;
+    } else {
+      basePrice = (pricing.combined / 100) * formData.guestCount;
     }
-    // For members with paying guests, only guests pay
-    if (canUseMembership) {
-      return (pricing.combined / 100) * formData.payingGuestCount;
+    
+    // Apply promo code discount
+    if (promoCodeStatus.isValid && promoCodeStatus.discountPercentage) {
+      const discount = basePrice * (promoCodeStatus.discountPercentage / 100);
+      return basePrice - discount;
     }
-    return (pricing.combined / 100) * formData.guestCount;
+    
+    return basePrice;
+  };
+
+  const validatePromoCode = async (code: string) => {
+    if (!code.trim()) {
+      setPromoCodeStatus({ isValid: null, message: "" });
+      return;
+    }
+
+    setValidatingPromo(true);
+    try {
+      // Check partner_codes table
+      const { data: partnerCode, error } = await supabase
+        .from('partner_codes')
+        .select('company_name, discount_percentage, promo_code')
+        .eq('promo_code', code.toUpperCase().trim())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (partnerCode) {
+        setPromoCodeStatus({
+          isValid: true,
+          message: `${partnerCode.discount_percentage}% off (${partnerCode.company_name})`,
+          discountPercentage: partnerCode.discount_percentage,
+          companyName: partnerCode.company_name
+        });
+      } else {
+        // Also check general discount codes
+        const { data: discountCode } = await supabase
+          .from('discount_codes')
+          .select('code, discount_type, discount_value, is_active')
+          .eq('code', code.toUpperCase().trim())
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (discountCode && discountCode.discount_type === 'percentage') {
+          setPromoCodeStatus({
+            isValid: true,
+            message: `${discountCode.discount_value}% off`,
+            discountPercentage: discountCode.discount_value
+          });
+        } else if (discountCode) {
+          setPromoCodeStatus({
+            isValid: true,
+            message: `£${(discountCode.discount_value / 100).toFixed(2)} off`,
+            discountPercentage: undefined
+          });
+        } else {
+          setPromoCodeStatus({
+            isValid: false,
+            message: "Invalid promo code"
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error validating promo code:', err);
+      setPromoCodeStatus({
+        isValid: false,
+        message: "Error validating code"
+      });
+    } finally {
+      setValidatingPromo(false);
+    }
   };
 
   const canUseMembership = membershipStatus?.hasMembership && membershipStatus?.canBook && !membershipStatus?.hasUsedCreditForDate;
@@ -510,6 +590,7 @@ const Booking = () => {
           specialRequests: formData.specialRequests,
           bookingType: formData.bookingType,
           guestCount: formData.guestCount,
+          discountCode: promoCodeStatus.isValid ? promoCode.toUpperCase().trim() : undefined,
         }
       });
 
@@ -1001,6 +1082,42 @@ const Booking = () => {
                         rows={3}
                       />
                     </div>
+
+                    {/* Promo Code Input - Only for paid bookings (not members/tokens) */}
+                    {!canUseMembership && !canUseTokens && (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label htmlFor="promoCode" className="flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          Promo Code
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="promoCode"
+                            value={promoCode}
+                            onChange={(e) => {
+                              setPromoCode(e.target.value.toUpperCase());
+                              setPromoCodeStatus({ isValid: null, message: "" });
+                            }}
+                            placeholder="Enter code (optional)"
+                            className={`flex-1 uppercase ${promoCodeStatus.isValid === true ? 'border-primary' : promoCodeStatus.isValid === false ? 'border-destructive' : ''}`}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => validatePromoCode(promoCode)}
+                            disabled={validatingPromo || !promoCode.trim()}
+                          >
+                            {validatingPromo ? "..." : "Apply"}
+                          </Button>
+                        </div>
+                        {promoCodeStatus.message && (
+                          <p className={`text-sm flex items-center gap-1 ${promoCodeStatus.isValid ? 'text-primary' : 'text-destructive'}`}>
+                            {promoCodeStatus.isValid ? <Check className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                            {promoCodeStatus.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1087,9 +1204,25 @@ const Booking = () => {
                                   : `£${(pricing.combined / 100).toFixed(0)} × ${formData.guestCount} people`}
                               </span>
                             </div>
-                            <div className="flex justify-between font-semibold text-primary">
+                            {promoCodeStatus.isValid && promoCodeStatus.discountPercentage && (
+                              <div className="flex justify-between text-primary">
+                                <span className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3" />
+                                  Discount ({promoCodeStatus.discountPercentage}%):
+                                </span>
+                                <span>
+                                  -£{((() => {
+                                    const basePrice = formData.bookingType === 'private' 
+                                      ? pricing.private / 100 
+                                      : (pricing.combined / 100) * formData.guestCount;
+                                    return (basePrice * (promoCodeStatus.discountPercentage / 100)).toFixed(2);
+                                  })())}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-semibold text-primary pt-1 border-t">
                               <span>Total:</span>
-                              <span>£{calculateTotalPrice()}</span>
+                              <span>£{calculateTotalPrice().toFixed(2)}</span>
                             </div>
                           </>
                         )}

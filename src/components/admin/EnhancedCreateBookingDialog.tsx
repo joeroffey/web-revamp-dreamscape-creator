@@ -10,10 +10,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle } from "lucide-react";
+import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminTimeSlotPicker } from "./AdminTimeSlotPicker";
+
+interface PartnerCode {
+  id: string;
+  company_name: string;
+  promo_code: string;
+  discount_percentage: number;
+}
 
 interface TokenRecord {
   id: string;
@@ -43,6 +50,7 @@ export function EnhancedCreateBookingDialog({
   const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
+  const [selectedPartnerCode, setSelectedPartnerCode] = useState<PartnerCode | null>(null);
   const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number } | null>(null);
   const [bookingForm, setBookingForm] = useState({
     customer_name: "",
@@ -89,6 +97,20 @@ export function EnhancedCreateBookingDialog({
 
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: partnerCodes } = useQuery({
+    queryKey: ["partner-codes-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("partner_codes")
+        .select("id, company_name, promo_code, discount_percentage")
+        .eq("is_active", true)
+        .order("company_name", { ascending: true });
+
+      if (error) throw error;
+      return data as PartnerCode[];
     },
   });
 
@@ -150,14 +172,26 @@ export function EnhancedCreateBookingDialog({
         if (customerErr) throw customerErr;
       }
 
+      // Calculate discount if partner code is applied
+      let discountAmount = 0;
+      let finalAmount = booking.price_amount;
+      let discountNote = '';
+
+      if (selectedPartnerCode && !useToken) {
+        discountAmount = Math.round(booking.price_amount * (selectedPartnerCode.discount_percentage / 100));
+        finalAmount = booking.price_amount - discountAmount;
+        discountNote = ` [Partner: ${selectedPartnerCode.company_name} - ${selectedPartnerCode.discount_percentage}% off]`;
+      }
+
       // Adjust payment if using tokens
       const finalBooking = {
         ...booking,
         payment_status: useToken ? 'paid' : booking.payment_status,
-        final_amount: useToken ? 0 : booking.price_amount,
+        discount_amount: useToken ? 0 : discountAmount,
+        final_amount: useToken ? 0 : finalAmount,
         special_requests: useToken 
           ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
-          : booking.special_requests,
+          : `${booking.special_requests || ''}${discountNote}`.trim(),
       };
 
       const { data, error } = await supabase
@@ -271,6 +305,7 @@ export function EnhancedCreateBookingDialog({
     setAvailableTokens([]);
     setTotalTokens(0);
     setUseToken(false);
+    setSelectedPartnerCode(null);
     setSelectedSlotInfo(null);
     setBookingForm({
       customer_name: "",
@@ -641,6 +676,7 @@ export function EnhancedCreateBookingDialog({
               <div className="space-y-2">
                 <Label htmlFor="price_amount">
                   Price (£) {useToken && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
+                  {selectedPartnerCode && !useToken && <Badge variant="outline" className="ml-2">{selectedPartnerCode.discount_percentage}% off</Badge>}
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">£</span>
@@ -658,8 +694,52 @@ export function EnhancedCreateBookingDialog({
                 {useToken && (
                   <p className="text-xs text-muted-foreground">Price will be £0 (paid with tokens)</p>
                 )}
+                {selectedPartnerCode && !useToken && bookingForm.price_amount > 0 && (
+                  <p className="text-xs text-primary">
+                    Final: £{((bookingForm.price_amount - Math.round(bookingForm.price_amount * (selectedPartnerCode.discount_percentage / 100))) / 100).toFixed(2)} 
+                    (saves £{(Math.round(bookingForm.price_amount * (selectedPartnerCode.discount_percentage / 100)) / 100).toFixed(2)})
+                  </p>
+                )}
               </div>
             </div>
+
+            {/* Partner Code Selection */}
+            {partnerCodes && partnerCodes.length > 0 && !useToken && (
+              <div className="space-y-2">
+                <Label>Partner Company Discount</Label>
+                <Select 
+                  value={selectedPartnerCode?.id || "none"} 
+                  onValueChange={(value) => {
+                    if (value === "none") {
+                      setSelectedPartnerCode(null);
+                    } else {
+                      const code = partnerCodes.find(c => c.id === value);
+                      setSelectedPartnerCode(code || null);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No discount applied" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No discount</SelectItem>
+                    {partnerCodes.map((code) => (
+                      <SelectItem key={code.id} value={code.id}>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3 w-3" />
+                          {code.company_name} ({code.discount_percentage}% off)
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedPartnerCode && (
+                  <p className="text-xs text-muted-foreground">
+                    Code: <code className="px-1 py-0.5 bg-muted rounded">{selectedPartnerCode.promo_code}</code>
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="special_requests">Special Requests</Label>
