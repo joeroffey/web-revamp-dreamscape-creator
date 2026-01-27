@@ -95,8 +95,9 @@ serve(async (req) => {
       .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
 
     const totalNeeded = 1 + payingGuestCount; // Member + paying guests
-    if (hasPrivateBooking || currentCommunalCount + totalNeeded > 5) {
-      throw new Error("Not enough spaces available");
+    const remainingSpaces = 5 - currentCommunalCount;
+    if (hasPrivateBooking || totalNeeded > remainingSpaces) {
+      throw new Error(`Not enough spaces available. Only ${remainingSpaces} spaces remaining for this slot.`);
     }
 
     // Get pricing

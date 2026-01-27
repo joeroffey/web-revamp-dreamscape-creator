@@ -276,11 +276,15 @@ const Booking = () => {
   const handleGuestCountChange = (value: string) => {
     const newGuestCount = parseInt(value) || 1;
     
-    // Auto-convert to private if booking 4 people in communal
-    if (formData.bookingType === "communal" && newGuestCount === 4) {
+    // Enforce maximum based on available spaces for communal bookings
+    const maxAllowed = Math.min(availableSpaces, 4);
+    const clampedCount = Math.min(newGuestCount, maxAllowed);
+    
+    // Auto-convert to private if booking 4+ people in communal (only if slot has full availability)
+    if (formData.bookingType === "communal" && clampedCount >= 4 && availableSpaces === 5) {
       setFormData(prev => ({ 
         ...prev, 
-        guestCount: newGuestCount, 
+        guestCount: clampedCount, 
         bookingType: "private" 
       }));
       toast({
@@ -288,7 +292,7 @@ const Booking = () => {
         description: "Automatically switched to private booking for 4+ guests.",
       });
     } else {
-      setFormData(prev => ({ ...prev, guestCount: newGuestCount }));
+      setFormData(prev => ({ ...prev, guestCount: clampedCount }));
     }
     
     // Clear error for this field
@@ -986,7 +990,7 @@ const Booking = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {Array.from({ length: Math.min(availableSpaces, 4) }, (_, i) => i).map(num => (
+                              {Array.from({ length: Math.max(0, Math.min(availableSpaces - 1, 4)) + 1 }, (_, i) => i).map(num => (
                                 <SelectItem key={num} value={num.toString()}>
                                   {num === 0 ? "No additional guests" : `${num} paying guest${num > 1 ? 's' : ''} (£${(pricing.combined / 100) * num})`}
                                 </SelectItem>
