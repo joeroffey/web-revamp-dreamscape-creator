@@ -34,6 +34,7 @@ import AdminMemberships from "./pages/admin/Memberships";
 import ModernReports from "./pages/admin/ModernReports";
 import AdminSettings from "./pages/admin/Settings";
 import ModernScheduleManagement from "./components/admin/ModernScheduleManagement";
+import AdminBlog from "./pages/admin/Blog";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/admin/gift-cards" element={<ModernGiftCardManagement />} />
             <Route path="/admin/memberships" element={<AdminMemberships />} />
             <Route path="/admin/reports" element={<ModernReports />} />
+            <Route path="/admin/blog" element={<AdminBlog />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
