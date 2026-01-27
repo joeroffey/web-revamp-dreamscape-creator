@@ -73,6 +73,14 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
     }
   };
 
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const getBookingTypeColor = (type: string) => {
     return type === 'private' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800';
   };
@@ -183,11 +191,11 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                               </div>
 
                               <div className="flex items-center justify-between">
-                                <div className="text-sm">
+                                <div className="text-sm flex items-center gap-2">
                                   <span className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</span>
-                                  <span className="text-muted-foreground ml-2">
-                                    ({booking.payment_status})
-                                  </span>
+                                  <Badge className={getPaymentStatusColor(booking.payment_status)}>
+                                    {booking.payment_status === 'pending' ? 'UNPAID' : 'Paid'}
+                                  </Badge>
                                 </div>
                                 
                                 {booking.special_requests && (

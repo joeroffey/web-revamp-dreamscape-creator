@@ -224,17 +224,18 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
       }
 
       // Now get booking information for each slot
+      // Include both paid AND pending bookings - they all reserve spaces
       const slotsWithBookings = await Promise.all(
         slots.map(async (slot) => {
           const { data: bookings } = await supabase
             .from("bookings")
             .select("booking_type, guest_count, payment_status")
             .eq("time_slot_id", slot.id)
-            .eq("payment_status", "paid");
+            .in("payment_status", ["paid", "pending"]);
 
-          const confirmedBookings = bookings || [];
-          const communalBookings = confirmedBookings.filter(b => b.booking_type === 'communal');
-          const privateBookings = confirmedBookings.filter(b => b.booking_type === 'private');
+          const activeBookings = bookings || [];
+          const communalBookings = activeBookings.filter(b => b.booking_type === 'communal');
+          const privateBookings = activeBookings.filter(b => b.booking_type === 'private');
           
           const totalCommunalGuests = communalBookings.reduce((sum, b) => sum + (b.guest_count || 0), 0);
           const hasPrivateBooking = privateBookings.length > 0;
@@ -256,7 +257,7 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
             is_available: isAvailable,
             has_private_booking: hasPrivateBooking,
             total_communal_guests: totalCommunalGuests,
-            bookings: confirmedBookings
+            bookings: activeBookings
           };
         })
       );
