@@ -7,6 +7,8 @@ import { AuthProvider } from "./components/AuthContext";
 import { ScrollToTop } from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import About from "./pages/About";
+import Events from "./pages/Events";
+import Blog from "./pages/Blog";
 import Contact from "./pages/Contact";
 import Booking from "./pages/Booking";
 import GiftCards from "./pages/GiftCards";
@@ -46,6 +48,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/booking" element={<Booking />} />
             <Route path="/gift-cards" element={<GiftCards />} />
