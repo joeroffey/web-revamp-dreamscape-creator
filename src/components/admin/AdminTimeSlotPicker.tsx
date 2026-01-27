@@ -167,11 +167,14 @@ export function AdminTimeSlotPicker({
     setError("");
     
     try {
+      // Always query "combined" service type - all sessions use the same time slots
+      const dbServiceType = "combined";
+      
       const { data: slotsData, error: slotsError } = await supabase
         .from("time_slots")
         .select("*")
         .eq("slot_date", date)
-        .eq("service_type", serviceType)
+        .eq("service_type", dbServiceType)
         .order("slot_time");
 
       if (slotsError) {
@@ -191,7 +194,7 @@ export function AdminTimeSlotPicker({
             .from("time_slots")
             .select("*")
             .eq("slot_date", date)
-            .eq("service_type", serviceType)
+            .eq("service_type", dbServiceType)
             .order("slot_time");
             
           if (!retryError && retryData) {
