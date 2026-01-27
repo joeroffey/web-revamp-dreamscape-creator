@@ -31,7 +31,7 @@ interface AdminTimeSlotPickerProps {
   selectedDate: string;
   selectedTime: string;
   onDateChange: (date: string) => void;
-  onTimeChange: (time: string) => void;
+  onTimeChange: (time: string, timeSlotId?: string) => void;
 }
 
 export function AdminTimeSlotPicker({
@@ -202,15 +202,16 @@ export function AdminTimeSlotPicker({
 
       const slotsWithBookings = await Promise.all(
         slots.map(async (slot) => {
+          // Include both paid AND pending (unpaid) bookings - they all reserve spaces
           const { data: bookings } = await supabase
             .from("bookings")
             .select("booking_type, guest_count, payment_status")
             .eq("time_slot_id", slot.id)
-            .eq("payment_status", "paid");
+            .in("payment_status", ["paid", "pending"]);
 
-          const confirmedBookings = bookings || [];
-          const communalBookings = confirmedBookings.filter(b => b.booking_type === 'communal');
-          const privateBookings = confirmedBookings.filter(b => b.booking_type === 'private');
+          const activeBookings = bookings || [];
+          const communalBookings = activeBookings.filter(b => b.booking_type === 'communal');
+          const privateBookings = activeBookings.filter(b => b.booking_type === 'private');
           
           const totalCommunalGuests = communalBookings.reduce((sum, b) => sum + (b.guest_count || 0), 0);
           const hasPrivateBooking = privateBookings.length > 0;
@@ -362,7 +363,7 @@ export function AdminTimeSlotPicker({
                     <div key={slot.id} className="relative">
                       <Button
                         variant={isSelected ? "default" : "outline"}
-                        onClick={() => !isDisabled && onTimeChange(slot.slot_time)}
+                        onClick={() => !isDisabled && onTimeChange(slot.slot_time, slot.id)}
                         disabled={isDisabled}
                         className={`w-full p-2 h-auto text-xs flex flex-col gap-0.5 ${
                           isPastSlot ? "opacity-40 cursor-not-allowed" : ""

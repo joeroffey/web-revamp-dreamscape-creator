@@ -51,11 +51,13 @@ export function EnhancedCreateBookingDialog({
     service_type: "",
     session_date: "",
     session_time: "",
+    time_slot_id: "",
     duration_minutes: 60,
     guest_count: 1,
     price_amount: 0,
     special_requests: "",
-    booking_status: "confirmed"
+    booking_status: "confirmed",
+    payment_status: "pending"
   });
 
   const queryClient = useQueryClient();
@@ -150,7 +152,7 @@ export function EnhancedCreateBookingDialog({
       // Adjust payment if using tokens
       const finalBooking = {
         ...booking,
-        payment_status: useToken ? 'paid' : 'pending',
+        payment_status: useToken ? 'paid' : booking.payment_status,
         final_amount: useToken ? 0 : booking.price_amount,
         special_requests: useToken 
           ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
@@ -164,6 +166,31 @@ export function EnhancedCreateBookingDialog({
         .single();
 
       if (error) throw error;
+
+      // Update time slot availability if we have a time_slot_id
+      if (booking.time_slot_id) {
+        // Fetch current bookings for this slot (both paid and pending)
+        const { data: existingBookings } = await supabase
+          .from("bookings")
+          .select("booking_type, guest_count")
+          .eq("time_slot_id", booking.time_slot_id)
+          .in("payment_status", ["paid", "pending"]);
+
+        const totalGuests = (existingBookings || [])
+          .filter(b => b.booking_type === 'communal')
+          .reduce((sum, b) => sum + (b.guest_count || 1), 0);
+
+        const hasPrivate = (existingBookings || []).some(b => b.booking_type === 'private');
+
+        await supabase
+          .from("time_slots")
+          .update({
+            booked_count: hasPrivate ? 5 : totalGuests,
+            is_available: hasPrivate ? false : totalGuests < 5,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", booking.time_slot_id);
+      }
 
       // Deduct tokens if using token payment
       if (useToken) {
@@ -198,6 +225,7 @@ export function EnhancedCreateBookingDialog({
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["daily-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["customer-tokens"] });
+      queryClient.invalidateQueries({ queryKey: ["time-slots"] });
       toast.success(useToken 
         ? `Booking created using ${bookingForm.guest_count} token(s)`
         : "Booking created successfully"
@@ -250,11 +278,13 @@ export function EnhancedCreateBookingDialog({
       service_type: "",
       session_date: "",
       session_time: "",
+      time_slot_id: "",
       duration_minutes: 60,
       guest_count: 1,
       price_amount: 0,
       special_requests: "",
-      booking_status: "confirmed"
+      booking_status: "confirmed",
+      payment_status: "pending"
     });
     onOpenChange(false);
   };
@@ -495,7 +525,7 @@ export function EnhancedCreateBookingDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="booking_status">Status</Label>
+                <Label htmlFor="booking_status">Booking Status</Label>
                 <Select value={bookingForm.booking_status} onValueChange={(value) => setBookingForm({ ...bookingForm, booking_status: value })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -509,14 +539,29 @@ export function EnhancedCreateBookingDialog({
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment_status">Payment Status</Label>
+                <Select value={bookingForm.payment_status} onValueChange={(value) => setBookingForm({ ...bookingForm, payment_status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Unpaid (Pay on arrival)</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/* Date and Time Slot Picker */}
             {bookingForm.service_type && (
               <AdminTimeSlotPicker
                 serviceType={bookingForm.service_type}
                 selectedDate={bookingForm.session_date}
                 selectedTime={bookingForm.session_time}
-                onDateChange={(date) => setBookingForm({ ...bookingForm, session_date: date })}
-                onTimeChange={(time) => setBookingForm({ ...bookingForm, session_time: time })}
+                onDateChange={(date) => setBookingForm({ ...bookingForm, session_date: date, time_slot_id: "" })}
+                onTimeChange={(time, timeSlotId) => setBookingForm({ ...bookingForm, session_time: time, time_slot_id: timeSlotId || "" })}
               />
             )}
 

@@ -29,10 +29,11 @@ export default function ModernScheduleManagement() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      // Include both paid AND pending (unpaid) bookings
       const { data, error } = await supabase
         .from("bookings")
         .select("*")
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "pending"])
         .order("session_date", { ascending: true })
         .order("session_time", { ascending: true });
 
