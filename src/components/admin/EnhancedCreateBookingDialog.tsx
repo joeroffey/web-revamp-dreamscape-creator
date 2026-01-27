@@ -568,8 +568,20 @@ export function EnhancedCreateBookingDialog({
                 serviceType={bookingForm.service_type}
                 selectedDate={bookingForm.session_date}
                 selectedTime={bookingForm.session_time}
-                onDateChange={(date) => setBookingForm({ ...bookingForm, session_date: date, time_slot_id: "" })}
-                onTimeChange={(time, timeSlotId) => setBookingForm({ ...bookingForm, session_time: time, time_slot_id: timeSlotId || "" })}
+                onDateChange={(date) => {
+                  setBookingForm({ ...bookingForm, session_date: date, time_slot_id: "" });
+                  setSelectedSlotInfo(null);
+                }}
+                onTimeChange={(time, timeSlotId, slotInfo) => {
+                  setBookingForm({ ...bookingForm, session_time: time, time_slot_id: timeSlotId || "" });
+                  if (slotInfo) {
+                    setSelectedSlotInfo(slotInfo);
+                    // If selecting private but slot has communal bookings, show warning
+                    if (bookingForm.service_type === 'Private Session' && slotInfo.hasCommunalBookings) {
+                      toast.error("This slot has communal bookings - private session not available");
+                    }
+                  }
+                }}
               />
             )}
 
