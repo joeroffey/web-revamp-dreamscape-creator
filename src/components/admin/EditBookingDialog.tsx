@@ -296,19 +296,25 @@ export const EditBookingDialog = ({
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          booking_status: 'cancelled',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', booking.id);
+      // Use edge function to handle cancellation properly (updates time slots, refunds tokens)
+      const { data, error } = await supabase.functions.invoke('cancel-booking', {
+        body: { bookingId: booking.id }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      let description = "The booking has been cancelled successfully.";
+      if (data?.tokenRefunded) {
+        description += " Session token has been refunded.";
+      }
+      if (data?.slotsFreed) {
+        description += ` ${data.slotsFreed} slot(s) are now available.`;
+      }
 
       toast({
         title: "Booking Cancelled",
-        description: "The booking has been cancelled successfully.",
+        description,
       });
 
       setShowCancelDialog(false);

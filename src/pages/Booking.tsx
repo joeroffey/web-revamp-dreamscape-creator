@@ -935,8 +935,8 @@ const Booking = () => {
                       </div>
                     )}
 
-                    {/* Guest Count - Non-members only */}
-                    {!canUseMembership && formData.bookingType === "communal" && (
+                    {/* Guest Count - Non-members and non-token users only */}
+                    {!canUseMembership && !canUseTokens && formData.bookingType === "communal" && (
                       <div className="space-y-2">
                         <Label htmlFor="guestCount">Number of People</Label>
                         <Select 

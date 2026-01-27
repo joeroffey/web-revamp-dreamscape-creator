@@ -86,11 +86,13 @@ serve(async (req) => {
     }
 
     // Check slot availability for communal booking (members always book communal for themselves)
+    // Exclude cancelled bookings from the count
     const { data: existingBookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select('booking_type, guest_count')
+      .select('booking_type, guest_count, booking_status')
       .eq('time_slot_id', timeSlotId)
-      .eq('payment_status', 'paid');
+      .eq('payment_status', 'paid')
+      .neq('booking_status', 'cancelled');
 
     if (bookingsError) throw bookingsError;
 
