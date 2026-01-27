@@ -156,7 +156,7 @@ const Events = () => {
                   <img 
                     src="/events/yoga-class.jpg" 
                     alt="Hot Yoga class at Revitalise Hub"
-                    className="w-full h-full object-cover object-[center_25%]"
+                    className="w-full h-full object-cover object-center"
                   />
                 </div>
                 <div className="space-y-6">
