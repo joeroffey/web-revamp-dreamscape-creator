@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { DailyScheduleView } from "@/components/admin/DailyScheduleView";
-import { CreateBookingDialog } from "@/components/admin/CreateBookingDialog";
+import { EnhancedCreateBookingDialog } from "@/components/admin/EnhancedCreateBookingDialog";
 import { CalendarDays, List, Plus, Clock, Users, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -242,14 +242,13 @@ export default function ModernScheduleManagement() {
           </div>
         </div>
 
-        <CreateBookingDialog
+        <EnhancedCreateBookingDialog
           open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-          onBookingCreated={() => {
-            setShowCreateDialog(false);
-            handleRefresh();
+          onOpenChange={(open) => {
+            setShowCreateDialog(open);
+            if (!open) handleRefresh();
           }}
-          preselectedDate={selectedDate}
+          selectedDate={selectedDate}
         />
       </div>
     </AdminLayout>
