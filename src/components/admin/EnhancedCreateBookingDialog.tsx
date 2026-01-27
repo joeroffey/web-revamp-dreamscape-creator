@@ -43,6 +43,7 @@ export function EnhancedCreateBookingDialog({
   const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
+  const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number } | null>(null);
   const [bookingForm, setBookingForm] = useState({
     customer_name: "",
     customer_email: "",
@@ -270,6 +271,7 @@ export function EnhancedCreateBookingDialog({
     setAvailableTokens([]);
     setTotalTokens(0);
     setUseToken(false);
+    setSelectedSlotInfo(null);
     setBookingForm({
       customer_name: "",
       customer_email: "",
@@ -309,6 +311,12 @@ export function EnhancedCreateBookingDialog({
   const handleCreateBooking = () => {
     if (!bookingForm.customer_name || !bookingForm.customer_email || !bookingForm.service_type || !bookingForm.session_date) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Prevent private booking if communal bookings exist in this slot
+    if (bookingForm.service_type === 'Private Session' && selectedSlotInfo?.hasCommunalBookings) {
+      toast.error("Cannot book a private session - this slot already has communal bookings");
       return;
     }
 
