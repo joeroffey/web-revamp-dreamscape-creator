@@ -14,7 +14,10 @@ import {
   Settings,
   LogOut,
   Home,
-  X
+  X,
+  Building2,
+  BarChart3,
+  FileText
 } from 'lucide-react';
 
 export const MobileAdminNav = () => {
@@ -29,6 +32,9 @@ export const MobileAdminNav = () => {
     { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
     { href: '/admin/gift-cards', icon: Gift, label: 'Gift Cards' },
     { href: '/admin/memberships', icon: CreditCard, label: 'Memberships' },
+    { href: '/admin/partner-codes', icon: Building2, label: 'Partner Codes' },
+    { href: '/admin/blog', icon: FileText, label: 'Blog' },
+    { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
   ];
 

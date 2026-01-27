@@ -121,11 +121,15 @@ serve(async (req) => {
     // Calculate original amount (pence) using database pricing
     const originalAmount = bookingType === 'private' ? pricing.private : (pricing.combined * guestCount);
 
-    // Optional: validate and apply discount code
+    // Optional: validate and apply discount code (check both discount_codes and partner_codes tables)
     let discountCodeRow: any = null;
+    let partnerCodeRow: any = null;
     let discountAmount = 0;
+    
     if (discountCode && discountCode.trim().length > 0) {
       const code = discountCode.trim().toUpperCase();
+      
+      // First check discount_codes table
       const { data: dc, error: dcErr } = await supabase
         .from('discount_codes')
         .select('*')
@@ -133,27 +137,53 @@ serve(async (req) => {
         .maybeSingle();
 
       if (dcErr) throw dcErr;
-      if (!dc) throw new Error('Invalid discount code');
+      
+      if (dc) {
+        // Validate discount code
+        const now = new Date();
+        const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
+        const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
+        const activeOk = dc.is_active !== false;
+        const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
+        const minOk = !dc.min_amount || originalAmount >= dc.min_amount;
+        if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
+          throw new Error('Discount code is not valid for this booking');
+        }
 
-      const now = new Date();
-      const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
-      const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
-      const activeOk = dc.is_active !== false;
-      const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
-      const minOk = !dc.min_amount || originalAmount >= dc.min_amount;
-      if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
-        throw new Error('Discount code is not valid for this booking');
-      }
-
-      discountCodeRow = dc;
-      if (dc.discount_type === 'percentage') {
-        discountAmount = Math.round(originalAmount * (dc.discount_value / 100));
+        discountCodeRow = dc;
+        if (dc.discount_type === 'percentage') {
+          discountAmount = Math.round(originalAmount * (dc.discount_value / 100));
+        } else {
+          discountAmount = Math.min(originalAmount, dc.discount_value);
+        }
       } else {
-        discountAmount = Math.min(originalAmount, dc.discount_value);
+        // Check partner_codes table
+        const { data: pc, error: pcErr } = await supabase
+          .from('partner_codes')
+          .select('*')
+          .eq('promo_code', code)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (pcErr) throw pcErr;
+        
+        if (pc) {
+          partnerCodeRow = pc;
+          discountAmount = Math.round(originalAmount * (pc.discount_percentage / 100));
+        } else {
+          throw new Error('Invalid promo code');
+        }
       }
     }
 
     const finalAmount = Math.max(0, originalAmount - discountAmount);
+
+    // Build discount description for Stripe
+    const discountLabel = discountCodeRow 
+      ? discountCodeRow.code 
+      : partnerCodeRow 
+        ? `${partnerCodeRow.company_name} (${partnerCodeRow.promo_code})`
+        : '';
 
     // Create Stripe checkout session
     const sessionName = bookingType === 'private' ? 'Private Session' : 'Communal Session';
@@ -165,7 +195,7 @@ serve(async (req) => {
             currency: "gbp",
             product_data: {
               name: `${sessionName} (${bookingType === 'private' ? 'Exclusive' : 'Communal'})`,
-              description: `60 minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}${discountCodeRow ? ` (Discount: ${discountCodeRow.code})` : ''}`,
+              description: `60 minute session on ${timeSlot.slot_date} at ${timeSlot.slot_time} for ${guestCount} ${guestCount === 1 ? 'person' : 'people'}${discountLabel ? ` (Discount: ${discountLabel})` : ''}`,
             },
             unit_amount: finalAmount,
           },
@@ -182,8 +212,10 @@ serve(async (req) => {
         customerEmail,
         bookingType,
         guestCount: guestCount.toString(),
-        discountCode: discountCodeRow?.code || "",
+        discountCode: discountCodeRow?.code || partnerCodeRow?.promo_code || "",
         discountCodeId: discountCodeRow?.id || "",
+        partnerCodeId: partnerCodeRow?.id || "",
+        partnerCompany: partnerCodeRow?.company_name || "",
         originalAmount: originalAmount.toString(),
         discountAmount: discountAmount.toString(),
         finalAmount: finalAmount.toString(),

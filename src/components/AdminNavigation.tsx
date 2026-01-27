@@ -13,7 +13,8 @@ import {
   LogOut,
   Home,
   BarChart3,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 
 export const AdminNavigation = () => {
@@ -27,6 +28,7 @@ export const AdminNavigation = () => {
     { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
     { href: '/admin/gift-cards', icon: Gift, label: 'Gift Cards' },
     { href: '/admin/memberships', icon: CreditCard, label: 'Memberships' },
+    { href: '/admin/partner-codes', icon: Building2, label: 'Partner Codes' },
     { href: '/admin/blog', icon: FileText, label: 'Blog' },
     { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
