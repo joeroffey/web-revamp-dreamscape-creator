@@ -227,11 +227,14 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
       // Include both paid AND pending bookings - they all reserve spaces
       const slotsWithBookings = await Promise.all(
         slots.map(async (slot) => {
+          // Include both paid AND pending bookings - they all reserve spaces
+          // BUT exclude cancelled bookings
           const { data: bookings } = await supabase
             .from("bookings")
-            .select("booking_type, guest_count, payment_status")
+            .select("booking_type, guest_count, payment_status, booking_status")
             .eq("time_slot_id", slot.id)
-            .in("payment_status", ["paid", "pending"]);
+            .in("payment_status", ["paid", "pending"])
+            .neq("booking_status", "cancelled");
 
           const activeBookings = bookings || [];
           const communalBookings = activeBookings.filter(b => b.booking_type === 'communal');

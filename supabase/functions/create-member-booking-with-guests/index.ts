@@ -83,12 +83,13 @@ serve(async (req) => {
       throw new Error("You already have a booking on this date");
     }
 
-    // Check availability
+    // Check availability (exclude cancelled bookings)
     const { data: existingBookings } = await supabase
       .from('bookings')
-      .select('booking_type, guest_count')
+      .select('booking_type, guest_count, booking_status')
       .eq('time_slot_id', timeSlotId)
-      .eq('payment_status', 'paid');
+      .eq('payment_status', 'paid')
+      .neq('booking_status', 'cancelled');
 
     const hasPrivateBooking = existingBookings?.some(b => b.booking_type === 'private');
     const currentCommunalCount = existingBookings?.filter(b => b.booking_type === 'communal')
