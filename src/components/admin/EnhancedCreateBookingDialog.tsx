@@ -613,24 +613,23 @@ export function EnhancedCreateBookingDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="price_amount">
-                  Price {useToken && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
+                  Price (£) {useToken && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">£</span>
                   <Input
                     id="price_amount"
                     type="number"
-                    step="0.01"
                     min="0"
-                    value={(bookingForm.price_amount / 100).toFixed(2)}
-                    onChange={(e) => setBookingForm({ ...bookingForm, price_amount: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                    value={bookingForm.price_amount / 100}
+                    onChange={(e) => setBookingForm({ ...bookingForm, price_amount: Math.round(parseFloat(e.target.value || '0') * 100) })}
                     className={cn("pl-8", useToken && "opacity-50")}
                     disabled={useToken}
-                    placeholder="0.00"
+                    placeholder="18"
                   />
                 </div>
                 {useToken && (
-                  <p className="text-xs text-muted-foreground">Price will be £0.00 (paid with tokens)</p>
+                  <p className="text-xs text-muted-foreground">Price will be £0 (paid with tokens)</p>
                 )}
               </div>
             </div>
