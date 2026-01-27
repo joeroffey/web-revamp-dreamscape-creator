@@ -88,11 +88,11 @@ const Events = () => {
                     This immersive experience combines guided breathwork with sauna and ice bath contrast therapy, leaving you feeling calm, grounded, and renewed.
                   </p>
                 </div>
-                <div className="aspect-[4/3] overflow-hidden rounded-2xl">
+                <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl">
                   <img 
                     src="/events/breathwork-session.jpg" 
                     alt="Soma Breathwork session at Revitalise Hub"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-[center_30%]"
                   />
                 </div>
               </div>
@@ -119,11 +119,11 @@ const Events = () => {
 
               {/* What is Soma Breathwork */}
               <div className="grid md:grid-cols-2 gap-12 items-center">
-                <div className="aspect-[4/3] overflow-hidden rounded-2xl order-2 md:order-1">
+                <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl order-2 md:order-1">
                   <img 
                     src="/events/breathwork-setup.jpg" 
                     alt="Breathwork setup with mats and candles"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-[center_40%]"
                   />
                 </div>
                 <div className="space-y-6 order-1 md:order-2">
@@ -152,11 +152,11 @@ const Events = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
               <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-                <div className="aspect-[4/3] overflow-hidden rounded-2xl">
+                <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl">
                   <img 
                     src="/events/yoga-class.jpg" 
                     alt="Hot Yoga class at Revitalise Hub"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-[center_25%]"
                   />
                 </div>
                 <div className="space-y-6">
@@ -186,11 +186,11 @@ const Events = () => {
                     The heat helps release tension, improve circulation, and encourage presence and focus. Chloe's grounded, supportive teaching style makes the session accessible for all levels, with space to move at your own pace.
                   </p>
                 </div>
-                <div className="aspect-[4/3] overflow-hidden rounded-2xl">
+                <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl">
                   <img 
                     src="/events/yoga-pose.jpg" 
                     alt="Yoga pose demonstration"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-[center_60%]"
                   />
                 </div>
               </div>
