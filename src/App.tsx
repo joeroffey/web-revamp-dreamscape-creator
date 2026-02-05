@@ -26,6 +26,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import FitnessRecovery from "./pages/FitnessRecovery";
 import YourVisit from "./pages/YourVisit";
 import NotFound from "./pages/NotFound";
+import RedeemGiftCard from "./pages/RedeemGiftCard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ModernBookingManagement from "./components/admin/ModernBookingManagement";
 import ModernCustomerManagement from "./components/admin/ModernCustomerManagement";
