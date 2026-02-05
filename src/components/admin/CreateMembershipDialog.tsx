@@ -135,11 +135,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       const startDate = new Date();
       const endDate = addMonths(startDate, durationMonths);
 
-      // Check if customer already has an active membership
+      // Check if customer already has an active membership (by email, since they may not have account yet)
       const { data: existingMembership } = await supabase
         .from('memberships')
         .select('id')
-        .eq('user_id', userId)
+        .eq('customer_email', selectedCustomer.email.toLowerCase())
         .eq('status', 'active')
         .maybeSingle();
 
