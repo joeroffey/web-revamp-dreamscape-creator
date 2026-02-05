@@ -69,6 +69,8 @@ export default function ModernCustomerManagement() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [creatingAccounts, setCreatingAccounts] = useState(false);
+  const { session } = useAuth();
 
   const queryClient = useQueryClient();
 
