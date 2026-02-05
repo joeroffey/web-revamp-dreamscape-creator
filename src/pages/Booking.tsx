@@ -1323,34 +1323,84 @@ const Booking = () => {
                           </>
                         ) : (
                           <>
-                            <div className="flex justify-between">
-                              <span>Price:</span>
-                              <span>
-                                {formData.bookingType === 'private' 
-                                  ? `£${(pricing.private / 100).toFixed(0)} flat rate` 
-                                  : `£${(pricing.combined / 100).toFixed(0)} × ${formData.guestCount} people`}
-                              </span>
-                            </div>
-                            {promoCodeStatus.isValid && promoCodeStatus.discountPercentage && (
-                              <div className="flex justify-between text-primary">
-                                <span className="flex items-center gap-1">
-                                  <Tag className="h-3 w-3" />
-                                  Discount ({promoCodeStatus.discountPercentage}%):
-                                </span>
-                                <span>
-                                  -£{((() => {
-                                    const basePrice = formData.bookingType === 'private' 
-                                      ? pricing.private / 100 
-                                      : (pricing.combined / 100) * formData.guestCount;
-                                    return (basePrice * (promoCodeStatus.discountPercentage / 100)).toFixed(2);
-                                  })())}
-                                </span>
+                            {/* Payment Method Selection - Show when user has credits */}
+                            {canUseCredits && (
+                              <div className="pt-2 border-t mb-3">
+                                <p className="text-sm font-medium mb-2">Payment Method:</p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant={paymentMethod === 'credits' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => setPaymentMethod('credits')}
+                                  >
+                                    <Wallet className="h-4 w-4 mr-1" />
+                                    Use Credit (£{creditStatus?.totalCreditsInPounds})
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant={paymentMethod === 'card' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => setPaymentMethod('card')}
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-1" />
+                                    Pay with Card
+                                  </Button>
+                                </div>
                               </div>
                             )}
-                            <div className="flex justify-between font-semibold text-primary pt-1 border-t">
-                              <span>Total:</span>
-                              <span>£{calculateTotalPrice().toFixed(2)}</span>
-                            </div>
+                            
+                            {paymentMethod === 'credits' && canUseCredits ? (
+                              <>
+                                <div className="flex justify-between text-primary font-medium pt-2 border-t">
+                                  <span>Payment:</span>
+                                  <span className="flex items-center gap-1">
+                                    <Wallet className="h-4 w-4" />
+                                    Gift Card Credit
+                                  </span>
+                                </div>
+                                <div className="flex justify-between font-semibold text-primary">
+                                  <span>Total:</span>
+                                  <span>£0 (Using £{(bookingCost / 100).toFixed(2)} credit)</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  £{((creditStatus?.totalCredits || 0 - bookingCost) / 100).toFixed(2)} credit remaining after this booking
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex justify-between">
+                                  <span>Price:</span>
+                                  <span>
+                                    {formData.bookingType === 'private' 
+                                      ? `£${(pricing.private / 100).toFixed(0)} flat rate` 
+                                      : `£${(pricing.combined / 100).toFixed(0)} × ${formData.guestCount} people`}
+                                  </span>
+                                </div>
+                                {promoCodeStatus.isValid && promoCodeStatus.discountPercentage && (
+                                  <div className="flex justify-between text-primary">
+                                    <span className="flex items-center gap-1">
+                                      <Tag className="h-3 w-3" />
+                                      Discount ({promoCodeStatus.discountPercentage}%):
+                                    </span>
+                                    <span>
+                                      -£{((() => {
+                                        const basePrice = formData.bookingType === 'private' 
+                                          ? pricing.private / 100 
+                                          : (pricing.combined / 100) * formData.guestCount;
+                                        return (basePrice * (promoCodeStatus.discountPercentage / 100)).toFixed(2);
+                                      })())}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between font-semibold text-primary pt-1 border-t">
+                                  <span>Total:</span>
+                                  <span>£{calculateTotalPrice().toFixed(2)}</span>
+                                </div>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
