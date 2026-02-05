@@ -1,17 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Clock, 
   Users, 
   Phone, 
   Mail, 
   Edit, 
-  CheckCircle, 
-  XCircle,
   MoreHorizontal,
   Eye
 } from 'lucide-react';
@@ -52,12 +51,30 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
   const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
 
-  // Generate time slots from 9 AM to 7 PM
-  const timeSlots = Array.from({ length: 11 }, (_, i) => {
-    const hour = 9 + i;
-    return `${hour.toString().padStart(2, '0')}:00:00`;
-  });
+  // Fetch actual time slots from the database for the selected date
+  useEffect(() => {
+    const fetchTimeSlots = async () => {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
+      const { data: slotsData } = await supabase
+        .from('time_slots')
+        .select('slot_time')
+        .eq('slot_date', dateStr)
+        .eq('service_type', 'combined')
+        .order('slot_time');
+
+      if (slotsData && slotsData.length > 0) {
+        const uniqueTimes = [...new Set(slotsData.map(s => s.slot_time))];
+        setTimeSlots(uniqueTimes);
+      } else {
+        setTimeSlots([]);
+      }
+    };
+
+    fetchTimeSlots();
+  }, [selectedDate]);
 
   const getBookingsForTimeSlot = (timeSlot: string) => {
     return bookings.filter(booking => booking.session_time === timeSlot);
