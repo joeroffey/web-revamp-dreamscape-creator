@@ -59,6 +59,16 @@ interface TokenStatus {
   } | null;
 }
 
+interface CreditStatus {
+  totalCredits: number;
+  totalCreditsInPounds: string;
+  credits: Array<{
+    id: string;
+    credit_balance: number;
+    expires_at: string;
+  }>;
+}
+
 const Booking = () => {
   const { toast } = useToast();
   const { user } = useAuth();
