@@ -329,123 +329,124 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
             )}
             </div>
 
-            {/* Payment Method Selection */}
-            <Label htmlFor="membershipType">Membership Type</Label>
-            <Select
-              value={form.membershipType}
-              onValueChange={(value) => setForm(prev => ({ ...prev, membershipType: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select membership type" />
-              </SelectTrigger>
-              <SelectContent>
-                {membershipOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label} - £{option.price}/month
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Payment Method Selection */}
-          <div className="space-y-3">
-            <Label>Payment Setup</Label>
-            <RadioGroup 
-              value={paymentMode} 
-              onValueChange={(value) => setPaymentMode(value as PaymentMode)}
-              className="grid grid-cols-1 gap-2"
-            >
-              <div className={cn(
-                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
-                paymentMode === 'manual' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              )}>
-                <RadioGroupItem value="manual" id="manual" />
-                <Label htmlFor="manual" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Banknote className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Manual / Cash</p>
-                    <p className="text-xs text-muted-foreground">Already paid, no payment setup needed</p>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className={cn(
-                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
-                paymentMode === 'card' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              )}>
-                <RadioGroupItem value="card" id="card" />
-                <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Card Payment</p>
-                    <p className="text-xs text-muted-foreground">Set up recurring card payments</p>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className={cn(
-                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
-                paymentMode === 'bacs_debit' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              )}>
-                <RadioGroupItem value="bacs_debit" id="bacs_debit" />
-                <Label htmlFor="bacs_debit" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Direct Debit (BACS)</p>
-                    <p className="text-xs text-muted-foreground">Set up recurring bank payments</p>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Duration - only show for manual */}
-          {paymentMode === 'manual' && (
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration</Label>
+              <Label htmlFor="membershipType">Membership Type</Label>
               <Select
-                value={form.durationMonths}
-                onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+                value={form.membershipType}
+                onValueChange={(value) => setForm(prev => ({ ...prev, membershipType: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select duration" />
+                  <SelectValue placeholder="Select membership type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {durationOptions.map(option => (
+                  {membershipOptions.map(option => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {option.label} - £{option.price}/month
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {/* Summary */}
-          <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-            <p><strong>Summary:</strong></p>
-            {selectedCustomer && <p>• Customer: {selectedCustomer.full_name}</p>}
-            <p>• {selectedMembership?.label} - £{selectedMembership?.price}/month</p>
+            {/* Payment Method Selection */}
+            <div className="space-y-3">
+              <Label>Payment Setup</Label>
+              <RadioGroup 
+                value={paymentMode} 
+                onValueChange={(value) => setPaymentMode(value as PaymentMode)}
+                className="grid grid-cols-1 gap-2"
+              >
+                <div className={cn(
+                  "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                  paymentMode === 'manual' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                )}>
+                  <RadioGroupItem value="manual" id="manual" />
+                  <Label htmlFor="manual" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Banknote className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Manual / Cash</p>
+                      <p className="text-xs text-muted-foreground">Already paid, no payment setup needed</p>
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className={cn(
+                  "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                  paymentMode === 'card' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                )}>
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Card Payment</p>
+                      <p className="text-xs text-muted-foreground">Set up recurring card payments</p>
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className={cn(
+                  "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                  paymentMode === 'bacs_debit' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                )}>
+                  <RadioGroupItem value="bacs_debit" id="bacs_debit" />
+                  <Label htmlFor="bacs_debit" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Direct Debit (BACS)</p>
+                      <p className="text-xs text-muted-foreground">Set up recurring bank payments</p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Duration - only show for manual */}
             {paymentMode === 'manual' && (
-              <>
-                <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
-                <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
-              </>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration</Label>
+                <Select
+                  value={form.durationMonths}
+                  onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
-            {paymentMode !== 'manual' && (
-              <p className="text-muted-foreground text-xs mt-2">
-                Customer will be redirected to Stripe to enter payment details
-              </p>
-            )}
-            {paymentMode === 'manual' && (
-              <p className="text-muted-foreground text-xs mt-2">
-                * Manual memberships don't auto-renew
-              </p>
-            )}
+
+            {/* Summary */}
+            <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+              <p><strong>Summary:</strong></p>
+              {selectedCustomer && <p>• Customer: {selectedCustomer.full_name}</p>}
+              <p>• {selectedMembership?.label} - £{selectedMembership?.price}/month</p>
+              {paymentMode === 'manual' && (
+                <>
+                  <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
+                  <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
+                </>
+              )}
+              {paymentMode !== 'manual' && (
+                <p className="text-muted-foreground text-xs mt-2">
+                  Customer will be redirected to Stripe to enter payment details
+                </p>
+              )}
+              {paymentMode === 'manual' && (
+                <p className="text-muted-foreground text-xs mt-2">
+                  * Manual memberships don't auto-renew
+                </p>
+              )}
+            </div>
           </div>
 
-          <DialogFooter className="mt-4 pt-4 border-t flex-shrink-0">
+          <DialogFooter className="pt-4 border-t flex-shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
