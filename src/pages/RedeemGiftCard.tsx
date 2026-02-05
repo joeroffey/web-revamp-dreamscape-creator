@@ -13,7 +13,7 @@ import { useAuth } from "@/components/AuthContext";
 
 const RedeemGiftCard = () => {
   const { toast } = useToast();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
