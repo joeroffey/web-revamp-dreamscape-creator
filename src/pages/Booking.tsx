@@ -1235,12 +1235,35 @@ const Booking = () => {
                         )}
                       </div>
                       
+                      {/* Terms & Conditions Checkbox */}
+                      <div className="flex items-start space-x-3 mb-6 p-3 bg-muted/30 rounded-lg">
+                        <Checkbox 
+                          id="terms" 
+                          checked={termsAccepted}
+                          onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                          className="mt-0.5"
+                        />
+                        <label 
+                          htmlFor="terms" 
+                          className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+                        >
+                          I have read and agree to the{" "}
+                          <Link 
+                            to="/terms-conditions" 
+                            target="_blank"
+                            className="text-primary hover:underline font-medium"
+                          >
+                            Terms & Conditions
+                          </Link>
+                        </label>
+                      </div>
+
                       {canUseMembership ? (
                         <Button 
                           size="lg" 
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                           onClick={handleMemberBooking}
-                          disabled={isLoading}
+                          disabled={isLoading || !termsAccepted}
                         >
                           {isLoading ? "Processing..." : (
                             <>
@@ -1254,7 +1277,7 @@ const Booking = () => {
                           size="lg" 
                           className="w-full bg-emerald-500 text-white hover:bg-emerald-600 rounded-full"
                           onClick={handleTokenBooking}
-                          disabled={isLoading}
+                          disabled={isLoading || !termsAccepted}
                         >
                           {isLoading ? "Processing..." : (
                             <>
@@ -1268,7 +1291,7 @@ const Booking = () => {
                           size="lg" 
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                           onClick={handleBooking}
-                          disabled={isLoading}
+                          disabled={isLoading || !termsAccepted}
                         >
                           {isLoading ? "Processing..." : "Confirm Booking & Pay"}
                         </Button>
