@@ -153,11 +153,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         return;
       }
 
-      // Create the membership
+      // Create the membership - user_id is optional (will be linked when they sign up)
       const { error } = await supabase
         .from('memberships')
         .insert({
-          user_id: userId,
+          user_id: userId || null, // Will be null if no account exists
           customer_name: selectedCustomer.full_name || 'Unknown',
           customer_email: selectedCustomer.email.toLowerCase(),
           membership_type: form.membershipType,
