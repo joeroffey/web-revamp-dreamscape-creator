@@ -553,6 +553,16 @@ export default function ModernCustomerManagement() {
                 className="hidden"
                 onChange={handleFileUpload}
               />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={createAllAuthAccounts} 
+                disabled={creatingAccounts}
+                className="min-h-[44px]"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {creatingAccounts ? "Creating..." : "Create Auth Accounts"}
+              </Button>
               <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="min-h-[44px]">
                 <Upload className="h-4 w-4 mr-2" />
                 Import CSV
