@@ -1456,6 +1456,20 @@ const Booking = () => {
                             </>
                           )}
                         </Button>
+                      ) : paymentMethod === 'credits' && canUseCredits ? (
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                          onClick={handleCreditBooking}
+                          disabled={isLoading || !termsAccepted}
+                        >
+                          {isLoading ? "Processing..." : (
+                            <>
+                              <Wallet className="h-4 w-4 mr-2" />
+                              Confirm Booking with Credit
+                            </>
+                          )}
+                        </Button>
                       ) : (
                         <Button 
                           size="lg" 
