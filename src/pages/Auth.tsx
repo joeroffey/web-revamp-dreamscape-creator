@@ -75,7 +75,7 @@ const Auth = () => {
         title: firstName ? `Welcome back, ${firstName}!` : "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      navigate("/");
+      navigate(redirectUrl);
     } catch (error: any) {
       toast({
         title: "Login Failed",
