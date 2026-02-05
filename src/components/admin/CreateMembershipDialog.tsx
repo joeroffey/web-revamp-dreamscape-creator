@@ -445,7 +445,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="mt-4 pt-4 border-t flex-shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
