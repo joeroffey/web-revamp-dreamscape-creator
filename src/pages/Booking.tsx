@@ -632,6 +632,70 @@ const Booking = () => {
     }
   };
 
+  const handleCreditBooking = async () => {
+    if (!validateForm() || !user?.id) {
+      toast({
+        title: "Please Complete All Required Fields",
+        description: "Check the form for any missing information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error("Authentication required");
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-credit-booking', {
+        body: {
+          userId: user.id,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          timeSlotId: selectedTimeSlot!.id,
+          specialRequests: formData.specialRequests,
+          bookingType: formData.bookingType,
+          guestCount: formData.guestCount,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.success) {
+        // Refresh credit balance after booking
+        await checkCreditBalance();
+        
+        window.location.href = `/booking-success?credits=true&remaining=${(data.creditsRemaining / 100).toFixed(2)}`;
+      } else {
+        throw new Error("Failed to create booking");
+      }
+    } catch (error) {
+      console.error('Credit booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      toast({
+        title: "Booking Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleBooking = async () => {
     if (!validateForm()) {
       toast({
