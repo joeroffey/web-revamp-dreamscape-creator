@@ -394,10 +394,6 @@ export default function ModernBookingManagement() {
                         <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
                           {booking.payment_status || 'pending'}
                         </Badge>
-                        <br />
-                        <Badge className={`text-xs mt-1 ${getStatusColor(booking.booking_status)}`}>
-                          {booking.booking_status || 'pending'}
-                        </Badge>
                       </div>
                       
                       <div className="flex items-center justify-end gap-2">
@@ -435,19 +431,12 @@ export default function ModernBookingManagement() {
                                     <p><strong>Price:</strong> {formatCurrency(selectedBooking.price_amount)}</p>
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h4 className="font-medium mb-2">Status</h4>
-                                    <Badge className={getStatusColor(selectedBooking.booking_status)}>
-                                      {selectedBooking.booking_status || 'pending'}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-medium mb-2">Payment Status</h4>
-                                    <Badge className={getPaymentStatusColor(selectedBooking.payment_status)}>
-                                      {selectedBooking.payment_status || 'pending'}
-                                    </Badge>
-                                  </div>
+                                <div>
+                                  <h4 className="font-medium mb-2">Payment Status</h4>
+                                  <Badge className={getPaymentStatusColor(selectedBooking.payment_status)}>
+                                    {selectedBooking.payment_status || 'pending'}
+                                  </Badge>
+                                </div>
                                 </div>
                                 {selectedBooking.special_requests && (
                                   <div>
