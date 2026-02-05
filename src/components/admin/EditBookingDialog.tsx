@@ -574,7 +574,7 @@ export const EditBookingDialog = ({
                       variant="destructive"
                       size="sm"
                       onClick={() => setShowCancelDialog(true)}
-                      disabled={loading || booking.booking_status === 'cancelled'}
+                      disabled={loading || booking.payment_status === 'cancelled'}
                     >
                       <Ban className="h-4 w-4 mr-1" />
                       Cancel Booking
