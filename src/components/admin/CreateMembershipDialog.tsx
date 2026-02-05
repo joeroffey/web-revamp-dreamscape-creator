@@ -235,15 +235,15 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
   const endDate = addMonths(new Date(), durationMonths);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={(open) => { if (!open) resetForm(); onOpenChange(open); }}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            Create Manual Membership
+            Create Membership
           </DialogTitle>
           <DialogDescription>
-            Create a membership for a customer who paid in cash or by other methods.
+            Create a membership and optionally set up recurring payments.
           </DialogDescription>
         </DialogHeader>
         
@@ -317,13 +317,13 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
             {/* Account status indicator */}
             {selectedCustomer && hasAccount === false && (
-              <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-md text-sm text-amber-700">
+              <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/20 rounded-md text-sm text-warning-foreground">
                 <AlertCircle className="h-4 w-4" />
-                <span>No account yet. Membership will be linked when they sign up with this email.</span>
+                <span>No account yet. Membership will be linked when they sign up.</span>
               </div>
             )}
             {selectedCustomer && hasAccount === true && (
-              <div className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/20 rounded-md text-sm text-green-700">
+              <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-md text-sm text-primary">
                 <Check className="h-4 w-4" />
                 <span>Customer has an account ✓</span>
               </div>
@@ -342,42 +342,108 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
               <SelectContent>
                 {membershipOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {option.label} - £{option.price}/month
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="duration">Duration</Label>
-            <Select
-              value={form.durationMonths}
-              onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+          {/* Payment Method Selection */}
+          <div className="space-y-3">
+            <Label>Payment Setup</Label>
+            <RadioGroup 
+              value={paymentMode} 
+              onValueChange={(value) => setPaymentMode(value as PaymentMode)}
+              className="grid grid-cols-1 gap-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {durationOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <div className={cn(
+                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                paymentMode === 'manual' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <RadioGroupItem value="manual" id="manual" />
+                <Label htmlFor="manual" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Banknote className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Manual / Cash</p>
+                    <p className="text-xs text-muted-foreground">Already paid, no payment setup needed</p>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className={cn(
+                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                paymentMode === 'card' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <RadioGroupItem value="card" id="card" />
+                <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Card Payment</p>
+                    <p className="text-xs text-muted-foreground">Set up recurring card payments</p>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className={cn(
+                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                paymentMode === 'bacs_debit' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <RadioGroupItem value="bacs_debit" id="bacs_debit" />
+                <Label htmlFor="bacs_debit" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Direct Debit (BACS)</p>
+                    <p className="text-xs text-muted-foreground">Set up recurring bank payments</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
+
+          {/* Duration - only show for manual */}
+          {paymentMode === 'manual' && (
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duration</Label>
+              <Select
+                value={form.durationMonths}
+                onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {durationOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Summary */}
           <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
             <p><strong>Summary:</strong></p>
             {selectedCustomer && <p>• Customer: {selectedCustomer.full_name}</p>}
-            <p>• {selectedMembership?.label}</p>
-            <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
-            <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
-            <p className="text-muted-foreground text-xs mt-2">
-              * Manual memberships don't auto-renew
-            </p>
+            <p>• {selectedMembership?.label} - £{selectedMembership?.price}/month</p>
+            {paymentMode === 'manual' && (
+              <>
+                <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
+                <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
+              </>
+            )}
+            {paymentMode !== 'manual' && (
+              <p className="text-muted-foreground text-xs mt-2">
+                Customer will be redirected to Stripe to enter payment details
+              </p>
+            )}
+            {paymentMode === 'manual' && (
+              <p className="text-muted-foreground text-xs mt-2">
+                * Manual memberships don't auto-renew
+              </p>
+            )}
           </div>
 
           <DialogFooter>
@@ -388,12 +454,21 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {paymentMode === 'manual' ? 'Creating...' : 'Redirecting...'}
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Membership
+                  {paymentMode === 'manual' ? (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Membership
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Setup Payment
+                    </>
+                  )}
                 </>
               )}
             </Button>
