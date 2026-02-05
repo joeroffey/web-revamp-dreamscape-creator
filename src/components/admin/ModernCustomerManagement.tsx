@@ -405,6 +405,45 @@ export default function ModernCustomerManagement() {
     toast.success('Customers exported');
   };
 
+  const createAllAuthAccounts = async () => {
+    if (!session?.access_token) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+
+    setCreatingAccounts(true);
+    try {
+      const response = await fetch(
+        "https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/create-customer-accounts",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create accounts");
+      }
+
+      toast.success(data.message);
+      
+      if (data.results?.errors?.length > 0) {
+        console.error("Account creation errors:", data.results.errors);
+        toast.warning(`${data.results.failed} accounts failed to create. Check console for details.`);
+      }
+    } catch (error: any) {
+      console.error("Error creating auth accounts:", error);
+      toast.error(error.message || "Failed to create auth accounts");
+    } finally {
+      setCreatingAccounts(false);
+    }
+  };
+
   const fetchCustomerBookings = async (customerEmail: string) => {
     try {
       const { data } = await supabase
