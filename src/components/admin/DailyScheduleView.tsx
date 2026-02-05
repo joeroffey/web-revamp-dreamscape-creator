@@ -156,9 +156,6 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                 <Badge className={getBookingTypeColor(booking.booking_type)}>
                                   {booking.booking_type}
                                 </Badge>
-                                <Badge className={getStatusColor(booking.booking_status)}>
-                                  {booking.booking_status}
-                                </Badge>
                                 <Badge variant="secondary">
                                   {formatServiceType(booking.service_type)}
                                 </Badge>
