@@ -204,47 +204,101 @@ const Auth = () => {
                   </TabsList>
 
                   <TabsContent value="login">
-                    <form onSubmit={handleLogin} className="space-y-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="login-email" className="flex items-center gap-2 text-white font-medium">
-                          <Mail className="h-4 w-4" />
-                          Email
-                        </Label>
-                        <Input
-                          id="login-email"
-                          type="email"
-                          value={loginData.email}
-                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                          placeholder="your.email@example.com"
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label htmlFor="login-password" className="flex items-center gap-2 text-white font-medium">
-                          <Lock className="h-4 w-4" />
-                          Password
-                        </Label>
-                        <Input
-                          id="login-password"
-                          type="password"
-                          value={loginData.password}
-                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                          placeholder="Enter your password"
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
-                          required
-                        />
-                      </div>
+                    {showForgotPassword ? (
+                      <form onSubmit={handleForgotPassword} className="space-y-6">
+                        <div className="text-center mb-4">
+                          <h3 className="text-lg font-medium text-white">Reset Your Password</h3>
+                          <p className="text-white/70 text-sm mt-1">
+                            Enter your email and we'll send you a reset link
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Label htmlFor="forgot-email" className="flex items-center gap-2 text-white font-medium">
+                            <Mail className="h-4 w-4" />
+                            Email
+                          </Label>
+                          <Input
+                            id="forgot-email"
+                            type="email"
+                            value={forgotPasswordEmail}
+                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                            placeholder="your.email@example.com"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
+                            required
+                          />
+                        </div>
 
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                        disabled={loading}
-                      >
-                        {loading ? "Signing in..." : "Sign In"}
-                      </Button>
-                    </form>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          disabled={loading}
+                        >
+                          {loading ? "Sending..." : "Send Reset Link"}
+                        </Button>
+
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          className="w-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={() => setShowForgotPassword(false)}
+                        >
+                          Back to Sign In
+                        </Button>
+                      </form>
+                    ) : (
+                      <form onSubmit={handleLogin} className="space-y-6">
+                        <div className="space-y-3">
+                          <Label htmlFor="login-email" className="flex items-center gap-2 text-white font-medium">
+                            <Mail className="h-4 w-4" />
+                            Email
+                          </Label>
+                          <Input
+                            id="login-email"
+                            type="email"
+                            value={loginData.email}
+                            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                            placeholder="your.email@example.com"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Label htmlFor="login-password" className="flex items-center gap-2 text-white font-medium">
+                            <Lock className="h-4 w-4" />
+                            Password
+                          </Label>
+                          <Input
+                            id="login-password"
+                            type="password"
+                            value={loginData.password}
+                            onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                            placeholder="Enter your password"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
+                            required
+                          />
+                        </div>
+
+                        <div className="text-right">
+                          <button
+                            type="button"
+                            onClick={() => setShowForgotPassword(true)}
+                            className="text-sm text-white/80 hover:text-white hover:underline transition-colors"
+                          >
+                            Forgot your password?
+                          </button>
+                        </div>
+
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          disabled={loading}
+                        >
+                          {loading ? "Signing in..." : "Sign In"}
+                        </Button>
+                      </form>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="signup">
