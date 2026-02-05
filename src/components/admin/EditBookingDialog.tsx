@@ -107,7 +107,6 @@ export const EditBookingDialog = ({
       guest_count: booking.guest_count || 1,
       session_date: parse(booking.session_date, 'yyyy-MM-dd', new Date()),
       session_time: booking.session_time?.substring(0, 5) || '09:00',
-      booking_status: booking.booking_status as any,
       payment_status: booking.payment_status as any,
       special_requests: booking.special_requests || '',
     },
