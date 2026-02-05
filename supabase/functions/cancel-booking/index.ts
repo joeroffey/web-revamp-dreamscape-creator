@@ -49,15 +49,17 @@ serve(async (req) => {
     }
 
     // Check if this was a token/membership booking (free booking - final_amount is 0 or null)
-    const wasTokenBooking = booking.payment_status === 'paid' && 
+    const wasTokenBooking = (booking.payment_status === 'paid' || booking.payment_status === 'pending') && 
       (booking.final_amount === 0 || booking.final_amount === null) &&
       booking.discount_amount > 0;
 
-    // Update booking status to cancelled
+    const wasPaidBooking = booking.payment_status === 'paid' || booking.payment_status === 'pending';
+
+    // Update payment status to cancelled
     const { error: updateError } = await supabase
       .from('bookings')
       .update({
-        booking_status: 'cancelled',
+        payment_status: 'cancelled',
         updated_at: new Date().toISOString(),
       })
       .eq('id', bookingId);
@@ -65,7 +67,7 @@ serve(async (req) => {
     if (updateError) throw updateError;
 
     // Update time slot availability if booking had a time_slot_id
-    if (booking.time_slot_id && booking.payment_status === 'paid') {
+    if (booking.time_slot_id && wasPaidBooking) {
       const guestCount = booking.guest_count || 1;
       
       // Get current time slot

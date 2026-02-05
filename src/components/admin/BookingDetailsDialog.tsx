@@ -85,9 +85,6 @@ export const BookingDetailsDialog = ({
         <div className="space-y-6">
           {/* Status Badges */}
           <div className="flex flex-wrap gap-2">
-            <Badge className={getStatusColor(booking.booking_status)}>
-              {booking.booking_status}
-            </Badge>
             <Badge className={getPaymentStatusColor(booking.payment_status)}>
               {booking.payment_status}
             </Badge>

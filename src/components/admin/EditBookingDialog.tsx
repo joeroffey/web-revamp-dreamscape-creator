@@ -65,7 +65,6 @@ interface BookingData {
   guest_count: number;
   session_date: string;
   session_time: string;
-  booking_status: string;
   payment_status: string;
   special_requests?: string;
   stripe_session_id?: string;
