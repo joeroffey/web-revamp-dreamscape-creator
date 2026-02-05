@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, CreditCard, Check, ChevronsUpDown, User, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2 } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,8 @@ interface Customer {
   phone: string | null;
 }
 
+type PaymentMode = 'manual' | 'card' | 'bacs_debit';
+
 export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated }: CreateMembershipDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -33,15 +36,16 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('manual');
   const [form, setForm] = useState({
     membershipType: '4_sessions_month',
     durationMonths: '1',
   });
 
   const membershipOptions = [
-    { value: '4_sessions_month', label: '4 Sessions Per Month', sessions: 4 },
-    { value: '8_sessions_month', label: '8 Sessions Per Month', sessions: 8 },
-    { value: 'unlimited', label: 'Unlimited', sessions: 999 },
+    { value: '4_sessions_month', label: '4 Sessions Per Month', sessions: 4, price: 48 },
+    { value: '8_sessions_month', label: '8 Sessions Per Month', sessions: 8, price: 75 },
+    { value: 'unlimited', label: 'Unlimited', sessions: 999, price: 100 },
   ];
 
   const durationOptions = [
@@ -128,6 +132,27 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     setLoading(true);
 
     try {
+      // If payment mode is card or bacs_debit, redirect to Stripe checkout
+      if (paymentMode === 'card' || paymentMode === 'bacs_debit') {
+        const { data, error } = await supabase.functions.invoke('create-admin-membership-payment', {
+          body: {
+            customerEmail: selectedCustomer.email,
+            customerName: selectedCustomer.full_name,
+            membershipType: form.membershipType,
+            durationMonths: parseInt(form.durationMonths),
+            paymentMethod: paymentMode,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error('Failed to create payment session');
+      }
+
+      // Manual membership creation (no payment setup)
       const selectedMembership = membershipOptions.find(m => m.value === form.membershipType);
       const sessionsPerMonth = selectedMembership?.sessions || 4;
       const durationMonths = parseInt(form.durationMonths);
@@ -135,7 +160,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       const startDate = new Date();
       const endDate = addMonths(startDate, durationMonths);
 
-      // Check if customer already has an active membership (by email, since they may not have account yet)
+      // Check if customer already has an active membership
       const { data: existingMembership } = await supabase
         .from('memberships')
         .select('id')
@@ -153,11 +178,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         return;
       }
 
-      // Create the membership - user_id is optional (will be linked when they sign up)
+      // Create the membership
       const { error } = await supabase
         .from('memberships')
         .insert({
-          user_id: userId || null, // Will be null if no account exists
+          user_id: userId || null,
           customer_name: selectedCustomer.full_name || 'Unknown',
           customer_email: selectedCustomer.email.toLowerCase(),
           membership_type: form.membershipType,
@@ -179,13 +204,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       });
 
       // Reset form and close
-      setSelectedCustomer(null);
-      setHasAccount(null);
-      setUserId(null);
-      setForm({
-        membershipType: '4_sessions_month',
-        durationMonths: '1',
-      });
+      resetForm();
       onOpenChange(false);
       onMembershipCreated();
     } catch (error: any) {
@@ -200,20 +219,31 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     }
   };
 
+  const resetForm = () => {
+    setSelectedCustomer(null);
+    setHasAccount(null);
+    setUserId(null);
+    setPaymentMode('manual');
+    setForm({
+      membershipType: '4_sessions_month',
+      durationMonths: '1',
+    });
+  };
+
   const selectedMembership = membershipOptions.find(m => m.value === form.membershipType);
   const durationMonths = parseInt(form.durationMonths);
   const endDate = addMonths(new Date(), durationMonths);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={(open) => { if (!open) resetForm(); onOpenChange(open); }}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            Create Manual Membership
+            Create Membership
           </DialogTitle>
           <DialogDescription>
-            Create a membership for a customer who paid in cash or by other methods.
+            Create a membership and optionally set up recurring payments.
           </DialogDescription>
         </DialogHeader>
         
@@ -287,13 +317,13 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
             {/* Account status indicator */}
             {selectedCustomer && hasAccount === false && (
-              <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-md text-sm text-amber-700">
+              <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/20 rounded-md text-sm text-warning-foreground">
                 <AlertCircle className="h-4 w-4" />
-                <span>No account yet. Membership will be linked when they sign up with this email.</span>
+                <span>No account yet. Membership will be linked when they sign up.</span>
               </div>
             )}
             {selectedCustomer && hasAccount === true && (
-              <div className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/20 rounded-md text-sm text-green-700">
+              <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-md text-sm text-primary">
                 <Check className="h-4 w-4" />
                 <span>Customer has an account ✓</span>
               </div>
@@ -312,42 +342,108 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
               <SelectContent>
                 {membershipOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {option.label} - £{option.price}/month
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="duration">Duration</Label>
-            <Select
-              value={form.durationMonths}
-              onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+          {/* Payment Method Selection */}
+          <div className="space-y-3">
+            <Label>Payment Setup</Label>
+            <RadioGroup 
+              value={paymentMode} 
+              onValueChange={(value) => setPaymentMode(value as PaymentMode)}
+              className="grid grid-cols-1 gap-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {durationOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <div className={cn(
+                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                paymentMode === 'manual' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <RadioGroupItem value="manual" id="manual" />
+                <Label htmlFor="manual" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Banknote className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Manual / Cash</p>
+                    <p className="text-xs text-muted-foreground">Already paid, no payment setup needed</p>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className={cn(
+                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                paymentMode === 'card' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <RadioGroupItem value="card" id="card" />
+                <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Card Payment</p>
+                    <p className="text-xs text-muted-foreground">Set up recurring card payments</p>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className={cn(
+                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                paymentMode === 'bacs_debit' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <RadioGroupItem value="bacs_debit" id="bacs_debit" />
+                <Label htmlFor="bacs_debit" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Direct Debit (BACS)</p>
+                    <p className="text-xs text-muted-foreground">Set up recurring bank payments</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
+
+          {/* Duration - only show for manual */}
+          {paymentMode === 'manual' && (
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duration</Label>
+              <Select
+                value={form.durationMonths}
+                onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {durationOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Summary */}
           <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
             <p><strong>Summary:</strong></p>
             {selectedCustomer && <p>• Customer: {selectedCustomer.full_name}</p>}
-            <p>• {selectedMembership?.label}</p>
-            <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
-            <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
-            <p className="text-muted-foreground text-xs mt-2">
-              * Manual memberships don't auto-renew
-            </p>
+            <p>• {selectedMembership?.label} - £{selectedMembership?.price}/month</p>
+            {paymentMode === 'manual' && (
+              <>
+                <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
+                <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
+              </>
+            )}
+            {paymentMode !== 'manual' && (
+              <p className="text-muted-foreground text-xs mt-2">
+                Customer will be redirected to Stripe to enter payment details
+              </p>
+            )}
+            {paymentMode === 'manual' && (
+              <p className="text-muted-foreground text-xs mt-2">
+                * Manual memberships don't auto-renew
+              </p>
+            )}
           </div>
 
           <DialogFooter>
@@ -358,12 +454,21 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {paymentMode === 'manual' ? 'Creating...' : 'Redirecting...'}
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Membership
+                  {paymentMode === 'manual' ? (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Membership
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Setup Payment
+                    </>
+                  )}
                 </>
               )}
             </Button>

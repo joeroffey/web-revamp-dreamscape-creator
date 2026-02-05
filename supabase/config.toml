@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.create-credit-booking]
 verify_jwt = false
+
+[functions.create-admin-membership-payment]
+verify_jwt = false
