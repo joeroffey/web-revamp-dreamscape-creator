@@ -119,7 +119,7 @@ const RedeemGiftCard = () => {
             {isRedeemed ? (
               <Card className="wellness-card text-center">
                 <CardContent className="pt-8 pb-8">
-                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
                   <h2 className="text-2xl font-semibold mb-2">Success!</h2>
                   <p className="text-3xl font-bold text-primary mb-4">
                     £{redeemedAmount ? (redeemedAmount / 100).toFixed(2) : '0.00'}
