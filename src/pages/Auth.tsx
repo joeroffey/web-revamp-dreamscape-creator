@@ -263,6 +263,7 @@ const Auth = () => {
                           onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                           placeholder="Your phone number"
                           className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
+                          required
                         />
                       </div>
 
