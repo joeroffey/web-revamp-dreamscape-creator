@@ -197,9 +197,46 @@ const Booking = () => {
     }
   };
 
+  // Check credit balance for logged-in user
+  const checkCreditBalance = async () => {
+    if (!user?.id) {
+      setCreditStatus(null);
+      return;
+    }
+
+    setCheckingCredits(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        setCreditStatus(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('check-credit-balance', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        console.error('Error checking credits:', error);
+        setCreditStatus(null);
+      } else {
+        setCreditStatus(data);
+      }
+    } catch (err) {
+      console.error('Error checking credits:', err);
+      setCreditStatus(null);
+    } finally {
+      setCheckingCredits(false);
+    }
+  };
+
   useEffect(() => {
     checkMembershipForDate();
     checkTokenStatusForDate();
+    checkCreditBalance();
   }, [user?.id, user?.email]);
 
   // Pre-fill user data from auth and profile if no membership
