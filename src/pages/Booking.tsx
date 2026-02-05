@@ -92,6 +92,7 @@ const Booking = () => {
     guestCount: 1,
     payingGuestCount: 0, // Guests that will pay separately
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Fetch pricing from database
   useEffect(() => {
