@@ -257,7 +257,6 @@ export const EditBookingDialog = ({
             guest_count: data.guest_count,
             session_date: newDate,
             session_time: newTime,
-            booking_status: data.booking_status,
             payment_status: data.payment_status,
             special_requests: data.special_requests || null,
             updated_at: new Date().toISOString(),
