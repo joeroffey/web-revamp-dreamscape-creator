@@ -85,10 +85,10 @@ export default function ModernBookingManagement() {
 
       const totalBookings = bookingsData?.length || 0;
       const upcomingBookings = (bookingsData || []).filter(b => 
-        new Date(b.session_date) >= new Date() && b.booking_status !== 'cancelled'
+        new Date(b.session_date) >= new Date() && b.payment_status !== 'cancelled'
       ).length;
       const completedBookings = (bookingsData || []).filter(b => 
-        b.booking_status === 'completed'
+        b.payment_status === 'paid' && new Date(b.session_date) < new Date()
       ).length;
       const totalRevenue = (bookingsData || [])
         .filter(b => b.payment_status === 'paid')
