@@ -498,6 +498,12 @@ const Booking = () => {
   const canUseTokens = !canUseMembership && tokenStatus?.hasTokens && tokenStatus.tokensRemaining > 0 && tokenStatus?.canBook !== false;
   const hasUsedCreditForSelectedDate = selectedTimeSlot && membershipStatus?.hasUsedCreditForDate;
   const hasUsedTokenForSelectedDate = selectedTimeSlot && tokenStatus?.hasUsedTokenForDate;
+  
+  // Calculate if user can use credits (has enough to cover the booking)
+  const bookingCost = formData.bookingType === 'private' 
+    ? pricing.private 
+    : pricing.combined * formData.guestCount;
+  const canUseCredits = creditStatus && creditStatus.totalCredits >= bookingCost && !canUseMembership && !canUseTokens;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
