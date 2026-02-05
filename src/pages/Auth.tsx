@@ -16,6 +16,8 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/";
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
@@ -27,6 +29,34 @@ const Auth = () => {
     password: "",
     confirmPassword: "",
   });
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: 'https://www.revitalisehub.co.uk/reset-password',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Reset Email Sent!",
+        description: "Check your email for a link to reset your password.",
+      });
+      setShowForgotPassword(false);
+      setForgotPasswordEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Check if user is already logged in
