@@ -13,7 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX, ArrowUpDown, ArrowUp, ArrowDown, UserPlus } from "lucide-react";
+import { useAuth } from "@/components/AuthContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -68,6 +69,8 @@ export default function ModernCustomerManagement() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [creatingAccounts, setCreatingAccounts] = useState(false);
+  const { session } = useAuth();
 
   const queryClient = useQueryClient();
 
@@ -402,6 +405,45 @@ export default function ModernCustomerManagement() {
     toast.success('Customers exported');
   };
 
+  const createAllAuthAccounts = async () => {
+    if (!session?.access_token) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+
+    setCreatingAccounts(true);
+    try {
+      const response = await fetch(
+        "https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/create-customer-accounts",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create accounts");
+      }
+
+      toast.success(data.message);
+      
+      if (data.results?.errors?.length > 0) {
+        console.error("Account creation errors:", data.results.errors);
+        toast.warning(`${data.results.failed} accounts failed to create. Check console for details.`);
+      }
+    } catch (error: any) {
+      console.error("Error creating auth accounts:", error);
+      toast.error(error.message || "Failed to create auth accounts");
+    } finally {
+      setCreatingAccounts(false);
+    }
+  };
+
   const fetchCustomerBookings = async (customerEmail: string) => {
     try {
       const { data } = await supabase
@@ -550,6 +592,16 @@ export default function ModernCustomerManagement() {
                 className="hidden"
                 onChange={handleFileUpload}
               />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={createAllAuthAccounts} 
+                disabled={creatingAccounts}
+                className="min-h-[44px]"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {creatingAccounts ? "Creating..." : "Create Auth Accounts"}
+              </Button>
               <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="min-h-[44px]">
                 <Upload className="h-4 w-4 mr-2" />
                 Import CSV
