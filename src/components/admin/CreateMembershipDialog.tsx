@@ -125,15 +125,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       return;
     }
 
-    if (!hasAccount || !userId) {
-      toast({
-        title: "Account Required",
-        description: "This customer needs to create an account before they can have a membership",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
