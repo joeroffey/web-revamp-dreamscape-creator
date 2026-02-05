@@ -51,8 +51,7 @@ const formSchema = z.object({
   guest_count: z.number().min(1, 'At least 1 guest required').max(10, 'Maximum 10 guests'),
   session_date: z.date({ required_error: 'Session date is required' }),
   session_time: z.string().min(1, 'Session time is required'),
-  booking_status: z.enum(['confirmed', 'completed', 'cancelled']),
-  payment_status: z.enum(['paid', 'pending', 'failed', 'refunded', 'partial_refund']),
+  payment_status: z.enum(['paid', 'pending', 'cancelled', 'refunded', 'partial_refund']),
   special_requests: z.string().optional(),
 });
 
@@ -66,7 +65,6 @@ interface BookingData {
   guest_count: number;
   session_date: string;
   session_time: string;
-  booking_status: string;
   payment_status: string;
   special_requests?: string;
   stripe_session_id?: string;
@@ -109,7 +107,6 @@ export const EditBookingDialog = ({
       guest_count: booking.guest_count || 1,
       session_date: parse(booking.session_date, 'yyyy-MM-dd', new Date()),
       session_time: booking.session_time?.substring(0, 5) || '09:00',
-      booking_status: booking.booking_status as any,
       payment_status: booking.payment_status as any,
       special_requests: booking.special_requests || '',
     },
@@ -123,7 +120,6 @@ export const EditBookingDialog = ({
       guest_count: booking.guest_count || 1,
       session_date: parse(booking.session_date, 'yyyy-MM-dd', new Date()),
       session_time: booking.session_time?.substring(0, 5) || '09:00',
-      booking_status: booking.booking_status as any,
       payment_status: booking.payment_status as any,
       special_requests: booking.special_requests || '',
     });
@@ -243,7 +239,6 @@ export const EditBookingDialog = ({
             session_date: newDate,
             session_time: newTime,
             time_slot_id: newTimeSlotId,
-            booking_status: data.booking_status,
             payment_status: data.payment_status,
             special_requests: data.special_requests || null,
             updated_at: new Date().toISOString(),
@@ -262,7 +257,6 @@ export const EditBookingDialog = ({
             guest_count: data.guest_count,
             session_date: newDate,
             session_time: newTime,
-            booking_status: data.booking_status,
             payment_status: data.payment_status,
             special_requests: data.special_requests || null,
             updated_at: new Date().toISOString(),
@@ -529,57 +523,32 @@ export const EditBookingDialog = ({
 
               {/* Status */}
               <div className="space-y-4">
-                <h3 className="font-medium text-sm text-muted-foreground">Status</h3>
+                <h3 className="font-medium text-sm text-muted-foreground">Payment Status</h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="booking_status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Booking Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="payment_status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="failed">Failed</SelectItem>
-                            <SelectItem value="refunded">Refunded</SelectItem>
-                            <SelectItem value="partial_refund">Partial Refund</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="payment_status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="refunded">Refunded</SelectItem>
+                          <SelectItem value="partial_refund">Partial Refund</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <FormField
@@ -605,7 +574,7 @@ export const EditBookingDialog = ({
                       variant="destructive"
                       size="sm"
                       onClick={() => setShowCancelDialog(true)}
-                      disabled={loading || booking.booking_status === 'cancelled'}
+                      disabled={loading || booking.payment_status === 'cancelled'}
                     >
                       <Ban className="h-4 w-4 mr-1" />
                       Cancel Booking

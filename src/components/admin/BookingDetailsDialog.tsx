@@ -29,7 +29,6 @@ interface BookingData {
   booking_type: string;
   guest_count: number;
   payment_status: string;
-  booking_status: string;
   price_amount: number;
   special_requests?: string;
   service_type: string;
@@ -47,20 +46,11 @@ export const BookingDetailsDialog = ({
   open,
   onOpenChange
 }: BookingDetailsDialogProps) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'comp': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -95,9 +85,6 @@ export const BookingDetailsDialog = ({
         <div className="space-y-6">
           {/* Status Badges */}
           <div className="flex flex-wrap gap-2">
-            <Badge className={getStatusColor(booking.booking_status)}>
-              {booking.booking_status}
-            </Badge>
             <Badge className={getPaymentStatusColor(booking.payment_status)}>
               {booking.payment_status}
             </Badge>

@@ -85,10 +85,10 @@ export default function ModernBookingManagement() {
 
       const totalBookings = bookingsData?.length || 0;
       const upcomingBookings = (bookingsData || []).filter(b => 
-        new Date(b.session_date) >= new Date() && b.booking_status !== 'cancelled'
+        new Date(b.session_date) >= new Date() && b.payment_status !== 'cancelled'
       ).length;
       const completedBookings = (bookingsData || []).filter(b => 
-        b.booking_status === 'completed'
+        b.payment_status === 'paid' && new Date(b.session_date) < new Date()
       ).length;
       const totalRevenue = (bookingsData || [])
         .filter(b => b.payment_status === 'paid')
@@ -114,21 +114,12 @@ export default function ModernBookingManagement() {
     return new Date(dateString).toLocaleDateString('en-GB');
   };
 
-  const getStatusColor = (status: string | null) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getPaymentStatusColor = (status: string | null) => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'refunded': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -138,7 +129,7 @@ export default function ModernBookingManagement() {
                          booking.customer_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          booking.service_type.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || booking.booking_status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || booking.payment_status === statusFilter;
     const matchesPayment = paymentFilter === 'all' || booking.payment_status === paymentFilter;
     
     return matchesSearch && matchesStatus && matchesPayment;
@@ -242,7 +233,6 @@ export default function ModernBookingManagement() {
               guest_count: selectedBooking.guest_count || 1,
               session_date: selectedBooking.session_date,
               session_time: selectedBooking.session_time,
-              booking_status: selectedBooking.booking_status || 'confirmed',
               payment_status: selectedBooking.payment_status || 'pending',
               special_requests: selectedBooking.special_requests || undefined,
               stripe_session_id: selectedBooking.stripe_session_id || undefined,
@@ -300,22 +290,10 @@ export default function ModernBookingManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <PoundSterling className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Payment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Payment</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -411,10 +389,6 @@ export default function ModernBookingManagement() {
                         <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
                           {booking.payment_status || 'pending'}
                         </Badge>
-                        <br />
-                        <Badge className={`text-xs mt-1 ${getStatusColor(booking.booking_status)}`}>
-                          {booking.booking_status || 'pending'}
-                        </Badge>
                       </div>
                       
                       <div className="flex items-center justify-end gap-2">
@@ -452,19 +426,11 @@ export default function ModernBookingManagement() {
                                     <p><strong>Price:</strong> {formatCurrency(selectedBooking.price_amount)}</p>
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h4 className="font-medium mb-2">Status</h4>
-                                    <Badge className={getStatusColor(selectedBooking.booking_status)}>
-                                      {selectedBooking.booking_status || 'pending'}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-medium mb-2">Payment Status</h4>
-                                    <Badge className={getPaymentStatusColor(selectedBooking.payment_status)}>
-                                      {selectedBooking.payment_status || 'pending'}
-                                    </Badge>
-                                  </div>
+                                <div>
+                                  <h4 className="font-medium mb-2">Payment Status</h4>
+                                  <Badge className={getPaymentStatusColor(selectedBooking.payment_status)}>
+                                    {selectedBooking.payment_status || 'pending'}
+                                  </Badge>
                                 </div>
                                 {selectedBooking.special_requests && (
                                   <div>

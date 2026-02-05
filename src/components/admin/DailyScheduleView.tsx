@@ -34,7 +34,6 @@ interface BookingData {
   booking_type: string;
   guest_count: number;
   payment_status: string;
-  booking_status: string;
   price_amount: number;
   special_requests?: string;
   service_type: string;
@@ -64,19 +63,11 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
     return bookings.filter(booking => booking.session_time === timeSlot);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -165,9 +156,6 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                 <Badge className={getBookingTypeColor(booking.booking_type)}>
                                   {booking.booking_type}
                                 </Badge>
-                                <Badge className={getStatusColor(booking.booking_status)}>
-                                  {booking.booking_status}
-                                </Badge>
                                 <Badge variant="secondary">
                                   {formatServiceType(booking.service_type)}
                                 </Badge>
@@ -194,7 +182,7 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                 <div className="text-sm flex items-center gap-2">
                                   <span className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</span>
                                   <Badge className={getPaymentStatusColor(booking.payment_status)}>
-                                    {booking.payment_status === 'pending' ? 'UNPAID' : 'Paid'}
+                                    {booking.payment_status === 'pending' ? 'UNPAID' : booking.payment_status === 'cancelled' ? 'Cancelled' : 'Paid'}
                                   </Badge>
                                 </div>
                                 
