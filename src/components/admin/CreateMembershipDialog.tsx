@@ -247,8 +247,8 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden gap-4">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
             <Label>Customer *</Label>
             <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
               <PopoverTrigger asChild>
