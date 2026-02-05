@@ -257,60 +257,91 @@ export default function ModernCustomerManagement() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (isExcel) {
+      // Handle Excel files using xlsx library
       try {
-        const text = e.target?.result as string;
-        const lines = text.split('\n').filter(line => line.trim());
-        if (lines.length < 2) {
-          toast.error('CSV file must have a header row and at least one data row');
+        const XLSX = await import('xlsx');
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+        
+        if (jsonData.length < 2) {
+          toast.error('File must have a header row and at least one data row');
           return;
         }
 
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-        const emailIndex = headers.findIndex(h => h.includes('email'));
-        const firstNameIndex = headers.findIndex(h => h === 'first name' || h === 'firstname' || h === 'first_name');
-        const lastNameIndex = headers.findIndex(h => h === 'last name' || h === 'lastname' || h === 'last_name');
-        const phoneIndex = headers.findIndex(h => h.includes('phone') || h.includes('tel'));
-
-        if (emailIndex === -1) {
-          toast.error('CSV must have an email column');
-          return;
-        }
-
-        if (firstNameIndex === -1 || lastNameIndex === -1) {
-          toast.error('CSV must have first name and last name columns');
-          return;
-        }
-
-        const parsedData = lines.slice(1).map((line, idx) => {
-          const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-          const firstName = values[firstNameIndex] || '';
-          const lastName = values[lastNameIndex] || '';
+        // Column mapping: A=First Name, B=Last Name, C=Email, D=Phone
+        const parsedData = jsonData.slice(1).map((row, idx) => {
+          const firstName = String(row[0] || '').trim();
+          const lastName = String(row[1] || '').trim();
+          const email = String(row[2] || '').trim();
+          const phone = String(row[3] || '').trim();
           const fullName = [firstName, lastName].filter(Boolean).join(' ');
           return {
             row: idx + 2,
-            email: values[emailIndex] || '',
+            email,
             first_name: firstName,
             last_name: lastName,
             full_name: fullName,
-            phone: phoneIndex !== -1 ? values[phoneIndex] : '',
-            valid: !!values[emailIndex] && values[emailIndex].includes('@'),
+            phone,
+            valid: !!email && email.includes('@'),
           };
         }).filter(d => d.email);
 
         setImportData(parsedData);
         setImportDialogOpen(true);
       } catch (err) {
-        console.error('CSV parse error:', err);
-        toast.error('Failed to parse CSV file');
+        console.error('Excel parse error:', err);
+        toast.error('Failed to parse Excel file');
       }
-    };
-    reader.readAsText(file);
+    } else {
+      // Handle CSV files
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string;
+          const lines = text.split('\n').filter(line => line.trim());
+          if (lines.length < 2) {
+            toast.error('CSV file must have a header row and at least one data row');
+            return;
+          }
+
+          // Column mapping: A=First Name, B=Last Name, C=Email, D=Phone
+          const parsedData = lines.slice(1).map((line, idx) => {
+            const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+            const firstName = values[0] || '';
+            const lastName = values[1] || '';
+            const email = values[2] || '';
+            const phone = values[3] || '';
+            const fullName = [firstName, lastName].filter(Boolean).join(' ');
+            return {
+              row: idx + 2,
+              email,
+              first_name: firstName,
+              last_name: lastName,
+              full_name: fullName,
+              phone,
+              valid: !!email && email.includes('@'),
+            };
+          }).filter(d => d.email);
+
+          setImportData(parsedData);
+          setImportDialogOpen(true);
+        } catch (err) {
+          console.error('CSV parse error:', err);
+          toast.error('Failed to parse CSV file');
+        }
+      };
+      reader.readAsText(file);
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -515,7 +546,7 @@ export default function ModernCustomerManagement() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 className="hidden"
                 onChange={handleFileUpload}
               />
