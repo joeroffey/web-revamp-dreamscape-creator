@@ -126,6 +126,7 @@ serve(async (req) => {
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
+        payment_method_types: ["card", "bacs_debit"],
         line_items: [
           {
             price_data: {
@@ -145,6 +146,11 @@ serve(async (req) => {
         mode: "subscription",
         success_url: `${req.headers.get("origin")}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}/memberships`,
+        payment_method_options: {
+          bacs_debit: {
+            setup_future_usage: "off_session",
+          },
+        },
         metadata: {
           userId: userId,
           membershipType: membershipType,
