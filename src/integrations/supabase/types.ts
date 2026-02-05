@@ -325,6 +325,60 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          additional_info: Json | null
+          created_at: string
+          display_order: number | null
+          event_dates: string[] | null
+          event_time: string | null
+          full_description: string | null
+          id: string
+          image_url: string | null
+          instructor: string | null
+          is_published: boolean | null
+          secondary_image_url: string | null
+          short_description: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          created_at?: string
+          display_order?: number | null
+          event_dates?: string[] | null
+          event_time?: string | null
+          full_description?: string | null
+          id?: string
+          image_url?: string | null
+          instructor?: string | null
+          is_published?: boolean | null
+          secondary_image_url?: string | null
+          short_description?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          additional_info?: Json | null
+          created_at?: string
+          display_order?: number | null
+          event_dates?: string[] | null
+          event_time?: string | null
+          full_description?: string | null
+          id?: string
+          image_url?: string | null
+          instructor?: string | null
+          is_published?: boolean | null
+          secondary_image_url?: string | null
+          short_description?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gift_cards: {
         Row: {
           amount: number
