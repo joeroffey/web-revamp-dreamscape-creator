@@ -236,7 +236,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
   return (
     <Dialog open={open} onOpenChange={(open) => { if (!open) resetForm(); onOpenChange(open); }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
@@ -247,9 +247,8 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Customer Selection */}
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
             <Label>Customer *</Label>
             <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
               <PopoverTrigger asChild>
