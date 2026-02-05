@@ -69,6 +69,7 @@ const App = () => (
             <Route path="/gift-card-success" element={<GiftCardSuccess />} />
             <Route path="/intro-offer-success" element={<IntroOfferSuccess />} />
             <Route path="/redeem-gift-card" element={<RedeemGiftCard />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
