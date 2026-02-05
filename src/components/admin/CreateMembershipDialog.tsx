@@ -132,6 +132,27 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     setLoading(true);
 
     try {
+      // If payment mode is card or bacs_debit, redirect to Stripe checkout
+      if (paymentMode === 'card' || paymentMode === 'bacs_debit') {
+        const { data, error } = await supabase.functions.invoke('create-admin-membership-payment', {
+          body: {
+            customerEmail: selectedCustomer.email,
+            customerName: selectedCustomer.full_name,
+            membershipType: form.membershipType,
+            durationMonths: parseInt(form.durationMonths),
+            paymentMethod: paymentMode,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error('Failed to create payment session');
+      }
+
+      // Manual membership creation (no payment setup)
       const selectedMembership = membershipOptions.find(m => m.value === form.membershipType);
       const sessionsPerMonth = selectedMembership?.sessions || 4;
       const durationMonths = parseInt(form.durationMonths);
@@ -139,7 +160,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       const startDate = new Date();
       const endDate = addMonths(startDate, durationMonths);
 
-      // Check if customer already has an active membership (by email, since they may not have account yet)
+      // Check if customer already has an active membership
       const { data: existingMembership } = await supabase
         .from('memberships')
         .select('id')
@@ -157,11 +178,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         return;
       }
 
-      // Create the membership - user_id is optional (will be linked when they sign up)
+      // Create the membership
       const { error } = await supabase
         .from('memberships')
         .insert({
-          user_id: userId || null, // Will be null if no account exists
+          user_id: userId || null,
           customer_name: selectedCustomer.full_name || 'Unknown',
           customer_email: selectedCustomer.email.toLowerCase(),
           membership_type: form.membershipType,
@@ -183,13 +204,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       });
 
       // Reset form and close
-      setSelectedCustomer(null);
-      setHasAccount(null);
-      setUserId(null);
-      setForm({
-        membershipType: '4_sessions_month',
-        durationMonths: '1',
-      });
+      resetForm();
       onOpenChange(false);
       onMembershipCreated();
     } catch (error: any) {
@@ -202,6 +217,17 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setSelectedCustomer(null);
+    setHasAccount(null);
+    setUserId(null);
+    setPaymentMode('manual');
+    setForm({
+      membershipType: '4_sessions_month',
+      durationMonths: '1',
+    });
   };
 
   const selectedMembership = membershipOptions.find(m => m.value === form.membershipType);
