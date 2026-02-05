@@ -327,9 +327,9 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
                 <span>Customer has an account ✓</span>
               </div>
             )}
-          </div>
+            </div>
 
-          <div className="space-y-2">
+            {/* Payment Method Selection */}
             <Label htmlFor="membershipType">Membership Type</Label>
             <Select
               value={form.membershipType}
