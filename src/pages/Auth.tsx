@@ -8,11 +8,13 @@ import { User, Mail, Lock, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/Navigation";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/";
   const [loading, setLoading] = useState(false);
   const [loginData, setLoginData] = useState({
     email: "",
@@ -33,8 +35,8 @@ const Auth = () => {
         const { data: { session } } = await supabase.auth.getSession();
         console.log('Auth page - checking session:', !!session);
         if (session?.user) {
-          console.log('Auth page - user found, redirecting to home');
-          window.location.href = "/";
+          console.log('Auth page - user found, redirecting to:', redirectUrl);
+          navigate(redirectUrl);
         }
       } catch (error) {
         console.error('Auth page - error checking session:', error);
@@ -73,7 +75,7 @@ const Auth = () => {
         title: firstName ? `Welcome back, ${firstName}!` : "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      navigate("/");
+      navigate(redirectUrl);
     } catch (error: any) {
       toast({
         title: "Login Failed",
