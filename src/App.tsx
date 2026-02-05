@@ -26,6 +26,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import FitnessRecovery from "./pages/FitnessRecovery";
 import YourVisit from "./pages/YourVisit";
 import NotFound from "./pages/NotFound";
+import RedeemGiftCard from "./pages/RedeemGiftCard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ModernBookingManagement from "./components/admin/ModernBookingManagement";
 import ModernCustomerManagement from "./components/admin/ModernCustomerManagement";
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/membership-success" element={<MembershipSuccess />} />
             <Route path="/gift-card-success" element={<GiftCardSuccess />} />
             <Route path="/intro-offer-success" element={<IntroOfferSuccess />} />
+            <Route path="/redeem-gift-card" element={<RedeemGiftCard />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />

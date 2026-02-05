@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
-import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles, Gift, Tag } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, Check, AlertCircle, Users, CreditCard, Sparkles, Gift, Tag, Wallet } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -59,6 +59,16 @@ interface TokenStatus {
   } | null;
 }
 
+interface CreditStatus {
+  totalCredits: number;
+  totalCreditsInPounds: string;
+  credits: Array<{
+    id: string;
+    credit_balance: number;
+    expires_at: string;
+  }>;
+}
+
 const Booking = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -72,8 +82,11 @@ const Booking = () => {
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
+  const [creditStatus, setCreditStatus] = useState<CreditStatus | null>(null);
   const [checkingMembership, setCheckingMembership] = useState(false);
   const [checkingTokens, setCheckingTokens] = useState(false);
+  const [checkingCredits, setCheckingCredits] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'credits' | 'membership' | 'tokens'>('card');
   const [pricing, setPricing] = useState({ combined: 1800, private: 7000 }); // pence
   const [promoCode, setPromoCode] = useState("");
   const [promoCodeStatus, setPromoCodeStatus] = useState<{
@@ -184,9 +197,46 @@ const Booking = () => {
     }
   };
 
+  // Check credit balance for logged-in user
+  const checkCreditBalance = async () => {
+    if (!user?.id) {
+      setCreditStatus(null);
+      return;
+    }
+
+    setCheckingCredits(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        setCreditStatus(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('check-credit-balance', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        console.error('Error checking credits:', error);
+        setCreditStatus(null);
+      } else {
+        setCreditStatus(data);
+      }
+    } catch (err) {
+      console.error('Error checking credits:', err);
+      setCreditStatus(null);
+    } finally {
+      setCheckingCredits(false);
+    }
+  };
+
   useEffect(() => {
     checkMembershipForDate();
     checkTokenStatusForDate();
+    checkCreditBalance();
   }, [user?.id, user?.email]);
 
   // Pre-fill user data from auth and profile if no membership
@@ -448,6 +498,12 @@ const Booking = () => {
   const canUseTokens = !canUseMembership && tokenStatus?.hasTokens && tokenStatus.tokensRemaining > 0 && tokenStatus?.canBook !== false;
   const hasUsedCreditForSelectedDate = selectedTimeSlot && membershipStatus?.hasUsedCreditForDate;
   const hasUsedTokenForSelectedDate = selectedTimeSlot && tokenStatus?.hasUsedTokenForDate;
+  
+  // Calculate if user can use credits (has enough to cover the booking)
+  const bookingCost = formData.bookingType === 'private' 
+    ? pricing.private 
+    : pricing.combined * formData.guestCount;
+  const canUseCredits = creditStatus && creditStatus.totalCredits >= bookingCost && !canUseMembership && !canUseTokens;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
@@ -564,6 +620,70 @@ const Booking = () => {
       }
     } catch (error) {
       console.error('Token booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      toast({
+        title: "Booking Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreditBooking = async () => {
+    if (!validateForm() || !user?.id) {
+      toast({
+        title: "Please Complete All Required Fields",
+        description: "Check the form for any missing information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error("Authentication required");
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-credit-booking', {
+        body: {
+          userId: user.id,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          timeSlotId: selectedTimeSlot!.id,
+          specialRequests: formData.specialRequests,
+          bookingType: formData.bookingType,
+          guestCount: formData.guestCount,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.success) {
+        // Refresh credit balance after booking
+        await checkCreditBalance();
+        
+        window.location.href = `/booking-success?credits=true&remaining=${(data.creditsRemaining / 100).toFixed(2)}`;
+      } else {
+        throw new Error("Failed to create booking");
+      }
+    } catch (error) {
+      console.error('Credit booking error:', error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       
       toast({
@@ -761,6 +881,37 @@ const Booking = () => {
                   </div>
                   <p className="text-sm text-muted-foreground mt-3">
                     Use your {tokenStatus.isIntroOffer ? 'introductory offer' : ''} tokens for free communal sessions. One token = one person per day.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : creditStatus && creditStatus.totalCredits > 0 && !canUseMembership && !canUseTokens ? (
+              <Card className="mb-8 border-primary bg-primary/5">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Wallet className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Gift Card Credit Available</h3>
+                        <p className="text-sm text-muted-foreground">
+                          You have £{creditStatus.totalCreditsInPounds} credit balance
+                          {creditStatus.credits[0]?.expires_at && (
+                            <> • Expires {new Date(creditStatus.credits[0].expires_at).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="w-fit">
+                      <Wallet className="h-3 w-3 mr-1" />
+                      {canUseCredits ? 'Can Pay with Credit' : 'Partial Credit Available'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    {canUseCredits 
+                      ? 'You can use your credit balance to pay for this booking. Select "Use Credit" at checkout.'
+                      : `Your credit balance (£${creditStatus.totalCreditsInPounds}) is less than the booking cost. Credit can only be used when your remaining balance is less than the total.`
+                    }
                   </p>
                 </CardContent>
               </Card>
@@ -1203,34 +1354,84 @@ const Booking = () => {
                           </>
                         ) : (
                           <>
-                            <div className="flex justify-between">
-                              <span>Price:</span>
-                              <span>
-                                {formData.bookingType === 'private' 
-                                  ? `£${(pricing.private / 100).toFixed(0)} flat rate` 
-                                  : `£${(pricing.combined / 100).toFixed(0)} × ${formData.guestCount} people`}
-                              </span>
-                            </div>
-                            {promoCodeStatus.isValid && promoCodeStatus.discountPercentage && (
-                              <div className="flex justify-between text-primary">
-                                <span className="flex items-center gap-1">
-                                  <Tag className="h-3 w-3" />
-                                  Discount ({promoCodeStatus.discountPercentage}%):
-                                </span>
-                                <span>
-                                  -£{((() => {
-                                    const basePrice = formData.bookingType === 'private' 
-                                      ? pricing.private / 100 
-                                      : (pricing.combined / 100) * formData.guestCount;
-                                    return (basePrice * (promoCodeStatus.discountPercentage / 100)).toFixed(2);
-                                  })())}
-                                </span>
+                            {/* Payment Method Selection - Show when user has credits */}
+                            {canUseCredits && (
+                              <div className="pt-2 border-t mb-3">
+                                <p className="text-sm font-medium mb-2">Payment Method:</p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant={paymentMethod === 'credits' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => setPaymentMethod('credits')}
+                                  >
+                                    <Wallet className="h-4 w-4 mr-1" />
+                                    Use Credit (£{creditStatus?.totalCreditsInPounds})
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant={paymentMethod === 'card' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => setPaymentMethod('card')}
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-1" />
+                                    Pay with Card
+                                  </Button>
+                                </div>
                               </div>
                             )}
-                            <div className="flex justify-between font-semibold text-primary pt-1 border-t">
-                              <span>Total:</span>
-                              <span>£{calculateTotalPrice().toFixed(2)}</span>
-                            </div>
+                            
+                            {paymentMethod === 'credits' && canUseCredits ? (
+                              <>
+                                <div className="flex justify-between text-primary font-medium pt-2 border-t">
+                                  <span>Payment:</span>
+                                  <span className="flex items-center gap-1">
+                                    <Wallet className="h-4 w-4" />
+                                    Gift Card Credit
+                                  </span>
+                                </div>
+                                <div className="flex justify-between font-semibold text-primary">
+                                  <span>Total:</span>
+                                  <span>£0 (Using £{(bookingCost / 100).toFixed(2)} credit)</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  £{((creditStatus?.totalCredits || 0 - bookingCost) / 100).toFixed(2)} credit remaining after this booking
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex justify-between">
+                                  <span>Price:</span>
+                                  <span>
+                                    {formData.bookingType === 'private' 
+                                      ? `£${(pricing.private / 100).toFixed(0)} flat rate` 
+                                      : `£${(pricing.combined / 100).toFixed(0)} × ${formData.guestCount} people`}
+                                  </span>
+                                </div>
+                                {promoCodeStatus.isValid && promoCodeStatus.discountPercentage && (
+                                  <div className="flex justify-between text-primary">
+                                    <span className="flex items-center gap-1">
+                                      <Tag className="h-3 w-3" />
+                                      Discount ({promoCodeStatus.discountPercentage}%):
+                                    </span>
+                                    <span>
+                                      -£{((() => {
+                                        const basePrice = formData.bookingType === 'private' 
+                                          ? pricing.private / 100 
+                                          : (pricing.combined / 100) * formData.guestCount;
+                                        return (basePrice * (promoCodeStatus.discountPercentage / 100)).toFixed(2);
+                                      })())}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between font-semibold text-primary pt-1 border-t">
+                                  <span>Total:</span>
+                                  <span>£{calculateTotalPrice().toFixed(2)}</span>
+                                </div>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
@@ -1283,6 +1484,20 @@ const Booking = () => {
                             <>
                               <Gift className="h-4 w-4 mr-2" />
                               Confirm Booking with Token
+                            </>
+                          )}
+                        </Button>
+                      ) : paymentMethod === 'credits' && canUseCredits ? (
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                          onClick={handleCreditBooking}
+                          disabled={isLoading || !termsAccepted}
+                        >
+                          {isLoading ? "Processing..." : (
+                            <>
+                              <Wallet className="h-4 w-4 mr-2" />
+                              Confirm Booking with Credit
                             </>
                           )}
                         </Button>

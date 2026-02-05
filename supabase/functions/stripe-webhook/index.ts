@@ -90,34 +90,52 @@ serve(async (req) => {
 
       if (session.metadata?.type === "gift_card") {
         // Mark gift card as paid
-        await supabase
+        const { data: gcRow } = await supabase
           .from('gift_cards')
           .update({ payment_status: 'paid' })
-          .eq('stripe_session_id', session.id);
+          .eq('stripe_session_id', session.id)
+          .select('id')
+          .maybeSingle();
+
+        // Send gift card email to recipient
+        if (gcRow?.id) {
+          try {
+            const emailResponse = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-gift-card-email`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                },
+                body: JSON.stringify({ giftCardId: gcRow.id })
+              }
+            );
+            if (!emailResponse.ok) {
+              console.error("Failed to send gift card email:", await emailResponse.text());
+            } else {
+              console.log("Gift card email sent successfully");
+            }
+          } catch (emailError) {
+            console.error("Error sending gift card email:", emailError);
+          }
+        }
 
         const discountCodeId = session.metadata?.discountCodeId;
         const originalAmount = Number(session.metadata?.originalAmount || 0);
         const discountAmount = Number(session.metadata?.discountAmount || 0);
         const finalAmount = Number(session.metadata?.finalAmount || 0);
-        if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0) {
-          const { data: gcRow } = await supabase
-            .from('gift_cards')
-            .select('id')
-            .eq('stripe_session_id', session.id)
-            .maybeSingle();
-
-          if (gcRow?.id) {
-            await supabase
-              .from('discount_redemptions')
-              .insert({
-                discount_code_id: discountCodeId,
-                entity_type: 'gift_card',
-                entity_id: gcRow.id,
-                original_amount: originalAmount,
-                discount_amount: discountAmount,
-                final_amount: finalAmount
-              });
-          }
+        if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && gcRow?.id) {
+          await supabase
+            .from('discount_redemptions')
+            .insert({
+              discount_code_id: discountCodeId,
+              entity_type: 'gift_card',
+              entity_id: gcRow.id,
+              original_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount
+            });
         }
       }
 

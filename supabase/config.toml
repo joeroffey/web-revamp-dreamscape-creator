@@ -8,3 +8,15 @@ verify_jwt = false
 
 [functions.create-member-booking]
 verify_jwt = false
+
+[functions.send-gift-card-email]
+verify_jwt = false
+
+[functions.redeem-gift-card]
+verify_jwt = false
+
+[functions.check-credit-balance]
+verify_jwt = false
+
+[functions.create-credit-booking]
+verify_jwt = false
