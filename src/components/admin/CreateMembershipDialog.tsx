@@ -125,15 +125,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       return;
     }
 
-    if (!hasAccount || !userId) {
-      toast({
-        title: "Account Required",
-        description: "This customer needs to create an account before they can have a membership",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -144,11 +135,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       const startDate = new Date();
       const endDate = addMonths(startDate, durationMonths);
 
-      // Check if customer already has an active membership
+      // Check if customer already has an active membership (by email, since they may not have account yet)
       const { data: existingMembership } = await supabase
         .from('memberships')
         .select('id')
-        .eq('user_id', userId)
+        .eq('customer_email', selectedCustomer.email.toLowerCase())
         .eq('status', 'active')
         .maybeSingle();
 
@@ -162,11 +153,11 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         return;
       }
 
-      // Create the membership
+      // Create the membership - user_id is optional (will be linked when they sign up)
       const { error } = await supabase
         .from('memberships')
         .insert({
-          user_id: userId,
+          user_id: userId || null, // Will be null if no account exists
           customer_name: selectedCustomer.full_name || 'Unknown',
           customer_email: selectedCustomer.email.toLowerCase(),
           membership_type: form.membershipType,
@@ -296,9 +287,9 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
             {/* Account status indicator */}
             {selectedCustomer && hasAccount === false && (
-              <div className="flex items-center gap-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
+              <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-md text-sm text-amber-700">
                 <AlertCircle className="h-4 w-4" />
-                <span>This customer doesn't have an account. They need to sign up first.</span>
+                <span>No account yet. Membership will be linked when they sign up with this email.</span>
               </div>
             )}
             {selectedCustomer && hasAccount === true && (
@@ -363,7 +354,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !selectedCustomer || !hasAccount}>
+            <Button type="submit" disabled={loading || !selectedCustomer}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
