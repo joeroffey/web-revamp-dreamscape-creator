@@ -354,7 +354,7 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !selectedCustomer || !hasAccount}>
+            <Button type="submit" disabled={loading || !selectedCustomer}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
