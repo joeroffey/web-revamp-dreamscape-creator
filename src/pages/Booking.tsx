@@ -82,8 +82,11 @@ const Booking = () => {
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
+  const [creditStatus, setCreditStatus] = useState<CreditStatus | null>(null);
   const [checkingMembership, setCheckingMembership] = useState(false);
   const [checkingTokens, setCheckingTokens] = useState(false);
+  const [checkingCredits, setCheckingCredits] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'credits' | 'membership' | 'tokens'>('card');
   const [pricing, setPricing] = useState({ combined: 1800, private: 7000 }); // pence
   const [promoCode, setPromoCode] = useState("");
   const [promoCodeStatus, setPromoCodeStatus] = useState<{
