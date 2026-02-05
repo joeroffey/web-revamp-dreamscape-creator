@@ -389,6 +389,11 @@ export default function ModernBookingManagement() {
                         <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
                           {booking.payment_status || 'pending'}
                         </Badge>
+                      </div>
+                        <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
+                        <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
+                          {booking.payment_status || 'pending'}
+                        </Badge>
                         <br />
                         <Badge className={`text-xs mt-1 ${getStatusColor(booking.booking_status)}`}>
                           {booking.booking_status || 'pending'}
