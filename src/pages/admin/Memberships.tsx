@@ -272,7 +272,7 @@ export default function AdminMemberships() {
                   return (
                       <div 
                       key={membership.id} 
-                      className={`flex flex-col p-4 border rounded-lg hover:bg-accent transition-colors space-y-4 ${
+                      className={`flex flex-col p-4 border rounded-lg hover:bg-muted/50 hover:border-primary/30 transition-colors space-y-4 ${
                         expiringSoon && membership.status === 'active' ? 'border-primary/50 bg-primary/5' : ''
                       }`}
                     >
