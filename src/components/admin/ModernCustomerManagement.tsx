@@ -546,7 +546,7 @@ export default function ModernCustomerManagement() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 className="hidden"
                 onChange={handleFileUpload}
               />
