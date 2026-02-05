@@ -13,6 +13,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/";
   const [loading, setLoading] = useState(false);
   const [loginData, setLoginData] = useState({
     email: "",
