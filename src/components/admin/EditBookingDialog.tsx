@@ -51,8 +51,7 @@ const formSchema = z.object({
   guest_count: z.number().min(1, 'At least 1 guest required').max(10, 'Maximum 10 guests'),
   session_date: z.date({ required_error: 'Session date is required' }),
   session_time: z.string().min(1, 'Session time is required'),
-  booking_status: z.enum(['confirmed', 'completed', 'cancelled']),
-  payment_status: z.enum(['paid', 'pending', 'failed', 'refunded', 'partial_refund']),
+  payment_status: z.enum(['paid', 'pending', 'cancelled', 'refunded', 'partial_refund']),
   special_requests: z.string().optional(),
 });
 
