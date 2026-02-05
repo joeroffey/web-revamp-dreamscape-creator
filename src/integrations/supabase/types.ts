@@ -173,6 +173,50 @@ export type Database = {
           },
         ]
       }
+      customer_credits: {
+        Row: {
+          created_at: string
+          credit_balance: number
+          customer_email: string
+          expires_at: string
+          gift_card_id: string | null
+          id: string
+          redeemed_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_balance?: number
+          customer_email: string
+          expires_at?: string
+          gift_card_id?: string | null
+          id?: string
+          redeemed_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_balance?: number
+          customer_email?: string
+          expires_at?: string
+          gift_card_id?: string | null
+          id?: string
+          redeemed_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credits_gift_card_id_fkey"
+            columns: ["gift_card_id"]
+            isOneToOne: false
+            referencedRelation: "gift_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_tokens: {
         Row: {
           created_at: string
