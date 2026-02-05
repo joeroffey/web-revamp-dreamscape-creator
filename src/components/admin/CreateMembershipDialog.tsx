@@ -55,14 +55,12 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     { value: '12', label: '12 Months' },
   ];
 
-  // Fetch customers from CRM when dialog opens
   useEffect(() => {
     if (open) {
       fetchCustomers();
     }
   }, [open]);
 
-  // Check if selected customer has an account
   useEffect(() => {
     if (selectedCustomer) {
       checkCustomerAccount(selectedCustomer.email);
@@ -96,7 +94,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
   const checkCustomerAccount = async (email: string) => {
     try {
-      // Call edge function to check if email has an account
       const { data, error } = await supabase.functions.invoke('get-users-with-accounts');
       
       if (error) throw error;
@@ -132,7 +129,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     setLoading(true);
 
     try {
-      // If payment mode is card or bacs_debit, redirect to Stripe checkout
       if (paymentMode === 'card' || paymentMode === 'bacs_debit') {
         const { data, error } = await supabase.functions.invoke('create-admin-membership-payment', {
           body: {
@@ -152,7 +148,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         throw new Error('Failed to create payment session');
       }
 
-      // Manual membership creation (no payment setup)
       const selectedMembership = membershipOptions.find(m => m.value === form.membershipType);
       const sessionsPerMonth = selectedMembership?.sessions || 4;
       const durationMonths = parseInt(form.durationMonths);
@@ -160,7 +155,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       const startDate = new Date();
       const endDate = addMonths(startDate, durationMonths);
 
-      // Check if customer already has an active membership
       const { data: existingMembership } = await supabase
         .from('memberships')
         .select('id')
@@ -178,7 +172,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         return;
       }
 
-      // Create the membership
       const { error } = await supabase
         .from('memberships')
         .insert({
@@ -203,7 +196,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         description: `Successfully created ${selectedMembership?.label} membership for ${selectedCustomer.full_name}`,
       });
 
-      // Reset form and close
       resetForm();
       onOpenChange(false);
       onMembershipCreated();
@@ -236,8 +228,8 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
   return (
     <Dialog open={open} onOpenChange={(open) => { if (!open) resetForm(); onOpenChange(open); }}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
             Create Membership
@@ -248,204 +240,207 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-            <Label>Customer *</Label>
-            <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={customerSearchOpen}
-                  className="w-full justify-between h-auto min-h-[40px]"
-                >
-                  {selectedCustomer ? (
-                    <div className="flex items-center gap-2 text-left">
-                      <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{selectedCustomer.full_name || 'Unknown'}</span>
-                        <span className="text-xs text-muted-foreground">{selectedCustomer.email}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">Select customer...</span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[350px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search by name or email..." />
-                  <CommandList>
-                    <CommandEmpty>
-                      {loadingCustomers ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="ml-2">Loading customers...</span>
-                        </div>
-                      ) : (
-                        "No customers found."
-                      )}
-                    </CommandEmpty>
-                    <CommandGroup heading={`${customers.length} customers`}>
-                      {customers.map((customer) => (
-                        <CommandItem
-                          key={customer.id}
-                          value={`${customer.full_name} ${customer.email}`}
-                          onSelect={() => {
-                            setSelectedCustomer(customer);
-                            setCustomerSearchOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <div className="flex flex-col">
-                            <span>{customer.full_name || 'Unknown'}</span>
-                            <span className="text-xs text-muted-foreground">{customer.email}</span>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* Account status indicator */}
-            {selectedCustomer && hasAccount === false && (
-              <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/20 rounded-md text-sm text-warning-foreground">
-                <AlertCircle className="h-4 w-4" />
-                <span>No account yet. Membership will be linked when they sign up.</span>
-              </div>
-            )}
-            {selectedCustomer && hasAccount === true && (
-              <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-md text-sm text-primary">
-                <Check className="h-4 w-4" />
-                <span>Customer has an account ✓</span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="membershipType">Membership Type</Label>
-            <Select
-              value={form.membershipType}
-              onValueChange={(value) => setForm(prev => ({ ...prev, membershipType: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select membership type" />
-              </SelectTrigger>
-              <SelectContent>
-                {membershipOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label} - £{option.price}/month
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Payment Method Selection */}
-          <div className="space-y-3">
-            <Label>Payment Setup</Label>
-            <RadioGroup 
-              value={paymentMode} 
-              onValueChange={(value) => setPaymentMode(value as PaymentMode)}
-              className="grid grid-cols-1 gap-2"
-            >
-              <div className={cn(
-                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
-                paymentMode === 'manual' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              )}>
-                <RadioGroupItem value="manual" id="manual" />
-                <Label htmlFor="manual" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Banknote className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Manual / Cash</p>
-                    <p className="text-xs text-muted-foreground">Already paid, no payment setup needed</p>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className={cn(
-                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
-                paymentMode === 'card' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              )}>
-                <RadioGroupItem value="card" id="card" />
-                <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Card Payment</p>
-                    <p className="text-xs text-muted-foreground">Set up recurring card payments</p>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className={cn(
-                "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
-                paymentMode === 'bacs_debit' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              )}>
-                <RadioGroupItem value="bacs_debit" id="bacs_debit" />
-                <Label htmlFor="bacs_debit" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Direct Debit (BACS)</p>
-                    <p className="text-xs text-muted-foreground">Set up recurring bank payments</p>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Duration - only show for manual */}
-          {paymentMode === 'manual' && (
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
+            {/* Customer Selection */}
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration</Label>
+              <Label>Customer *</Label>
+              <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={customerSearchOpen}
+                    className="w-full justify-between h-auto min-h-[40px]"
+                  >
+                    {selectedCustomer ? (
+                      <div className="flex items-center gap-2 text-left">
+                        <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{selectedCustomer.full_name || 'Unknown'}</span>
+                          <span className="text-xs text-muted-foreground">{selectedCustomer.email}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Select customer...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[350px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search by name or email..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {loadingCustomers ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="ml-2">Loading customers...</span>
+                          </div>
+                        ) : (
+                          "No customers found."
+                        )}
+                      </CommandEmpty>
+                      <CommandGroup heading={`${customers.length} customers`}>
+                        {customers.map((customer) => (
+                          <CommandItem
+                            key={customer.id}
+                            value={`${customer.full_name} ${customer.email}`}
+                            onSelect={() => {
+                              setSelectedCustomer(customer);
+                              setCustomerSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span>{customer.full_name || 'Unknown'}</span>
+                              <span className="text-xs text-muted-foreground">{customer.email}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {selectedCustomer && hasAccount === false && (
+                <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/20 rounded-md text-sm text-warning-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>No account yet. Membership will be linked when they sign up.</span>
+                </div>
+              )}
+              {selectedCustomer && hasAccount === true && (
+                <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-md text-sm text-primary">
+                  <Check className="h-4 w-4" />
+                  <span>Customer has an account ✓</span>
+                </div>
+              )}
+            </div>
+
+            {/* Membership Type */}
+            <div className="space-y-2">
+              <Label htmlFor="membershipType">Membership Type</Label>
               <Select
-                value={form.durationMonths}
-                onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+                value={form.membershipType}
+                onValueChange={(value) => setForm(prev => ({ ...prev, membershipType: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select duration" />
+                  <SelectValue placeholder="Select membership type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {durationOptions.map(option => (
+                  {membershipOptions.map(option => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {option.label} - £{option.price}/month
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {/* Summary */}
-          <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-            <p><strong>Summary:</strong></p>
-            {selectedCustomer && <p>• Customer: {selectedCustomer.full_name}</p>}
-            <p>• {selectedMembership?.label} - £{selectedMembership?.price}/month</p>
+            {/* Payment Method Selection */}
+            <div className="space-y-3">
+              <Label>Payment Setup</Label>
+              <RadioGroup 
+                value={paymentMode} 
+                onValueChange={(value) => setPaymentMode(value as PaymentMode)}
+                className="grid grid-cols-1 gap-2"
+              >
+                <div className={cn(
+                  "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                  paymentMode === 'manual' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                )}>
+                  <RadioGroupItem value="manual" id="manual" />
+                  <Label htmlFor="manual" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Banknote className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Manual / Cash</p>
+                      <p className="text-xs text-muted-foreground">Already paid, no payment setup needed</p>
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className={cn(
+                  "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                  paymentMode === 'card' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                )}>
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Card Payment</p>
+                      <p className="text-xs text-muted-foreground">Set up recurring card payments</p>
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className={cn(
+                  "flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors",
+                  paymentMode === 'bacs_debit' ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                )}>
+                  <RadioGroupItem value="bacs_debit" id="bacs_debit" />
+                  <Label htmlFor="bacs_debit" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Direct Debit (BACS)</p>
+                      <p className="text-xs text-muted-foreground">Set up recurring bank payments</p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Duration - only show for manual */}
             {paymentMode === 'manual' && (
-              <>
-                <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
-                <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
-              </>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration</Label>
+                <Select
+                  value={form.durationMonths}
+                  onValueChange={(value) => setForm(prev => ({ ...prev, durationMonths: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
-            {paymentMode !== 'manual' && (
-              <p className="text-muted-foreground text-xs mt-2">
-                Customer will be redirected to Stripe to enter payment details
-              </p>
-            )}
-            {paymentMode === 'manual' && (
-              <p className="text-muted-foreground text-xs mt-2">
-                * Manual memberships don't auto-renew
-              </p>
-            )}
+
+            {/* Summary */}
+            <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+              <p><strong>Summary:</strong></p>
+              {selectedCustomer && <p>• Customer: {selectedCustomer.full_name}</p>}
+              <p>• {selectedMembership?.label} - £{selectedMembership?.price}/month</p>
+              {paymentMode === 'manual' && (
+                <>
+                  <p>• Duration: {durationMonths} month{durationMonths > 1 ? 's' : ''}</p>
+                  <p>• Ends: {format(endDate, 'dd MMM yyyy')}</p>
+                </>
+              )}
+              {paymentMode !== 'manual' && (
+                <p className="text-muted-foreground text-xs mt-2">
+                  Customer will be redirected to Stripe to enter payment details
+                </p>
+              )}
+              {paymentMode === 'manual' && (
+                <p className="text-muted-foreground text-xs mt-2">
+                  * Manual memberships don't auto-renew
+                </p>
+              )}
+            </div>
           </div>
 
-          <DialogFooter className="mt-4 pt-4 border-t flex-shrink-0">
+          <DialogFooter className="pt-4 border-t flex-shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
