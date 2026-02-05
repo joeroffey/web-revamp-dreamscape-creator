@@ -34,7 +34,6 @@ interface BookingData {
   booking_type: string;
   guest_count: number;
   payment_status: string;
-  booking_status: string;
   price_amount: number;
   special_requests?: string;
   service_type: string;
