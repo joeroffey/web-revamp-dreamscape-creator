@@ -40,8 +40,8 @@ serve(async (req) => {
       throw new Error("Booking not found");
     }
 
-    // Only cancel confirmed/paid bookings
-    if (booking.booking_status === 'cancelled') {
+    // Only cancel if not already cancelled
+    if (booking.payment_status === 'cancelled') {
       return new Response(
         JSON.stringify({ success: true, message: "Booking already cancelled" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }

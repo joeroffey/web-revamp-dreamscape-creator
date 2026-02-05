@@ -182,7 +182,7 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                 <div className="text-sm flex items-center gap-2">
                                   <span className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</span>
                                   <Badge className={getPaymentStatusColor(booking.payment_status)}>
-                                    {booking.payment_status === 'pending' ? 'UNPAID' : 'Paid'}
+                                    {booking.payment_status === 'pending' ? 'UNPAID' : booking.payment_status === 'cancelled' ? 'Cancelled' : 'Paid'}
                                   </Badge>
                                 </div>
                                 
