@@ -884,6 +884,37 @@ const Booking = () => {
                   </p>
                 </CardContent>
               </Card>
+            ) : creditStatus && creditStatus.totalCredits > 0 && !canUseMembership && !canUseTokens ? (
+              <Card className="mb-8 border-primary bg-primary/5">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Wallet className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Gift Card Credit Available</h3>
+                        <p className="text-sm text-muted-foreground">
+                          You have £{creditStatus.totalCreditsInPounds} credit balance
+                          {creditStatus.credits[0]?.expires_at && (
+                            <> • Expires {new Date(creditStatus.credits[0].expires_at).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="w-fit">
+                      <Wallet className="h-3 w-3 mr-1" />
+                      {canUseCredits ? 'Can Pay with Credit' : 'Partial Credit Available'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    {canUseCredits 
+                      ? 'You can use your credit balance to pay for this booking. Select "Use Credit" at checkout.'
+                      : `Your credit balance (£${creditStatus.totalCreditsInPounds}) is less than the booking cost. Credit can only be used when your remaining balance is less than the total.`
+                    }
+                  </p>
+                </CardContent>
+              </Card>
             ) : user && membershipStatus && !membershipStatus.hasMembership && !canUseTokens ? (
               <Card className="mb-8 border-muted">
                 <CardContent className="p-4 sm:p-6">
