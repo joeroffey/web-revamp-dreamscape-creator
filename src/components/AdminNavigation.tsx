@@ -29,6 +29,7 @@ export const AdminNavigation = () => {
     { href: '/admin/gift-cards', icon: Gift, label: 'Gift Cards' },
     { href: '/admin/memberships', icon: CreditCard, label: 'Memberships' },
     { href: '/admin/partner-codes', icon: Building2, label: 'Partner Codes' },
+    { href: '/admin/events', icon: Calendar, label: 'Events' },
     { href: '/admin/blog', icon: FileText, label: 'Blog' },
     { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
