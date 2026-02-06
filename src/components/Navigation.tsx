@@ -159,84 +159,87 @@ export const Navigation = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
+          <button
+            type="button"
+            className="md:hidden p-2 -mr-2 touch-manipulation"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
           >
             {isOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
-          </Button>
+          </button>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-6 border-t border-border">
-            <div className="flex flex-col space-y-6">
-              <Link
-                to="/"
-                className="text-foreground hover:text-foreground/80 transition-colors font-light text-lg"
-                onClick={() => setIsOpen(false)}
-              >
-                Home
-              </Link>
-              
-              {/* About section with sub-items */}
-              <div className="space-y-3">
-                <span className="text-foreground font-light text-lg">About</span>
-                <div className="pl-4 space-y-3 border-l-2 border-border">
-                  {aboutSubItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className="block text-muted-foreground hover:text-foreground transition-colors font-light text-base"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {navItems.slice(1).map((item) => (
+          <div className="md:hidden border-t border-border">
+            <div className="max-h-[calc(100vh-5rem)] overflow-y-auto py-6">
+              <div className="flex flex-col space-y-6">
                 <Link
-                  key={item.name}
-                  to={item.href}
+                  to="/"
                   className="text-foreground hover:text-foreground/80 transition-colors font-light text-lg"
                   onClick={() => setIsOpen(false)}
                 >
-                  {item.name}
+                  Home
                 </Link>
-              ))}
-              <div className="pt-4 space-y-3">
-                {user ? (
-                  <>
-                    <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
+                
+                {/* About section with sub-items */}
+                <div className="space-y-3">
+                  <span className="text-foreground font-light text-lg">About</span>
+                  <div className="pl-4 space-y-3 border-l-2 border-border">
+                    {aboutSubItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="block text-muted-foreground hover:text-foreground transition-colors font-light text-base"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {navItems.slice(1).map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-foreground hover:text-foreground/80 transition-colors font-light text-lg"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <div className="pt-4 pb-6 space-y-3">
+                  {user ? (
+                    <>
+                      <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full rounded-full">
+                          <Settings className="h-4 w-4 mr-2" />
+                          {isAdmin ? "Admin Dashboard" : "Dashboard"}
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="outline" 
+                        className="w-full rounded-full text-red-600"
+                        onClick={() => {
+                          setIsOpen(false);
+                          handleSignOut();
+                        }}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
                       <Button variant="outline" className="w-full rounded-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        {isAdmin ? "Admin Dashboard" : "Dashboard"}
+                        <User className="h-4 w-4 mr-2" />
+                        Sign In
                       </Button>
                     </Link>
-                    <Button 
-                      variant="outline" 
-                      className="w-full rounded-full text-red-600"
-                      onClick={() => {
-                        setIsOpen(false);
-                        handleSignOut();
-                      }}
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
-                    </Button>
-                  </>
-                ) : (
-                  <Link to="/auth" onClick={() => setIsOpen(false)}>
-                    <Button variant="outline" className="w-full rounded-full">
-                      <User className="h-4 w-4 mr-2" />
-                      Sign In
-                    </Button>
-                  </Link>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
