@@ -87,20 +87,18 @@ export const AboutSection = () => {
           </div>
           
           {/* Centered 7th benefit */}
-          <div className="mt-8 pb-6 border-b border-white/30">
-            <div className="flex justify-center">
-              <div className="flex items-start gap-6 max-w-md">
-                <span className="text-4xl md:text-5xl font-bold text-white/90">
-                  {benefits[6].number}
-                </span>
-                <div className="pt-2">
-                  <h3 className="text-xl md:text-2xl font-medium text-white mb-1">
-                    {benefits[6].title}
-                  </h3>
-                  <p className="text-white/70 text-sm md:text-base">
-                    {benefits[6].description}
-                  </p>
-                </div>
+          <div className="mt-8 pb-6 border-b border-white/30 md:flex md:justify-center">
+            <div className="flex items-start gap-6 md:max-w-md">
+              <span className="text-4xl md:text-5xl font-bold text-white/90">
+                {benefits[6].number}
+              </span>
+              <div className="pt-2">
+                <h3 className="text-xl md:text-2xl font-medium text-white mb-1">
+                  {benefits[6].title}
+                </h3>
+                <p className="text-white/70 text-sm md:text-base">
+                  {benefits[6].description}
+                </p>
               </div>
             </div>
           </div>
