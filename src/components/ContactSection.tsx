@@ -144,17 +144,17 @@ export const ContactSection = () => {
                       <div>
                         <h3 className="font-semibold mb-2">Opening Hours</h3>
                         <div className="space-y-2 text-muted-foreground text-sm">
-                          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                             <span className="font-medium">Tuesday - Saturday</span>
-                            <span>8:30 AM - 8:00 PM</span>
+                            <span className="text-right">8:30 AM - 8:00 PM</span>
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                             <span className="font-medium">Sunday</span>
-                            <span>8:30 AM - 5:30 PM</span>
+                            <span className="text-right">8:30 AM - 5:30 PM</span>
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                             <span className="font-medium">Monday</span>
-                            <span>Closed</span>
+                            <span className="text-right">Closed</span>
                           </div>
                         </div>
                       </div>
