@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCustomerSearch } from "@/hooks/useCustomerSearch";
 import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -71,22 +72,11 @@ export function EnhancedCreateBookingDialog({
 
   const queryClient = useQueryClient();
 
-  const { data: existingCustomers } = useQuery({
-    queryKey: ["customer-search", customerSearch],
-    queryFn: async () => {
-      if (!customerSearch.trim()) return [];
-      
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, full_name, email, phone, tags")
-        .or(`full_name.ilike.%${customerSearch}%,email.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
-        .limit(10);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: customerSearch.length > 2,
-  });
+  // Use the shared customer search hook for better filtering
+  const { customers: existingCustomers, isLoading: searchingCustomers } = useCustomerSearch(
+    customerSearch,
+    { enabled: open && customerSearch.length >= 2, limit: 10 }
+  );
 
   const { data: pricingConfig } = useQuery({
     queryKey: ["pricing-config"],

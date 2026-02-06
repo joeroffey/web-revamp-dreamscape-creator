@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2 } from 'lucide-react';
+import { useCustomerSearch, CustomerSearchResult } from '@/hooks/useCustomerSearch';
+import { Loader2, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2, Search, Plus } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -18,22 +20,14 @@ interface CreateMembershipDialogProps {
   onMembershipCreated: () => void;
 }
 
-interface Customer {
-  id: string;
-  full_name: string | null;
-  email: string;
-  phone: string | null;
-}
-
 type PaymentMode = 'manual' | 'card' | 'bacs_debit';
 
 export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated }: CreateMembershipDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('manual');
@@ -41,6 +35,12 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     membershipType: '4_sessions_month',
     durationMonths: '1',
   });
+
+  // Use the shared customer search hook
+  const { customers: filteredCustomers, isLoading: loadingCustomers } = useCustomerSearch(
+    customerSearchTerm,
+    { enabled: open, limit: 50 }
+  );
 
   const membershipOptions = [
     { value: '4_sessions_month', label: '4 Sessions Per Month', sessions: 4, price: 48 },
@@ -56,12 +56,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
   ];
 
   useEffect(() => {
-    if (open) {
-      fetchCustomers();
-    }
-  }, [open]);
-
-  useEffect(() => {
     if (selectedCustomer) {
       checkCustomerAccount(selectedCustomer.email);
     } else {
@@ -69,28 +63,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       setUserId(null);
     }
   }, [selectedCustomer]);
-
-  const fetchCustomers = async () => {
-    setLoadingCustomers(true);
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, full_name, email, phone')
-        .order('full_name', { ascending: true });
-
-      if (error) throw error;
-      setCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load customers",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingCustomers(false);
-    }
-  };
 
   const checkCustomerAccount = async (email: string) => {
     try {
@@ -267,44 +239,64 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[350px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search by name or email..." />
-                    <CommandList>
-                      <CommandEmpty>
-                        {loadingCustomers ? (
-                          <div className="flex items-center justify-center py-4">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="ml-2">Loading customers...</span>
+                  <div className="flex flex-col">
+                    {/* Search Input */}
+                    <div className="flex items-center border-b px-3 py-2">
+                      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      <Input
+                        placeholder="Search by name or email..."
+                        value={customerSearchTerm}
+                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                        className="border-0 p-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                    </div>
+                    
+                    {/* Customer List */}
+                    <ScrollArea className="max-h-[250px]">
+                      {loadingCustomers ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="ml-2 text-sm text-muted-foreground">Loading customers...</span>
+                        </div>
+                      ) : filteredCustomers.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">
+                          No customers found.
+                        </div>
+                      ) : (
+                        <div className="p-1">
+                          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            {filteredCustomers.length} customers
                           </div>
-                        ) : (
-                          "No customers found."
-                        )}
-                      </CommandEmpty>
-                      <CommandGroup heading={`${customers.length} customers`}>
-                        {customers.map((customer) => (
-                          <CommandItem
-                            key={customer.id}
-                            value={`${customer.full_name} ${customer.email}`}
-                            onSelect={() => {
-                              setSelectedCustomer(customer);
-                              setCustomerSearchOpen(false);
-                            }}
-                          >
-                            <Check
+                          {filteredCustomers.map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                setCustomerSearchOpen(false);
+                                setCustomerSearchTerm('');
+                              }}
                               className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                                "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                selectedCustomer?.id === customer.id && "bg-accent"
                               )}
-                            />
-                            <div className="flex flex-col">
-                              <span>{customer.full_name || 'Unknown'}</span>
-                              <span className="text-xs text-muted-foreground">{customer.email}</span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col text-left">
+                                <span>{customer.full_name || 'Unknown'}</span>
+                                <span className="text-xs text-muted-foreground">{customer.email}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
                 </PopoverContent>
               </Popover>
 

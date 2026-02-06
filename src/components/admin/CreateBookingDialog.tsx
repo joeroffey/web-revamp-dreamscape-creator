@@ -35,6 +35,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomerSearch, CustomerSearchResult } from '@/hooks/useCustomerSearch';
 import { CalendarIcon, Clock, Coins, Search, User, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -64,13 +65,6 @@ interface TokenRecord {
   notes: string | null;
 }
 
-interface CustomerResult {
-  id: string;
-  full_name: string | null;
-  email: string;
-  phone: string | null;
-}
-
 interface CreateBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -89,10 +83,14 @@ export const CreateBookingDialog = ({
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<CustomerResult[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResult | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
   const { toast } = useToast();
+
+  // Use shared customer search hook
+  const { customers: searchResults, isLoading: isSearching } = useCustomerSearch(
+    customerSearch,
+    { enabled: open && customerSearch.length >= 2, limit: 10 }
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -124,30 +122,7 @@ export const CreateBookingDialog = ({
     }
   }, [watchedBookingType, watchedGuestCount, form]);
 
-  // Search customers
-  useEffect(() => {
-    const searchCustomers = async () => {
-      if (customerSearch.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, full_name, email, phone')
-        .or(`full_name.ilike.%${customerSearch}%,email.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
-        .limit(5);
-
-      if (!error && data) {
-        setSearchResults(data);
-      }
-      setIsSearching(false);
-    };
-
-    const debounce = setTimeout(searchCustomers, 300);
-    return () => clearTimeout(debounce);
-  }, [customerSearch]);
+  // Note: Customer search is now handled by useCustomerSearch hook above
 
   // Fetch available tokens when email changes
   useEffect(() => {
@@ -193,13 +168,12 @@ export const CreateBookingDialog = ({
     }
   }, [watchedGuestCount, totalTokens, useToken]);
 
-  const handleSelectCustomer = (customer: CustomerResult) => {
+  const handleSelectCustomer = (customer: CustomerSearchResult) => {
     setSelectedCustomer(customer);
     form.setValue('customer_name', customer.full_name || '');
     form.setValue('customer_email', customer.email);
     form.setValue('customer_phone', customer.phone || '');
     setCustomerSearch('');
-    setSearchResults([]);
   };
 
   const handleClearCustomer = () => {
@@ -352,7 +326,6 @@ export const CreateBookingDialog = ({
     setUseToken(false);
     setSelectedCustomer(null);
     setCustomerSearch('');
-    setSearchResults([]);
     setAvailableTokens([]);
     setTotalTokens(0);
   };
