@@ -122,30 +122,7 @@ export const CreateBookingDialog = ({
     }
   }, [watchedBookingType, watchedGuestCount, form]);
 
-  // Search customers
-  useEffect(() => {
-    const searchCustomers = async () => {
-      if (customerSearch.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, full_name, email, phone')
-        .or(`full_name.ilike.%${customerSearch}%,email.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
-        .limit(5);
-
-      if (!error && data) {
-        setSearchResults(data);
-      }
-      setIsSearching(false);
-    };
-
-    const debounce = setTimeout(searchCustomers, 300);
-    return () => clearTimeout(debounce);
-  }, [customerSearch]);
+  // Note: Customer search is now handled by useCustomerSearch hook above
 
   // Fetch available tokens when email changes
   useEffect(() => {
