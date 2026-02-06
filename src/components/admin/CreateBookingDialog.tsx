@@ -65,13 +65,6 @@ interface TokenRecord {
   notes: string | null;
 }
 
-interface CustomerResult {
-  id: string;
-  full_name: string | null;
-  email: string;
-  phone: string | null;
-}
-
 interface CreateBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
