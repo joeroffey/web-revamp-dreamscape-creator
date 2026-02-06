@@ -143,17 +143,17 @@ export const ContactSection = () => {
                       <Clock className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                       <div>
                         <h3 className="font-semibold mb-2">Opening Hours</h3>
-                        <div className="space-y-1 text-muted-foreground">
-                          <div className="flex justify-between">
-                            <span>Tuesday - Saturday</span>
+                        <div className="space-y-2 text-muted-foreground text-sm">
+                          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                            <span className="font-medium">Tuesday - Saturday</span>
                             <span>8:30 AM - 8:00 PM</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Sunday</span>
+                          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                            <span className="font-medium">Sunday</span>
                             <span>8:30 AM - 5:30 PM</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Monday</span>
+                          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                            <span className="font-medium">Monday</span>
                             <span>Closed</span>
                           </div>
                         </div>
