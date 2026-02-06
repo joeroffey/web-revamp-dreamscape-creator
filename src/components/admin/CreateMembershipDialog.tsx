@@ -239,44 +239,64 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[350px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search by name or email..." />
-                    <CommandList>
-                      <CommandEmpty>
-                        {loadingCustomers ? (
-                          <div className="flex items-center justify-center py-4">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="ml-2">Loading customers...</span>
+                  <div className="flex flex-col">
+                    {/* Search Input */}
+                    <div className="flex items-center border-b px-3 py-2">
+                      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      <Input
+                        placeholder="Search by name or email..."
+                        value={customerSearchTerm}
+                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                        className="border-0 p-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                    </div>
+                    
+                    {/* Customer List */}
+                    <ScrollArea className="max-h-[250px]">
+                      {loadingCustomers ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="ml-2 text-sm text-muted-foreground">Loading customers...</span>
+                        </div>
+                      ) : filteredCustomers.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">
+                          No customers found.
+                        </div>
+                      ) : (
+                        <div className="p-1">
+                          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            {filteredCustomers.length} customers
                           </div>
-                        ) : (
-                          "No customers found."
-                        )}
-                      </CommandEmpty>
-                      <CommandGroup heading={`${customers.length} customers`}>
-                        {customers.map((customer) => (
-                          <CommandItem
-                            key={customer.id}
-                            value={`${customer.full_name} ${customer.email}`}
-                            onSelect={() => {
-                              setSelectedCustomer(customer);
-                              setCustomerSearchOpen(false);
-                            }}
-                          >
-                            <Check
+                          {filteredCustomers.map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                setCustomerSearchOpen(false);
+                                setCustomerSearchTerm('');
+                              }}
                               className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                                "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                selectedCustomer?.id === customer.id && "bg-accent"
                               )}
-                            />
-                            <div className="flex flex-col">
-                              <span>{customer.full_name || 'Unknown'}</span>
-                              <span className="text-xs text-muted-foreground">{customer.email}</span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col text-left">
+                                <span>{customer.full_name || 'Unknown'}</span>
+                                <span className="text-xs text-muted-foreground">{customer.email}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
                 </PopoverContent>
               </Popover>
 
