@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2 } from 'lucide-react';
+import { useCustomerSearch, CustomerSearchResult } from '@/hooks/useCustomerSearch';
+import { Loader2, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2, Search } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -18,22 +20,14 @@ interface CreateMembershipDialogProps {
   onMembershipCreated: () => void;
 }
 
-interface Customer {
-  id: string;
-  full_name: string | null;
-  email: string;
-  phone: string | null;
-}
-
 type PaymentMode = 'manual' | 'card' | 'bacs_debit';
 
 export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated }: CreateMembershipDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('manual');
@@ -41,6 +35,12 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
     membershipType: '4_sessions_month',
     durationMonths: '1',
   });
+
+  // Use the shared customer search hook
+  const { customers: filteredCustomers, isLoading: loadingCustomers } = useCustomerSearch(
+    customerSearchTerm,
+    { enabled: open, limit: 50 }
+  );
 
   const membershipOptions = [
     { value: '4_sessions_month', label: '4 Sessions Per Month', sessions: 4, price: 48 },
@@ -56,12 +56,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
   ];
 
   useEffect(() => {
-    if (open) {
-      fetchCustomers();
-    }
-  }, [open]);
-
-  useEffect(() => {
     if (selectedCustomer) {
       checkCustomerAccount(selectedCustomer.email);
     } else {
@@ -69,28 +63,6 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
       setUserId(null);
     }
   }, [selectedCustomer]);
-
-  const fetchCustomers = async () => {
-    setLoadingCustomers(true);
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, full_name, email, phone')
-        .order('full_name', { ascending: true });
-
-      if (error) throw error;
-      setCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load customers",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingCustomers(false);
-    }
-  };
 
   const checkCustomerAccount = async (email: string) => {
     try {
