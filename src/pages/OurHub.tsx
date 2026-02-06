@@ -87,18 +87,18 @@ const OurHub = () => {
                     <Clock className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold">Opening Hours</h3>
                   </div>
-                  <div className="space-y-2 text-muted-foreground">
-                    <div className="flex justify-between">
-                      <span>Tuesday - Saturday</span>
-                      <span>8:30 AM - 8:00 PM</span>
+                  <div className="space-y-2 text-muted-foreground text-sm">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                      <span className="font-medium">Tuesday - Saturday</span>
+                      <span className="text-right">8:30 AM - 8:00 PM</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Sunday</span>
-                      <span>8:30 AM - 5:30 PM</span>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                      <span className="font-medium">Sunday</span>
+                      <span className="text-right">8:30 AM - 5:30 PM</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Monday</span>
-                      <span>Closed</span>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                      <span className="font-medium">Monday</span>
+                      <span className="text-right">Closed</span>
                     </div>
                   </div>
                 </CardContent>
