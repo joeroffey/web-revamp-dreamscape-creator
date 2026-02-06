@@ -83,10 +83,14 @@ export const CreateBookingDialog = ({
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<CustomerResult[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResult | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
   const { toast } = useToast();
+
+  // Use shared customer search hook
+  const { customers: searchResults, isLoading: isSearching } = useCustomerSearch(
+    customerSearch,
+    { enabled: open && customerSearch.length >= 2, limit: 10 }
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
