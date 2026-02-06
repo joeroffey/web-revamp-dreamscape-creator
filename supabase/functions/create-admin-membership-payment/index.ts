@@ -100,13 +100,6 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/admin/memberships?setup_success=true&customer=${encodeURIComponent(customerEmail)}`,
       cancel_url: `${req.headers.get("origin")}/admin/memberships?setup_cancelled=true`,
-      ...(paymentMethod === "bacs_debit" && {
-        payment_method_options: {
-          bacs_debit: {
-            setup_future_usage: "off_session",
-          },
-        },
-      }),
       metadata: {
         admin_created: "true",
         customerEmail: customerEmail.toLowerCase(),
