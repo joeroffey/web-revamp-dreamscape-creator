@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 export const Footer = () => {
   const scrollToTop = () => {
