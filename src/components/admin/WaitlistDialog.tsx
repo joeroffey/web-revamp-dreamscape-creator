@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Clock, User, Calendar, Bell, CheckCircle, X } from "lucide-react";
+import { useCustomerSearch, CustomerSearchResult } from "@/hooks/useCustomerSearch";
+import { Clock, User, Calendar, Bell, CheckCircle, X, Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -19,8 +19,9 @@ interface WaitlistDialogProps {
 
 export function WaitlistDialog({ open, onOpenChange }: WaitlistDialogProps) {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
   const [addForm, setAddForm] = useState({
-    customer_search: "",
     service_type: "",
     preferred_date: "",
     preferred_time: "",
@@ -28,6 +29,12 @@ export function WaitlistDialog({ open, onOpenChange }: WaitlistDialogProps) {
   });
 
   const queryClient = useQueryClient();
+
+  // Use the shared customer search hook
+  const { customers: filteredCustomers, isLoading: searchingCustomers } = useCustomerSearch(
+    customerSearchTerm,
+    { enabled: open, limit: 10 }
+  );
 
   const { data: waitlistEntries, isLoading } = useQuery({
     queryKey: ["waitlist"],
@@ -37,23 +44,6 @@ export function WaitlistDialog({ open, onOpenChange }: WaitlistDialogProps) {
       return [];
     },
     enabled: open,
-  });
-
-  const { data: customers } = useQuery({
-    queryKey: ["customer-search", addForm.customer_search],
-    queryFn: async () => {
-      if (!addForm.customer_search.trim()) return [];
-      
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .ilike("full_name", `%${addForm.customer_search}%`)
-        .limit(5);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: addForm.customer_search.length > 2,
   });
 
   const addToWaitlistMutation = useMutation({
