@@ -133,7 +133,12 @@ export const Footer = () => {
         </div>
 
         {/* Google Maps Banner */}
-        <MapSection />
+        <div className="border-t border-foreground/20 py-8">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-center">Find Us</h3>
+          </div>
+          <MapWithSkeleton />
+        </div>
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-foreground/70 text-sm">
