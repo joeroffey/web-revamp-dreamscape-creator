@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomerSearch, CustomerSearchResult } from '@/hooks/useCustomerSearch';
-import { Loader2, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2, Search } from 'lucide-react';
+import { Loader2, CreditCard, Check, ChevronsUpDown, User, AlertCircle, Banknote, Building2, Search, Plus } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
