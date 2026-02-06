@@ -219,14 +219,13 @@ export function WaitlistDialog({ open, onOpenChange }: WaitlistDialogProps) {
 
               <Button 
                 onClick={() => {
-                  const selectedCustomer = customers?.find(c => 
-                    c.full_name === addForm.customer_search
-                  );
                   if (selectedCustomer) {
                     handleAddToWaitlist(selectedCustomer.id);
+                  } else {
+                    toast.error("Please select a customer first");
                   }
                 }}
-                disabled={addToWaitlistMutation.isPending}
+                disabled={addToWaitlistMutation.isPending || !selectedCustomer}
                 className="w-full"
               >
                 Add to Waitlist
