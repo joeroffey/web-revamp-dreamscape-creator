@@ -326,7 +326,6 @@ export const CreateBookingDialog = ({
     setUseToken(false);
     setSelectedCustomer(null);
     setCustomerSearch('');
-    setSearchResults([]);
     setAvailableTokens([]);
     setTotalTokens(0);
   };
