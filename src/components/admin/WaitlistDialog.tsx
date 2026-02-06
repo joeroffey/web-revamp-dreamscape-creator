@@ -56,8 +56,9 @@ export function WaitlistDialog({ open, onOpenChange }: WaitlistDialogProps) {
       queryClient.invalidateQueries({ queryKey: ["waitlist"] });
       toast.success("Added to waitlist successfully");
       setShowAddForm(false);
+      setSelectedCustomer(null);
+      setCustomerSearchTerm("");
       setAddForm({
-        customer_search: "",
         service_type: "",
         preferred_date: "",
         preferred_time: "",
