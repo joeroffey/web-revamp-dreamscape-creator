@@ -128,27 +128,44 @@ export function WaitlistDialog({ open, onOpenChange }: WaitlistDialogProps) {
           </div>
 
           {showAddForm && (
-            <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
+            <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
               <h3 className="font-medium">Add Customer to Waitlist</h3>
               
               <div className="space-y-2">
                 <Label>Search Customer</Label>
-                <Input
-                  placeholder="Search by name or email..."
-                  value={addForm.customer_search}
-                  onChange={(e) => setAddForm({ ...addForm, customer_search: e.target.value })}
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search by name, last name, or email..."
+                    value={customerSearchTerm}
+                    onChange={(e) => {
+                      setCustomerSearchTerm(e.target.value);
+                      setSelectedCustomer(null);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
                 
-                {customers && customers.length > 0 && (
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {customers.map((customer) => (
+                {selectedCustomer && (
+                  <div className="p-2 border rounded bg-primary/10 border-primary/20">
+                    <div className="font-medium">{selectedCustomer.full_name || "No name"}</div>
+                    <div className="text-sm text-muted-foreground">{selectedCustomer.email}</div>
+                  </div>
+                )}
+                
+                {!selectedCustomer && filteredCustomers && filteredCustomers.length > 0 && customerSearchTerm.length >= 2 && (
+                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg">
+                    {filteredCustomers.map((customer) => (
                       <div
                         key={customer.id}
-                        className="p-2 border rounded cursor-pointer hover:bg-white"
-                        onClick={() => setAddForm({ ...addForm, customer_search: customer.full_name || "" })}
+                        className="p-2 cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setCustomerSearchTerm(customer.full_name || customer.email);
+                        }}
                       >
                         <div className="font-medium">{customer.full_name || "No name"}</div>
-                        <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                        <div className="text-sm text-muted-foreground">{customer.email}</div>
                       </div>
                     ))}
                   </div>
