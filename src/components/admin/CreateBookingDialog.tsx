@@ -35,6 +35,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomerSearch, CustomerSearchResult } from '@/hooks/useCustomerSearch';
 import { CalendarIcon, Clock, Coins, Search, User, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
