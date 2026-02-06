@@ -136,7 +136,18 @@ export const Footer = () => {
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-center">Find Us</h3>
           </div>
-          <MapWithSkeleton />
+          <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
+            <iframe
+              src="https://www.google.com/maps?q=Revitalise+Hub+Ensign+Yard+Lymington&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Revitalise Hub Location - Unit 7, Ensign yard, 670 Ampress Ln, Lymington SO41 8QY"
+            />
+          </div>
         </div>
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
