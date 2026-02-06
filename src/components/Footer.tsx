@@ -133,28 +133,7 @@ export const Footer = () => {
         </div>
 
         {/* Google Maps Banner */}
-        <div className="border-t border-foreground/20 py-8">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-center">Find Us</h3>
-          </div>
-          <a 
-            href="https://www.google.com/maps/search/?api=1&query=Revitalise+Hub+Ensign+Yard+670+Ampress+Lane+Lymington+SO41+8QY"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full h-48 rounded-lg overflow-hidden shadow-lg bg-muted/50 hover:bg-muted/70 transition-colors cursor-pointer group"
-          >
-            <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6">
-              <MapPin className="h-10 w-10 text-primary group-hover:scale-110 transition-transform" />
-              <div className="text-center">
-                <p className="font-medium text-foreground">Unit 7, Ensign Yard</p>
-                <p className="text-sm text-muted-foreground">670 Ampress Lane, Lymington SO41 8QY</p>
-              </div>
-              <span className="text-sm text-primary font-medium group-hover:underline">
-                Open in Google Maps →
-              </span>
-            </div>
-          </a>
-        </div>
+        <MapSection />
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-foreground/70 text-sm">
