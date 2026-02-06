@@ -168,13 +168,12 @@ export const CreateBookingDialog = ({
     }
   }, [watchedGuestCount, totalTokens, useToken]);
 
-  const handleSelectCustomer = (customer: CustomerResult) => {
+  const handleSelectCustomer = (customer: CustomerSearchResult) => {
     setSelectedCustomer(customer);
     form.setValue('customer_name', customer.full_name || '');
     form.setValue('customer_email', customer.email);
     form.setValue('customer_phone', customer.phone || '');
     setCustomerSearch('');
-    setSearchResults([]);
   };
 
   const handleClearCustomer = () => {
