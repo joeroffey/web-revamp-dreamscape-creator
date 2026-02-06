@@ -2,38 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
-
-const MapWithSkeleton = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  return (
-    <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg relative">
-      {/* Skeleton placeholder */}
-      {!isLoaded && (
-        <div className="absolute inset-0 bg-muted/50 flex flex-col items-center justify-center gap-3 animate-pulse">
-          <MapPin className="h-10 w-10 text-muted-foreground/50" />
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">Loading map...</p>
-          </div>
-        </div>
-      )}
-      {/* Actual iframe */}
-      <iframe
-        src="https://www.google.com/maps?q=Revitalise+Hub+Ensign+Yard+Lymington&output=embed"
-        width="100%"
-        height="100%"
-        style={{ border: 0 }}
-        allowFullScreen
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        title="Revitalise Hub Location - Unit 7, Ensign yard, 670 Ampress Ln, Lymington SO41 8QY"
-        onLoad={() => setIsLoaded(true)}
-        className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-      />
-    </div>
-  );
-};
 
 export const Footer = () => {
   const scrollToTop = () => {
@@ -168,7 +136,18 @@ export const Footer = () => {
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-center">Find Us</h3>
           </div>
-          <MapWithSkeleton />
+          <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
+            <iframe
+              src="https://www.google.com/maps?q=Revitalise+Hub+Ensign+Yard+Lymington&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Revitalise Hub Location - Unit 7, Ensign yard, 670 Ampress Ln, Lymington SO41 8QY"
+            />
+          </div>
         </div>
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
