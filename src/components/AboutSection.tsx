@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { 
   Zap, 
   Heart, 
@@ -7,21 +8,91 @@ import {
   Leaf, 
   Moon, 
   Shield,
-  Flame
+  Flame,
+  LucideIcon
 } from "lucide-react";
 
-const benefits = [
-  { icon: Zap, title: "Boosts Recovery", description: "Reduces muscle soreness" },
-  { icon: Heart, title: "Improves Circulation", description: "Enhances blood flow" },
-  { icon: Leaf, title: "Stress Relief", description: "Nervous system regulation" },
-  { icon: Brain, title: "Mental Clarity", description: "Enhances focus" },
-  { icon: Flame, title: "Reduces Inflammation", description: "Manages joint stiffness" },
-  { icon: Moon, title: "Better Sleep", description: "Promotes sleep quality" },
-  { icon: Shield, title: "Builds Resilience", description: "Physical & mental stress" },
+interface Benefit {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  detail: string;
+}
+
+const benefits: Benefit[] = [
+  { 
+    icon: Zap, 
+    title: "Boosts Recovery", 
+    description: "Reduces muscle soreness",
+    detail: "Accelerate your body's natural healing process and get back to peak performance faster."
+  },
+  { 
+    icon: Heart, 
+    title: "Improves Circulation", 
+    description: "Enhances blood flow",
+    detail: "Promote cardiovascular health and optimize oxygen delivery throughout your body."
+  },
+  { 
+    icon: Leaf, 
+    title: "Stress Relief", 
+    description: "Nervous system regulation",
+    detail: "Reset your parasympathetic nervous system and find deep, lasting calm."
+  },
+  { 
+    icon: Brain, 
+    title: "Mental Clarity", 
+    description: "Enhances focus",
+    detail: "Sharpen your mind and unlock heightened concentration and cognitive performance."
+  },
+  { 
+    icon: Flame, 
+    title: "Reduces Inflammation", 
+    description: "Manages joint stiffness",
+    detail: "Combat chronic inflammation and support joint health naturally."
+  },
+  { 
+    icon: Moon, 
+    title: "Better Sleep", 
+    description: "Promotes sleep quality",
+    detail: "Improve your sleep architecture for deeper, more restorative rest."
+  },
+  { 
+    icon: Shield, 
+    title: "Builds Resilience", 
+    description: "Physical & mental stress",
+    detail: "Train your body and mind to adapt and thrive under pressure."
+  },
 ];
 
 export const AboutSection = () => {
   const navigate = useNavigate();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Auto-rotate benefits
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActiveIndex((prev) => (prev + 1) % benefits.length);
+        setIsTransitioning(false);
+      }, 300);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleDotClick = (index: number) => {
+    if (index !== activeIndex) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActiveIndex(index);
+        setIsTransitioning(false);
+      }, 300);
+    }
+  };
+
+  const activeBenefit = benefits[activeIndex];
 
   return (
     <>
@@ -58,8 +129,8 @@ export const AboutSection = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="relative py-20 md:py-28 overflow-hidden">
+      {/* Benefits Section - Auto-rotating Carousel */}
+      <section className="relative py-24 md:py-32 overflow-hidden min-h-[600px] md:min-h-[700px]">
         {/* Background Image with Overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
@@ -67,56 +138,92 @@ export const AboutSection = () => {
             backgroundImage: `url('/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/70 to-black/85" />
         
-        <div className="relative max-w-6xl mx-auto px-6">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-light text-white mb-4 tracking-wide">
-              The Benefits
-            </h2>
-            <p className="text-white/60 text-lg max-w-2xl mx-auto">
-              Experience the proven advantages of contrast therapy
+        <div className="relative max-w-5xl mx-auto px-6 flex flex-col items-center justify-center h-full">
+          {/* Section Label */}
+          <div className="mb-8">
+            <span className="text-white/40 text-sm tracking-[0.3em] uppercase">
+              Why Contrast Therapy
+            </span>
+          </div>
+
+          {/* Main Rotating Display */}
+          <div className="text-center min-h-[280px] md:min-h-[320px] flex flex-col items-center justify-center">
+            {/* Icon */}
+            <div 
+              className={`w-20 h-20 md:w-24 md:h-24 mx-auto mb-8 rounded-full border-2 border-white/20 flex items-center justify-center transition-all duration-500 ${
+                isTransitioning ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
+              }`}
+            >
+              <activeBenefit.icon className="w-10 h-10 md:w-12 md:h-12 text-white" />
+            </div>
+
+            {/* Title */}
+            <h3 
+              className={`text-3xl md:text-5xl lg:text-6xl font-light text-white mb-4 tracking-wide transition-all duration-500 ${
+                isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+              }`}
+            >
+              {activeBenefit.title}
+            </h3>
+
+            {/* Subtitle */}
+            <p 
+              className={`text-white/60 text-lg md:text-xl mb-6 transition-all duration-500 delay-75 ${
+                isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+              }`}
+            >
+              {activeBenefit.description}
+            </p>
+
+            {/* Detail Text */}
+            <p 
+              className={`text-white/40 text-sm md:text-base max-w-xl mx-auto leading-relaxed transition-all duration-500 delay-100 ${
+                isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+              }`}
+            >
+              {activeBenefit.detail}
             </p>
           </div>
-          
-          {/* Benefits Grid - Icon Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {benefits.slice(0, 4).map((benefit) => (
-              <div 
-                key={benefit.title}
-                className="group backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 text-center hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+
+          {/* Progress Dots */}
+          <div className="flex items-center gap-3 mt-12">
+            {benefits.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handleDotClick(index)}
+                className={`relative h-2 rounded-full transition-all duration-500 ${
+                  index === activeIndex 
+                    ? 'w-8 bg-white' 
+                    : 'w-2 bg-white/30 hover:bg-white/50'
+                }`}
+                aria-label={`View benefit ${index + 1}`}
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <benefit.icon className="w-6 h-6 text-white/80" />
-                </div>
-                <h3 className="text-white font-medium mb-2 text-sm md:text-base">
-                  {benefit.title}
-                </h3>
-                <p className="text-white/50 text-xs md:text-sm">
-                  {benefit.description}
-                </p>
-              </div>
+                {index === activeIndex && (
+                  <span 
+                    className="absolute inset-0 rounded-full bg-white/50 animate-pulse"
+                    style={{ animationDuration: '4s' }}
+                  />
+                )}
+              </button>
             ))}
           </div>
-          
-          {/* Second Row - 3 cards centered */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6 max-w-4xl mx-auto">
-            {benefits.slice(4, 7).map((benefit) => (
-              <div 
+
+          {/* Benefit Pills - Small indicators at bottom */}
+          <div className="hidden md:flex flex-wrap justify-center gap-3 mt-10 max-w-3xl">
+            {benefits.map((benefit, index) => (
+              <button
                 key={benefit.title}
-                className="group backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 text-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 last:col-span-2 md:last:col-span-1"
+                onClick={() => handleDotClick(index)}
+                className={`px-4 py-2 rounded-full text-xs tracking-wide transition-all duration-300 ${
+                  index === activeIndex
+                    ? 'bg-white/20 text-white border border-white/30'
+                    : 'bg-transparent text-white/40 border border-white/10 hover:border-white/20 hover:text-white/60'
+                }`}
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <benefit.icon className="w-6 h-6 text-white/80" />
-                </div>
-                <h3 className="text-white font-medium mb-2 text-sm md:text-base">
-                  {benefit.title}
-                </h3>
-                <p className="text-white/50 text-xs md:text-sm">
-                  {benefit.description}
-                </p>
-              </div>
+                {benefit.title}
+              </button>
             ))}
           </div>
         </div>
