@@ -146,11 +146,8 @@ serve(async (req) => {
         mode: "subscription",
         success_url: `${req.headers.get("origin")}/membership-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}/memberships`,
-        payment_method_options: {
-          bacs_debit: {
-            setup_future_usage: "off_session",
-          },
-        },
+        // Note: payment_method_options.setup_future_usage is not allowed in subscription mode
+        // Stripe automatically handles saving payment methods for subscriptions
         metadata: {
           userId: userId,
           membershipType: membershipType,
