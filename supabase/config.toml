@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.create-admin-membership-payment]
 verify_jwt = false
+
+[functions.verify-booking-payment]
+verify_jwt = false
