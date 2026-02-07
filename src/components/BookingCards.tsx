@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 export const BookingCards = () => {
   const navigate = useNavigate();
@@ -13,46 +14,68 @@ export const BookingCards = () => {
           backgroundImage: `url('/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
         }}
       />
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
       
-      <div className="relative max-w-6xl mx-auto px-6">
+      <div className="relative max-w-5xl mx-auto px-6">
         {/* Section Title */}
         <h2 className="text-4xl md:text-6xl font-bold text-white text-center mb-16 tracking-wider">
           BOOK A SESSION
         </h2>
         
-        {/* Cards Grid */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Session Card */}
-          <div className="bg-black/90 rounded-2xl p-8 md:p-10 text-center flex flex-col items-center">
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-wide">
-              CONTRAST THERAPY
-            </h3>
-            <p className="text-white/70 mb-8 leading-relaxed">
-              Book a communal or private session combining ice bath and sauna for the ultimate recovery experience.
-            </p>
-            <Button 
-              onClick={() => navigate('/booking')}
-              className="bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 font-medium"
-            >
-              BOOK NOW
-            </Button>
+        {/* Cards - New horizontal glassmorphism design */}
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Contrast Therapy Card */}
+          <div className="group relative backdrop-blur-md bg-white/10 border border-white/20 p-8 transition-all duration-500 hover:bg-white/15 hover:border-white/30">
+            {/* Decorative corner accents */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/40" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/40" />
+            
+            <div className="flex flex-col h-full justify-between min-h-[200px]">
+              <div>
+                <span className="text-white/50 text-xs tracking-[0.3em] uppercase mb-2 block">Session</span>
+                <h3 className="text-2xl md:text-3xl font-light text-white mb-4 tracking-wide">
+                  CONTRAST THERAPY
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Book a communal or private session combining ice bath and sauna for the ultimate recovery experience.
+                </p>
+              </div>
+              
+              <button 
+                onClick={() => navigate('/booking')}
+                className="mt-6 inline-flex items-center gap-3 text-white border-b border-white/40 pb-1 w-fit group-hover:border-white transition-colors duration-300"
+              >
+                <span className="text-sm tracking-wider">BOOK NOW</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+              </button>
+            </div>
           </div>
           
           {/* Membership Card */}
-          <div className="bg-black/90 rounded-2xl p-8 md:p-10 text-center flex flex-col items-center">
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-wide">
-              MEMBERSHIP
-            </h3>
-            <p className="text-white/70 mb-8 leading-relaxed">
-              Regulars, we've got you! Get unlimited access and exclusive benefits with our membership plans.
-            </p>
-            <Button 
-              onClick={() => navigate('/memberships')}
-              className="bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 font-medium"
-            >
-              VIEW MEMBERSHIPS
-            </Button>
+          <div className="group relative backdrop-blur-md bg-white/10 border border-white/20 p-8 transition-all duration-500 hover:bg-white/15 hover:border-white/30">
+            {/* Decorative corner accents */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/40" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/40" />
+            
+            <div className="flex flex-col h-full justify-between min-h-[200px]">
+              <div>
+                <span className="text-white/50 text-xs tracking-[0.3em] uppercase mb-2 block">Monthly</span>
+                <h3 className="text-2xl md:text-3xl font-light text-white mb-4 tracking-wide">
+                  MEMBERSHIP
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Regulars, we've got you! Get unlimited access and exclusive benefits with our membership plans.
+                </p>
+              </div>
+              
+              <button 
+                onClick={() => navigate('/memberships')}
+                className="mt-6 inline-flex items-center gap-3 text-white border-b border-white/40 pb-1 w-fit group-hover:border-white transition-colors duration-300"
+              >
+                <span className="text-sm tracking-wider">VIEW MEMBERSHIPS</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
