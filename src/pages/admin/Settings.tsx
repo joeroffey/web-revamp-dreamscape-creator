@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,12 +9,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings2, Clock, PoundSterling, Save } from 'lucide-react';
+import { Settings2, Clock, PoundSterling, Save, Mail, Send, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminSettings() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [bulkEmailLoading, setBulkEmailLoading] = useState(false);
+  const [testEmailLoading, setTestEmailLoading] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
   
   // Pricing settings - only communal (combined) and private sessions
   // Prices are stored in pence in DB, but shown/edited in pounds in the UI.
@@ -452,6 +466,174 @@ export default function AdminSettings() {
                     checked={systemSettings.autoConfirmBookings}
                     onCheckedChange={(checked) => setSystemSettings(prev => ({ ...prev, autoConfirmBookings: checked }))}
                   />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bulk Password Reset Emails */}
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Customer Migration Emails
+              </CardTitle>
+              <CardDescription>
+                Send password reset emails to all imported customers so they can set up their accounts on the new website.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Test Email First */}
+              <div className="p-4 border rounded-lg bg-background">
+                <Label className="font-medium text-base">Step 1: Test Email</Label>
+                <p className="text-sm text-muted-foreground mt-1 mb-3">
+                  Send a test email to yourself first to verify the template looks correct.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Input
+                    type="email"
+                    placeholder="your-email@example.com"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    disabled={testEmailLoading || !testEmail}
+                    onClick={async () => {
+                      setTestEmailLoading(true);
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) throw new Error('Not authenticated');
+                        
+                        const response = await fetch(
+                          `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/send-bulk-password-reset`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${session.access_token}`,
+                            },
+                            body: JSON.stringify({ testMode: true, testEmail }),
+                          }
+                        );
+                        
+                        const result = await response.json();
+                        
+                        if (!response.ok) {
+                          throw new Error(result.error || 'Failed to send test email');
+                        }
+                        
+                        if (result.sent === 1) {
+                          toast({
+                            title: "Test Email Sent!",
+                            description: `Check ${testEmail} for the password reset email.`,
+                          });
+                        } else {
+                          toast({
+                            title: "Email Not Sent",
+                            description: result.errors?.[0] || "The test email could not be sent. Make sure the email exists in the system.",
+                            variant: "destructive",
+                          });
+                        }
+                      } catch (error: any) {
+                        console.error('Test email error:', error);
+                        toast({
+                          title: "Error",
+                          description: error.message,
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setTestEmailLoading(false);
+                      }
+                    }}
+                    className="min-h-[44px]"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {testEmailLoading ? 'Sending...' : 'Send Test'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Send to All */}
+              <div className="p-4 border border-amber-300 rounded-lg bg-amber-100/50">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <Label className="font-medium text-base">Step 2: Send to All Customers</Label>
+                    <p className="text-sm text-muted-foreground mt-1 mb-3">
+                      This will send password reset emails to ALL registered users. Make sure you've tested the email first!
+                    </p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={bulkEmailLoading} className="min-h-[44px]">
+                          <Mail className="h-4 w-4 mr-2" />
+                          {bulkEmailLoading ? 'Sending Emails...' : 'Send to All Customers'}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will send password reset emails to ALL customers in the system. 
+                            This action cannot be undone and may send hundreds of emails.
+                            <br /><br />
+                            Make sure you have tested the email template first!
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              setBulkEmailLoading(true);
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                if (!session) throw new Error('Not authenticated');
+                                
+                                const response = await fetch(
+                                  `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/send-bulk-password-reset`,
+                                  {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `Bearer ${session.access_token}`,
+                                    },
+                                    body: JSON.stringify({}),
+                                  }
+                                );
+                                
+                                const result = await response.json();
+                                
+                                if (!response.ok) {
+                                  throw new Error(result.error || 'Failed to send emails');
+                                }
+                                
+                                toast({
+                                  title: "Emails Sent!",
+                                  description: `Successfully sent ${result.sent} emails. ${result.failed} failed, ${result.skipped} skipped.`,
+                                });
+                                
+                                if (result.errors?.length > 0) {
+                                  console.error('Email errors:', result.errors);
+                                }
+                              } catch (error: any) {
+                                console.error('Bulk email error:', error);
+                                toast({
+                                  title: "Error",
+                                  description: error.message,
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setBulkEmailLoading(false);
+                              }
+                            }}
+                          >
+                            Yes, Send All Emails
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </div>
             </CardContent>
