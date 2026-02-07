@@ -224,17 +224,17 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
       }
 
       // Now get booking information for each slot
-      // Include both paid AND pending bookings - they all reserve spaces
+      // Only count PAID bookings for availability - pending bookings should NOT reserve spaces
+      // This prevents abandoned checkouts from blocking slots
       const slotsWithBookings = await Promise.all(
         slots.map(async (slot) => {
-          // Include both paid AND pending bookings - they all reserve spaces
-          // BUT exclude cancelled bookings
+          // Only count PAID bookings - pending bookings don't reserve spaces
+          // This ensures abandoned Stripe checkouts don't block availability
           const { data: bookings } = await supabase
             .from("bookings")
-            .select("booking_type, guest_count, payment_status, booking_status")
+            .select("booking_type, guest_count, payment_status")
             .eq("time_slot_id", slot.id)
-            .in("payment_status", ["paid", "pending"])
-            .neq("booking_status", "cancelled");
+            .eq("payment_status", "paid");
 
           const activeBookings = bookings || [];
           const communalBookings = activeBookings.filter(b => b.booking_type === 'communal');
