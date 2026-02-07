@@ -86,9 +86,12 @@ export default function ModernGiftCardManagement() {
 
   const formatCurrency = formatGBP;
 
-  const totalValue = giftCards.reduce((sum, gc) => sum + gc.amount, 0);
-  const redeemedCards = giftCards.filter(gc => gc.is_redeemed).length;
-  const redeemedValue = giftCards.filter(gc => gc.is_redeemed).reduce((sum, gc) => sum + gc.amount, 0);
+  // Only count paid gift cards in stats
+  const paidGiftCards = giftCards.filter(gc => gc.payment_status === 'paid');
+  const totalValue = paidGiftCards.reduce((sum, gc) => sum + gc.amount, 0);
+  const redeemedCards = paidGiftCards.filter(gc => gc.is_redeemed).length;
+  const redeemedValue = paidGiftCards.filter(gc => gc.is_redeemed).reduce((sum, gc) => sum + gc.amount, 0);
+  const pendingPaymentCards = giftCards.filter(gc => gc.payment_status === 'pending').length;
 
   if (loading) {
     return (
@@ -120,11 +123,11 @@ export default function ModernGiftCardManagement() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-pink-100 flex items-center gap-2">
                 <Gift className="h-4 w-4" />
-                Total Cards
+                Paid Cards
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{giftCards.length}</div>
+              <div className="text-3xl font-bold">{paidGiftCards.length}</div>
               <p className="text-xs text-pink-100 mt-1">All gift cards</p>
             </CardContent>
           </Card>
@@ -196,10 +199,12 @@ export default function ModernGiftCardManagement() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold text-lg">{giftCard.gift_code}</h3>
                           <Badge variant={
+                            giftCard.payment_status === 'pending' ? 'outline' :
                             giftCard.is_redeemed ? 'secondary' :
                             new Date(giftCard.expires_at) < new Date() ? 'destructive' : 'default'
-                          }>
-                            {giftCard.is_redeemed ? 'Redeemed' : 
+                          } className={giftCard.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : ''}>
+                            {giftCard.payment_status === 'pending' ? 'Awaiting Payment' :
+                             giftCard.is_redeemed ? 'Redeemed' : 
                              new Date(giftCard.expires_at) < new Date() ? 'Expired' : 'Active'}
                           </Badge>
                         </div>
@@ -281,7 +286,8 @@ export default function ModernGiftCardManagement() {
                       <div><strong>Code:</strong> {selectedGiftCard.gift_code}</div>
                       <div><strong>Original Amount:</strong> {formatCurrency(selectedGiftCard.amount)}</div>
                       <div><strong>Current Balance:</strong> {formatCurrency(selectedGiftCard.is_redeemed ? 0 : selectedGiftCard.amount)}</div>
-                      <div><strong>Status:</strong> {selectedGiftCard.is_redeemed ? 'Redeemed' : 'Active'}</div>
+                      <div><strong>Payment Status:</strong> {selectedGiftCard.payment_status === 'paid' ? 'Paid' : 'Awaiting Payment'}</div>
+                      <div><strong>Status:</strong> {selectedGiftCard.payment_status !== 'paid' ? 'Awaiting Payment' : selectedGiftCard.is_redeemed ? 'Redeemed' : 'Active'}</div>
                     </div>
                   </div>
                   <div>
