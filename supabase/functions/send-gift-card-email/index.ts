@@ -63,6 +63,13 @@ serve(async (req) => {
       ? `<p style="font-style: italic; color: #666; padding: 20px; background: #f9f9f9; border-radius: 8px; margin: 20px 0;">"${giftCard.message}"</p>` 
       : '';
 
+    // Build personal message with branded styling
+    const styledPersonalMessage = giftCard.message 
+      ? `<div style="padding: 20px; background: #f5f0eb; border-left: 4px solid #967B5E; border-radius: 4px; margin: 24px 0;">
+           <p style="font-style: italic; color: #52331F; margin: 0; font-size: 15px; line-height: 1.6;">"${giftCard.message}"</p>
+         </div>` 
+      : '';
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -70,39 +77,68 @@ serve(async (req) => {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
-          <div style="background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h1 style="color: #2d5a4a; text-align: center; margin-bottom: 10px;">🎁 You've Received a Gift Card!</h1>
-            <p style="text-align: center; color: #666; font-size: 18px;">from Revitalise Hub</p>
-            
-            <div style="text-align: center; padding: 30px 0;">
-              <p style="font-size: 16px; color: #333;">Hi ${recipientName},</p>
-              <p style="font-size: 16px; color: #333;">${giftCard.purchaser_name} has sent you a gift card worth</p>
-              <p style="font-size: 48px; font-weight: bold; color: #2d5a4a; margin: 20px 0;">£${amountInPounds}</p>
-            </div>
-            
-            ${personalMessage}
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Your gift card code:</p>
-              <p style="font-size: 24px; font-weight: bold; letter-spacing: 3px; color: #2d5a4a; background: #f0f7f4; padding: 15px 30px; border-radius: 8px; display: inline-block;">${giftCard.gift_code}</p>
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${redeemUrl}" style="display: inline-block; background: #2d5a4a; color: white; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-size: 16px; font-weight: 500;">Redeem Your Gift Card</a>
-            </div>
-            
-            <p style="text-align: center; font-size: 14px; color: #999; margin-top: 30px;">
-              Click the button above to redeem your gift card. You'll need to sign in or create an account to add the credit to your wallet.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            
-            <p style="text-align: center; font-size: 12px; color: #999;">
-              This gift card is valid for 1 year from redemption.<br>
-              © Revitalise Hub | Cold Water Therapy & Infrared Sauna
-            </p>
-          </div>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #CCBBA8;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="min-height: 100vh;">
+            <tr>
+              <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" width="100%" style="max-width: 480px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(82, 51, 31, 0.12);">
+                  <tr>
+                    <td style="padding: 40px 32px;">
+                      <!-- Header -->
+                      <div style="text-align: center; margin-bottom: 32px;">
+                        <h1 style="font-size: 22px; font-weight: 600; letter-spacing: 3px; color: #52331F; margin: 0 0 8px 0;">REVITALISE HUB</h1>
+                        <div style="width: 60px; height: 2px; background: #967B5E; margin: 0 auto;"></div>
+                      </div>
+
+                      <!-- Gift Icon -->
+                      <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="display: inline-block; width: 64px; height: 64px; background: linear-gradient(135deg, #52331F 0%, #967B5E 100%); border-radius: 50%; line-height: 64px; font-size: 28px;">🎁</div>
+                      </div>
+
+                      <!-- Main Content -->
+                      <h2 style="font-size: 24px; font-weight: 500; color: #52331F; text-align: center; margin: 0 0 16px 0;">You've Received a Gift Card!</h2>
+                      
+                      <p style="font-size: 15px; color: #967B5E; text-align: center; margin: 0 0 8px 0;">Hi ${recipientName},</p>
+                      <p style="font-size: 15px; color: #52331F; text-align: center; margin: 0 0 24px 0;">${giftCard.purchaser_name} has sent you a gift card worth</p>
+                      
+                      <!-- Amount Display -->
+                      <div style="text-align: center; margin: 24px 0;">
+                        <p style="font-size: 48px; font-weight: 700; color: #52331F; margin: 0; letter-spacing: -1px;">£${amountInPounds}</p>
+                      </div>
+
+                      ${styledPersonalMessage}
+
+                      <!-- Gift Code -->
+                      <div style="text-align: center; margin: 28px 0;">
+                        <p style="font-size: 13px; color: #967B5E; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px;">Your Gift Card Code</p>
+                        <div style="background: #f5f0eb; padding: 16px 24px; border-radius: 8px; display: inline-block;">
+                          <p style="font-size: 20px; font-weight: 600; letter-spacing: 4px; color: #52331F; margin: 0; font-family: 'Courier New', monospace;">${giftCard.gift_code}</p>
+                        </div>
+                      </div>
+
+                      <!-- CTA Button -->
+                      <div style="text-align: center; margin: 32px 0;">
+                        <a href="${redeemUrl}" style="display: inline-block; background: #52331F; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 30px; font-size: 15px; font-weight: 500; letter-spacing: 0.5px;">Redeem Your Gift Card</a>
+                      </div>
+
+                      <p style="font-size: 13px; color: #967B5E; text-align: center; line-height: 1.6; margin: 0;">
+                        Click the button above to redeem your gift card. You'll need to sign in or create an account to add the credit to your wallet.
+                      </p>
+
+                      <!-- Divider -->
+                      <div style="border-top: 1px solid #e8e0d8; margin: 32px 0;"></div>
+
+                      <!-- Footer -->
+                      <p style="font-size: 12px; color: #967B5E; text-align: center; line-height: 1.6; margin: 0;">
+                        This gift card is valid for 1 year from redemption.<br>
+                        © Revitalise Hub | Cold Water & Contrast Therapy
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
       </html>
     `;
