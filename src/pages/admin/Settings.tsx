@@ -560,7 +560,7 @@ export default function AdminSettings() {
               <div className="p-4 border rounded-lg bg-background">
                 <Label className="font-medium text-base">Step 2: Resend to Failed Recipients</Label>
                 <p className="text-sm text-muted-foreground mt-1 mb-3">
-                  Only sends to customers who didn't receive the email (due to rate limiting or errors). This is the recommended option after initial send.
+                  Only sends to customers who didn't receive the email (due to rate limiting or errors). Processes in batches of 100 to avoid timeouts.
                 </p>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -575,6 +575,7 @@ export default function AdminSettings() {
                       <AlertDialogDescription>
                         This will only send emails to customers who didn't receive the previous email.
                         Customers who already received the email successfully will be skipped.
+                        Emails are sent in batches of 100 - you may need to click again if there are more.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -582,41 +583,59 @@ export default function AdminSettings() {
                       <AlertDialogAction
                         onClick={async () => {
                           setResendFailedLoading(true);
+                          let totalSent = 0;
+                          let totalFailed = 0;
+                          let hasMore = true;
+                          let batchCount = 0;
+                          
                           try {
                             const { data: { session } } = await supabase.auth.getSession();
                             if (!session) throw new Error('Not authenticated');
                             
-                            const response = await fetch(
-                              `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/send-bulk-password-reset`,
-                              {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${session.access_token}`,
-                                },
-                                body: JSON.stringify({ resendFailed: true }),
+                            // Process batches until no more remain
+                            while (hasMore) {
+                              batchCount++;
+                              console.log(`Processing batch ${batchCount}...`);
+                              
+                              const response = await fetch(
+                                `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/send-bulk-password-reset`,
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${session.access_token}`,
+                                  },
+                                  body: JSON.stringify({ resendFailed: true }),
+                                }
+                              );
+                              
+                              const result = await response.json();
+                              
+                              if (!response.ok) {
+                                throw new Error(result.error || 'Failed to send emails');
                               }
-                            );
-                            
-                            const result = await response.json();
-                            
-                            if (!response.ok) {
-                              throw new Error(result.error || 'Failed to send emails');
+                              
+                              totalSent += result.sent || 0;
+                              totalFailed += result.failed || 0;
+                              hasMore = result.hasMore || false;
+                              
+                              console.log(`Batch ${batchCount}: sent ${result.sent}, ${result.total - result.batchSize} remaining`);
+                              
+                              // Small delay between batches to avoid overwhelming
+                              if (hasMore) {
+                                await new Promise(r => setTimeout(r, 1000));
+                              }
                             }
                             
                             toast({
-                              title: "Emails Sent!",
-                              description: `Successfully sent ${result.sent} emails. ${result.failed} failed, ${result.skipped} skipped.`,
+                              title: "All Emails Sent!",
+                              description: `Successfully sent ${totalSent} emails across ${batchCount} batch(es). ${totalFailed} failed.`,
                             });
-                            
-                            if (result.errors?.length > 0) {
-                              console.error('Email errors:', result.errors);
-                            }
                           } catch (error: any) {
                             console.error('Resend failed email error:', error);
                             toast({
                               title: "Error",
-                              description: error.message,
+                              description: `${error.message}. Sent ${totalSent} emails before error.`,
                               variant: "destructive",
                             });
                           } finally {
