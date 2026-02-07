@@ -37,9 +37,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth event:', event);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle password recovery - redirect to reset password page
+        if (event === 'PASSWORD_RECOVERY') {
+          window.location.href = '/reset-password';
+        }
       }
     );
 
