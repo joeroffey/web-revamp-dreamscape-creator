@@ -9,11 +9,13 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-// Rate limit: Resend free tier allows 100 emails/day, 2 emails/second
-// We'll use 500ms delay between emails to be safe (2 per second)
-const DELAY_BETWEEN_EMAILS_MS = 500;
+// Rate limit: Resend allows 2 emails/second
+// We'll use 300ms delay between emails
+const DELAY_BETWEEN_EMAILS_MS = 300;
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
+const RETRY_DELAY_MS = 1000;
+// Process in batches to avoid function timeout (max ~60 seconds)
+const BATCH_SIZE = 100;
 
 async function sendEmailWithRetry(
   email: string,
@@ -150,7 +152,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const testMode = body.testMode || false;
     const testEmail = body.testEmail;
-    const resendFailed = body.resendFailed || false; // New option to only resend to failed users
+    const resendFailed = body.resendFailed || false;
 
     // Fetch all users
     const { data: authUsers, error: usersError } = await supabase.auth.admin.listUsers({
@@ -168,17 +170,14 @@ serve(async (req) => {
 
     const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
 
-    // Get already sent emails if resending failed only
-    let alreadySentEmails = new Set<string>();
-    if (resendFailed) {
-      const { data: sentLogs } = await supabase
-        .from('password_reset_email_log')
-        .select('email')
-        .eq('status', 'sent');
-      
-      alreadySentEmails = new Set(sentLogs?.map(l => l.email.toLowerCase()) || []);
-      console.log(`Found ${alreadySentEmails.size} emails already successfully sent`);
-    }
+    // Always check already sent emails to avoid duplicates
+    const { data: sentLogs } = await supabase
+      .from('password_reset_email_log')
+      .select('email')
+      .eq('status', 'sent');
+    
+    const alreadySentEmails = new Set(sentLogs?.map(l => l.email.toLowerCase()) || []);
+    console.log(`Found ${alreadySentEmails.size} emails already successfully sent`);
 
     let usersToProcess = authUsers.users;
     
@@ -193,15 +192,20 @@ serve(async (req) => {
       }
     }
 
-    // Filter out already sent if resending failed
-    if (resendFailed) {
-      const beforeCount = usersToProcess.length;
-      usersToProcess = usersToProcess.filter(u => !alreadySentEmails.has(u.email?.toLowerCase() || ''));
-      console.log(`Filtered from ${beforeCount} to ${usersToProcess.length} users (excluding already sent)`);
-    }
+    // Always filter out already sent emails
+    const beforeCount = usersToProcess.length;
+    usersToProcess = usersToProcess.filter(u => !alreadySentEmails.has(u.email?.toLowerCase() || ''));
+    console.log(`Filtered from ${beforeCount} to ${usersToProcess.length} users (excluding already sent)`);
+
+    // Apply batch size limit to avoid timeout
+    const hasMore = usersToProcess.length > BATCH_SIZE;
+    const batchToProcess = usersToProcess.slice(0, BATCH_SIZE);
+    console.log(`Processing batch of ${batchToProcess.length} users (${usersToProcess.length} remaining total)`);
 
     const results = {
       total: usersToProcess.length,
+      batchSize: batchToProcess.length,
+      hasMore,
       sent: 0,
       failed: 0,
       skipped: 0,
@@ -209,7 +213,7 @@ serve(async (req) => {
       failedEmails: [] as string[],
     };
 
-    for (const user of usersToProcess) {
+    for (const user of batchToProcess) {
       if (!user.email) {
         results.skipped++;
         continue;
