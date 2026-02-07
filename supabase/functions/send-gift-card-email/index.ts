@@ -109,7 +109,7 @@ serve(async (req) => {
 
     // Send the email
     const emailResponse = await resend.emails.send({
-      from: "Revitalise Hub <noreply@revitalisehub.com>",
+      from: "Revitalise Hub <info@revitalisehub.co.uk>",
       to: [recipientEmail],
       subject: `🎁 You've received a £${amountInPounds} Revitalise Hub Gift Card!`,
       html: emailHtml,
