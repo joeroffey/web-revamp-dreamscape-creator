@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.verify-booking-payment]
 verify_jwt = false
+
+[functions.create-partial-credit-booking]
+verify_jwt = false

@@ -87,6 +87,7 @@ const Booking = () => {
   const [checkingTokens, setCheckingTokens] = useState(false);
   const [checkingCredits, setCheckingCredits] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'credits' | 'membership' | 'tokens'>('card');
+  const [applyPartialCredit, setApplyPartialCredit] = useState(false);
   const [pricing, setPricing] = useState({ combined: 1800, private: 7000 }); // pence
   const [promoCode, setPromoCode] = useState("");
   const [promoCodeStatus, setPromoCodeStatus] = useState<{
@@ -499,11 +500,12 @@ const Booking = () => {
   const hasUsedCreditForSelectedDate = selectedTimeSlot && membershipStatus?.hasUsedCreditForDate;
   const hasUsedTokenForSelectedDate = selectedTimeSlot && tokenStatus?.hasUsedTokenForDate;
   
-  // Calculate if user can use credits (has enough to cover the booking)
+  // Calculate if user can use credits (full or partial)
   const bookingCost = formData.bookingType === 'private' 
     ? pricing.private 
     : pricing.combined * formData.guestCount;
   const canUseCredits = creditStatus && creditStatus.totalCredits >= bookingCost && !canUseMembership && !canUseTokens;
+  const hasPartialCredit = creditStatus && creditStatus.totalCredits > 0 && creditStatus.totalCredits < bookingCost && !canUseMembership && !canUseTokens;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
@@ -684,6 +686,77 @@ const Booking = () => {
       }
     } catch (error) {
       console.error('Credit booking error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      toast({
+        title: "Booking Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePartialCreditBooking = async () => {
+    if (!validateForm() || !user?.id) {
+      toast({
+        title: "Please Complete All Required Fields",
+        description: "Check the form for any missing information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error("Authentication required");
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-partial-credit-booking', {
+        body: {
+          userId: user.id,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          timeSlotId: selectedTimeSlot!.id,
+          specialRequests: formData.specialRequests,
+          bookingType: formData.bookingType,
+          guestCount: formData.guestCount,
+          applyCredit: true,
+          discountCode: promoCodeStatus.isValid ? promoCode.toUpperCase().trim() : undefined,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create booking");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // If fully paid with credits, redirect to success
+      if (data?.paidWithCreditsOnly) {
+        await checkCreditBalance();
+        window.location.href = `/booking-success?credits=true&remaining=${(data.creditsRemaining / 100).toFixed(2)}`;
+        return;
+      }
+
+      // Otherwise redirect to Stripe for remaining payment
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No payment URL received");
+      }
+    } catch (error) {
+      console.error('Partial credit booking error:', error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       
       toast({
@@ -910,7 +983,7 @@ const Booking = () => {
                   <p className="text-sm text-muted-foreground mt-3">
                     {canUseCredits 
                       ? 'You can use your credit balance to pay for this booking. Select "Use Credit" at checkout.'
-                      : `Your credit balance (£${creditStatus.totalCreditsInPounds}) is less than the booking cost. Credit can only be used when your remaining balance is less than the total.`
+                      : `Your £${creditStatus.totalCreditsInPounds} credit can be applied to reduce your payment. The remaining balance will be charged to your card.`
                     }
                   </p>
                 </CardContent>
@@ -1354,7 +1427,7 @@ const Booking = () => {
                           </>
                         ) : (
                           <>
-                            {/* Payment Method Selection - Show when user has credits */}
+                            {/* Payment Method Selection - Show when user has enough credits */}
                             {canUseCredits && (
                               <div className="pt-2 border-t mb-3">
                                 <p className="text-sm font-medium mb-2">Payment Method:</p>
@@ -1426,10 +1499,47 @@ const Booking = () => {
                                     </span>
                                   </div>
                                 )}
+                                
+                                {/* Partial Credit Option */}
+                                {hasPartialCredit && user && (
+                                  <div className="pt-2 border-t mt-2">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <Checkbox 
+                                        id="applyCredit" 
+                                        checked={applyPartialCredit}
+                                        onCheckedChange={(checked) => setApplyPartialCredit(checked === true)}
+                                      />
+                                      <label 
+                                        htmlFor="applyCredit" 
+                                        className="text-sm cursor-pointer flex items-center gap-1"
+                                      >
+                                        <Wallet className="h-3 w-3 text-primary" />
+                                        Apply £{creditStatus?.totalCreditsInPounds} credit
+                                      </label>
+                                    </div>
+                                    {applyPartialCredit && (
+                                      <div className="flex justify-between text-primary text-sm">
+                                        <span>Credit Applied:</span>
+                                        <span>-£{creditStatus?.totalCreditsInPounds}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
                                 <div className="flex justify-between font-semibold text-primary pt-1 border-t">
-                                  <span>Total:</span>
-                                  <span>£{calculateTotalPrice().toFixed(2)}</span>
+                                  <span>Total to Pay:</span>
+                                  <span>
+                                    £{(applyPartialCredit && hasPartialCredit 
+                                      ? Math.max(0, (calculateTotalPrice() * 100 - (creditStatus?.totalCredits || 0)) / 100)
+                                      : calculateTotalPrice()
+                                    ).toFixed(2)}
+                                  </span>
                                 </div>
+                                {applyPartialCredit && hasPartialCredit && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Your £{creditStatus?.totalCreditsInPounds} credit will be applied and the remainder charged to your card.
+                                  </p>
+                                )}
                               </>
                             )}
                           </>
@@ -1498,6 +1608,20 @@ const Booking = () => {
                             <>
                               <Wallet className="h-4 w-4 mr-2" />
                               Confirm Booking with Credit
+                            </>
+                          )}
+                        </Button>
+                      ) : applyPartialCredit && hasPartialCredit ? (
+                        <Button 
+                          size="lg" 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+                          onClick={handlePartialCreditBooking}
+                          disabled={isLoading || !termsAccepted}
+                        >
+                          {isLoading ? "Processing..." : (
+                            <>
+                              <Wallet className="h-4 w-4 mr-2" />
+                              Apply Credit & Pay £{Math.max(0, (calculateTotalPrice() * 100 - (creditStatus?.totalCredits || 0)) / 100).toFixed(2)}
                             </>
                           )}
                         </Button>

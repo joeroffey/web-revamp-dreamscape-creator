@@ -88,6 +88,108 @@ serve(async (req) => {
         }
       }
 
+      // Handle partial credit booking (credit + card payment)
+      if (session.metadata?.type === "partial_credit_booking") {
+        const timeSlotId = session.metadata.timeSlotId;
+        const userId = session.metadata.userId;
+        const customerName = session.metadata.customerName;
+        const customerEmail = session.metadata.customerEmail;
+        const customerPhone = session.metadata.customerPhone || null;
+        const bookingType = session.metadata.bookingType as 'communal' | 'private';
+        const guestCount = Number(session.metadata.guestCount || 1);
+        const specialRequests = session.metadata.specialRequests || null;
+        const baseAmount = Number(session.metadata.baseAmount || 0);
+        const discountFromCode = Number(session.metadata.discountFromCode || 0);
+        const creditAmount = Number(session.metadata.creditAmount || 0);
+        const amountToPay = Number(session.metadata.amountToPay || 0);
+        const creditsToDeduct = JSON.parse(session.metadata.creditsToDeduct || '[]');
+        const discountCodeId = session.metadata.discountCodeId || null;
+
+        console.log("Processing partial credit booking:", { timeSlotId, creditAmount, amountToPay });
+
+        // Get time slot details
+        const { data: timeSlot } = await supabase
+          .from('time_slots')
+          .select('*')
+          .eq('id', timeSlotId)
+          .single();
+
+        if (!timeSlot) {
+          console.error("Time slot not found for partial credit booking");
+          throw new Error("Time slot not found");
+        }
+
+        // Deduct credits
+        for (const { id, amount } of creditsToDeduct) {
+          const { data: currentCredit } = await supabase
+            .from('customer_credits')
+            .select('credit_balance')
+            .eq('id', id)
+            .single();
+          
+          if (currentCredit) {
+            await supabase
+              .from('customer_credits')
+              .update({ 
+                credit_balance: currentCredit.credit_balance - amount,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', id);
+          }
+        }
+
+        // Create confirmed booking
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .insert({
+            user_id: userId,
+            customer_name: customerName,
+            customer_email: customerEmail.toLowerCase(),
+            customer_phone: customerPhone,
+            time_slot_id: timeSlotId,
+            service_type: 'combined',
+            session_date: timeSlot.slot_date,
+            session_time: timeSlot.slot_time,
+            duration_minutes: 60,
+            price_amount: baseAmount,
+            discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
+            discount_amount: discountFromCode + creditAmount,
+            final_amount: amountToPay,
+            guest_count: guestCount,
+            booking_type: bookingType,
+            special_requests: specialRequests,
+            payment_status: 'paid',
+            stripe_session_id: session.id,
+          })
+          .select()
+          .single();
+
+        if (bookingError) {
+          console.error("Error creating partial credit booking:", bookingError);
+          throw bookingError;
+        }
+
+        // Update time slot availability
+        if (bookingType === 'private') {
+          await supabase
+            .from('time_slots')
+            .update({ is_available: false, booked_count: 5, updated_at: new Date().toISOString() })
+            .eq('id', timeSlotId);
+        } else {
+          const newBookedCount = (timeSlot.booked_count || 0) + guestCount;
+          await supabase
+            .from('time_slots')
+            .update({
+              booked_count: newBookedCount,
+              is_available: newBookedCount < 5,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', timeSlotId);
+        }
+
+        console.log("Partial credit booking confirmed:", booking?.id);
+      }
+
       if (session.metadata?.type === "gift_card") {
         // Mark gift card as paid
         const { data: gcRow } = await supabase
