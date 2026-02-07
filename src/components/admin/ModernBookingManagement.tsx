@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Calendar, 
   Users, 
@@ -24,7 +25,10 @@ import {
   XCircle,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  AlertTriangle,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { EnhancedCreateBookingDialog } from '@/components/admin/EnhancedCreateBookingDialog';
 import { EditBookingDialog } from '@/components/admin/EditBookingDialog';
@@ -38,15 +42,18 @@ interface BookingStats {
   upcomingBookings: number;
   completedBookings: number;
   totalRevenue: number;
+  pendingPayments: number;
 }
 
 export default function ModernBookingManagement() {
+  const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<BookingStats>({
     totalBookings: 0,
     upcomingBookings: 0,
     completedBookings: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    pendingPayments: 0
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +63,7 @@ export default function ModernBookingManagement() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -69,6 +77,40 @@ export default function ModernBookingManagement() {
       setSelectedBookings(prev => prev.filter(id => id !== bookingId));
     } catch (error) {
       console.error('Error deleting booking:', error);
+    }
+  };
+
+  const handleVerifyPayment = async (bookingId: string) => {
+    setVerifyingPayment(bookingId);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-booking-payment', {
+        body: { bookingId }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Payment Verified",
+          description: data.message,
+        });
+        await fetchBookings();
+      } else {
+        toast({
+          title: "Payment Not Confirmed",
+          description: data.message,
+          variant: data.status === 'unpaid' ? 'destructive' : 'default',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error verifying payment:', error);
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Could not verify payment status",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingPayment(null);
     }
   };
 
@@ -93,12 +135,16 @@ export default function ModernBookingManagement() {
       const totalRevenue = (bookingsData || [])
         .filter(b => b.payment_status === 'paid')
         .reduce((sum, b) => sum + b.price_amount, 0);
+      const pendingPayments = (bookingsData || []).filter(b => 
+        b.payment_status === 'pending'
+      ).length;
 
       setStats({
         totalBookings: bookingsData?.length || 0,
         upcomingBookings,
         completedBookings,
-        totalRevenue
+        totalRevenue,
+        pendingPayments
       });
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -135,6 +181,11 @@ export default function ModernBookingManagement() {
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
+  // Get pending bookings with Stripe sessions (possible webhook failures)
+  const pendingWithStripe = bookings.filter(b => 
+    b.payment_status === 'pending' && b.stripe_session_id
+  );
+
   const handleSelectBooking = (bookingId: string) => {
     setSelectedBookings(prev => 
       prev.includes(bookingId) 
@@ -167,11 +218,11 @@ export default function ModernBookingManagement() {
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Completed Bookings',
-      value: stats.completedBookings,
-      icon: CheckCircle,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      title: 'Pending Payments',
+      value: stats.pendingPayments,
+      icon: AlertTriangle,
+      color: stats.pendingPayments > 0 ? 'text-yellow-600' : 'text-gray-600',
+      bgColor: stats.pendingPayments > 0 ? 'bg-yellow-50' : 'bg-gray-50'
     },
     {
       title: 'Total Revenue',
@@ -247,6 +298,42 @@ export default function ModernBookingManagement() {
           />
         )}
 
+        {/* Pending Payments Warning Banner */}
+        {pendingWithStripe.length > 0 && (
+          <Card className="border-yellow-300 bg-yellow-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-yellow-800 mb-1">
+                    {pendingWithStripe.length} Pending Booking{pendingWithStripe.length > 1 ? 's' : ''} May Need Attention
+                  </h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    These bookings have Stripe sessions but are still marked as pending. This could mean:
+                  </p>
+                  <ul className="text-sm text-yellow-700 list-disc list-inside mb-3 space-y-1">
+                    <li>The customer abandoned checkout</li>
+                    <li>The payment webhook failed to update the booking</li>
+                  </ul>
+                  <p className="text-sm text-yellow-700">
+                    Use the <strong>"Verify Payment"</strong> button on each booking to check if payment was actually completed in Stripe.
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="border-yellow-400 text-yellow-800 hover:bg-yellow-100"
+                  onClick={() => setStatusFilter('pending')}
+                >
+                  Show Pending Only
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {statCards.map((stat, index) => {
@@ -291,7 +378,9 @@ export default function ModernBookingManagement() {
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="pending">
+                      Pending {stats.pendingPayments > 0 && `(${stats.pendingPayments})`}
+                    </SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                     <SelectItem value="refunded">Refunded</SelectItem>
                   </SelectContent>
@@ -351,7 +440,11 @@ export default function ModernBookingManagement() {
                 </div>
               ) : (
                 filteredBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50">
+                  <div key={booking.id} className={`flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 ${
+                    booking.payment_status === 'pending' && booking.stripe_session_id 
+                      ? 'border-yellow-300 bg-yellow-50/50' 
+                      : ''
+                  }`}>
                     <Checkbox
                       checked={selectedBookings.includes(booking.id)}
                       onCheckedChange={() => handleSelectBooking(booking.id)}
@@ -386,12 +479,37 @@ export default function ModernBookingManagement() {
                       
                       <div>
                         <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
-                        <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
-                          {booking.payment_status || 'pending'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
+                            {booking.payment_status || 'pending'}
+                          </Badge>
+                          {booking.payment_status === 'pending' && booking.stripe_session_id && (
+                            <span className="text-xs text-yellow-600" title="Has Stripe session - may need verification">
+                              ⚠️
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2 flex-wrap">
+                        {/* Verify Payment Button for pending bookings with Stripe sessions */}
+                        {booking.payment_status === 'pending' && booking.stripe_session_id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+                            onClick={() => handleVerifyPayment(booking.id)}
+                            disabled={verifyingPayment === booking.id}
+                          >
+                            {verifyingPayment === booking.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                            )}
+                            Verify
+                          </Button>
+                        )}
+                        
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button 
@@ -400,7 +518,7 @@ export default function ModernBookingManagement() {
                               onClick={() => setSelectedBooking(booking)}
                             >
                               <Eye className="h-4 w-4 mr-2" />
-                              View Details
+                              View
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl">
@@ -431,6 +549,11 @@ export default function ModernBookingManagement() {
                                   <Badge className={getPaymentStatusColor(selectedBooking.payment_status)}>
                                     {selectedBooking.payment_status || 'pending'}
                                   </Badge>
+                                  {selectedBooking.stripe_session_id && (
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      Stripe Session: {selectedBooking.stripe_session_id}
+                                    </p>
+                                  )}
                                 </div>
                                 {selectedBooking.special_requests && (
                                   <div>

@@ -120,9 +120,9 @@ const Memberships = () => {
 
       if (error) throw error;
 
-      // Redirect to Stripe checkout
+      // Redirect to Stripe checkout (same-tab to avoid popup blockers)
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error('Membership purchase error:', error);
