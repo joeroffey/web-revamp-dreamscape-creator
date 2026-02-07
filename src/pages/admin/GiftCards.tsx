@@ -39,6 +39,7 @@ export default function AdminGiftCards() {
       const { data, error } = await supabase
         .from('gift_cards')
         .select('*')
+        .eq('payment_status', 'paid')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
