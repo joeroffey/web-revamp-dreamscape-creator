@@ -53,10 +53,10 @@ const GiftCards = () => {
   const handlePurchase = async () => {
     const amount = getCurrentAmount();
     
-    if (!formData.purchaserName || !formData.purchaserEmail || !amount) {
+    if (!formData.purchaserName || !formData.purchaserEmail || !formData.recipientName || !formData.recipientEmail || !amount) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields and select an amount.",
+        description: "Please fill in all required fields including recipient details and select an amount.",
         variant: "destructive",
       });
       return;
@@ -244,7 +244,7 @@ const GiftCards = () => {
                           <div className="space-y-3">
                             <Label htmlFor="recipientName" className="flex items-center gap-2">
                               <Gift className="h-4 w-4" />
-                              Recipient Name
+                              Recipient Name *
                             </Label>
                             <Input
                               id="recipientName"
@@ -252,11 +252,15 @@ const GiftCards = () => {
                               value={formData.recipientName}
                               onChange={handleInputChange}
                               placeholder="Gift recipient's name"
+                              required
                               disabled={getCurrentAmount() === 0}
                             />
                           </div>
                           <div className="space-y-3">
-                            <Label htmlFor="recipientEmail">Recipient Email</Label>
+                            <Label htmlFor="recipientEmail" className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              Recipient Email *
+                            </Label>
                             <Input
                               id="recipientEmail"
                               name="recipientEmail"
@@ -264,6 +268,7 @@ const GiftCards = () => {
                               value={formData.recipientEmail}
                               onChange={handleInputChange}
                               placeholder="recipient@example.com"
+                              required
                               disabled={getCurrentAmount() === 0}
                             />
                           </div>
@@ -286,7 +291,7 @@ const GiftCards = () => {
                           size="lg" 
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                           onClick={handlePurchase}
-                          disabled={isLoading || !getCurrentAmount() || !formData.purchaserName || !formData.purchaserEmail}
+                          disabled={isLoading || !getCurrentAmount() || !formData.purchaserName || !formData.purchaserEmail || !formData.recipientName || !formData.recipientEmail}
                         >
                           {isLoading ? "Processing..." : `Purchase £${getCurrentAmount()} Gift Card`}
                         </Button>
