@@ -601,6 +601,33 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_email_log: {
+        Row: {
+          email: string
+          error_message: string | null
+          id: string
+          sent_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          email: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pricing_config: {
         Row: {
           created_at: string

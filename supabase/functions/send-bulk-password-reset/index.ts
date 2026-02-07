@@ -9,119 +9,24 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+// Rate limit: Resend free tier allows 100 emails/day, 2 emails/second
+// We'll use 500ms delay between emails to be safe (2 per second)
+const DELAY_BETWEEN_EMAILS_MS = 500;
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
 
+async function sendEmailWithRetry(
+  email: string,
+  resetUrl: string,
+  firstName: string,
+  retries = 0
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-    // Check if requesting user is admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !requestingUser) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if user is admin
-    const { data: adminRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', requestingUser.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!adminRole) {
-      return new Response(
-        JSON.stringify({ error: "Admin access required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Parse request body for optional test mode
-    const body = await req.json().catch(() => ({}));
-    const testMode = body.testMode || false;
-    const testEmail = body.testEmail;
-
-    // Fetch all users
-    const { data: authUsers, error: usersError } = await supabase.auth.admin.listUsers({
-      perPage: 1000,
-    });
-
-    if (usersError) {
-      throw usersError;
-    }
-
-    // Get profiles for names
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name');
-
-    const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
-
-    let usersToProcess = authUsers.users;
-    
-    // In test mode, only send to the test email
-    if (testMode && testEmail) {
-      usersToProcess = authUsers.users.filter(u => u.email === testEmail);
-      if (usersToProcess.length === 0) {
-        return new Response(
-          JSON.stringify({ error: `Test email ${testEmail} not found in users` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    const results = {
-      total: usersToProcess.length,
-      sent: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-
-    for (const user of usersToProcess) {
-      if (!user.email) continue;
-
-      try {
-        // Generate password reset link
-        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-          type: 'recovery',
-          email: user.email,
-          options: {
-            redirectTo: 'https://www.revitalisehub.co.uk/reset-password',
-          },
-        });
-
-        if (linkError) {
-          results.failed++;
-          results.errors.push(`${user.email}: ${linkError.message}`);
-          continue;
-        }
-
-        const resetUrl = linkData.properties.action_link;
-        const firstName = profileMap.get(user.id)?.split(' ')[0] || 'there';
-
-        // Send email via Resend
-        const { error: emailError } = await resend.emails.send({
-          from: "Revitalise Hub <noreply@revitalisehub.co.uk>",
-          to: [user.email],
-          subject: "Welcome to Our New Website - Set Your Password",
-          html: `
+    const { error: emailError } = await resend.emails.send({
+      from: "Revitalise Hub <noreply@revitalisehub.co.uk>",
+      to: [email],
+      subject: "Welcome to Our New Website - Set Your Password",
+      html: `
 <!DOCTYPE html>
 <html>
   <head>
@@ -170,23 +75,200 @@ serve(async (req) => {
     </div>
   </body>
 </html>
-          `,
+      `,
+    });
+
+    if (emailError) {
+      // Check if it's a rate limit error (429)
+      const errorMessage = JSON.stringify(emailError);
+      if (errorMessage.includes('429') || errorMessage.includes('rate') || errorMessage.includes('Too Many')) {
+        if (retries < MAX_RETRIES) {
+          console.log(`Rate limited for ${email}, retry ${retries + 1}/${MAX_RETRIES} after ${RETRY_DELAY_MS}ms`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (retries + 1)));
+          return sendEmailWithRetry(email, resetUrl, firstName, retries + 1);
+        }
+      }
+      return { success: false, error: emailError.message || 'Email send failed' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    if (retries < MAX_RETRIES) {
+      console.log(`Error for ${email}, retry ${retries + 1}/${MAX_RETRIES}`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (retries + 1)));
+      return sendEmailWithRetry(email, resetUrl, firstName, retries + 1);
+    }
+    return { success: false, error: err.message };
+  }
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Check if requesting user is admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !requestingUser) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user is admin
+    const { data: adminRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', requestingUser.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (!adminRole) {
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse request body
+    const body = await req.json().catch(() => ({}));
+    const testMode = body.testMode || false;
+    const testEmail = body.testEmail;
+    const resendFailed = body.resendFailed || false; // New option to only resend to failed users
+
+    // Fetch all users
+    const { data: authUsers, error: usersError } = await supabase.auth.admin.listUsers({
+      perPage: 1000,
+    });
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    // Get profiles for names
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name');
+
+    const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+
+    // Get already sent emails if resending failed only
+    let alreadySentEmails = new Set<string>();
+    if (resendFailed) {
+      const { data: sentLogs } = await supabase
+        .from('password_reset_email_log')
+        .select('email')
+        .eq('status', 'sent');
+      
+      alreadySentEmails = new Set(sentLogs?.map(l => l.email.toLowerCase()) || []);
+      console.log(`Found ${alreadySentEmails.size} emails already successfully sent`);
+    }
+
+    let usersToProcess = authUsers.users;
+    
+    // In test mode, only send to the test email
+    if (testMode && testEmail) {
+      usersToProcess = authUsers.users.filter(u => u.email === testEmail);
+      if (usersToProcess.length === 0) {
+        return new Response(
+          JSON.stringify({ error: `Test email ${testEmail} not found in users` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Filter out already sent if resending failed
+    if (resendFailed) {
+      const beforeCount = usersToProcess.length;
+      usersToProcess = usersToProcess.filter(u => !alreadySentEmails.has(u.email?.toLowerCase() || ''));
+      console.log(`Filtered from ${beforeCount} to ${usersToProcess.length} users (excluding already sent)`);
+    }
+
+    const results = {
+      total: usersToProcess.length,
+      sent: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [] as string[],
+      failedEmails: [] as string[],
+    };
+
+    for (const user of usersToProcess) {
+      if (!user.email) {
+        results.skipped++;
+        continue;
+      }
+
+      try {
+        // Generate password reset link
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: 'recovery',
+          email: user.email,
+          options: {
+            redirectTo: 'https://www.revitalisehub.co.uk/reset-password',
+          },
         });
 
-        if (emailError) {
+        if (linkError) {
           results.failed++;
-          results.errors.push(`${user.email}: Email send failed`);
-        } else {
-          results.sent++;
-          console.log(`Sent reset email to: ${user.email}`);
+          results.errors.push(`${user.email}: ${linkError.message}`);
+          results.failedEmails.push(user.email);
+          continue;
         }
 
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const resetUrl = linkData.properties.action_link;
+        const firstName = profileMap.get(user.id)?.split(' ')[0] || 'there';
+
+        // Send email with retry logic
+        const emailResult = await sendEmailWithRetry(user.email, resetUrl, firstName);
+
+        if (emailResult.success) {
+          results.sent++;
+          console.log(`Sent reset email to: ${user.email}`);
+
+          // Log successful send to database
+          await supabase.from('password_reset_email_log').insert({
+            user_id: user.id,
+            email: user.email,
+            status: 'sent',
+          });
+        } else {
+          results.failed++;
+          results.errors.push(`${user.email}: ${emailResult.error}`);
+          results.failedEmails.push(user.email);
+
+          // Log failed send to database
+          await supabase.from('password_reset_email_log').insert({
+            user_id: user.id,
+            email: user.email,
+            status: 'failed',
+            error_message: emailResult.error,
+          });
+        }
+
+        // Rate limiting delay between emails
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_EMAILS_MS));
 
       } catch (err: any) {
         results.failed++;
         results.errors.push(`${user.email}: ${err.message}`);
+        results.failedEmails.push(user.email);
       }
     }
 

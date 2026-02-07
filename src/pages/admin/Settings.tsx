@@ -27,6 +27,7 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [bulkEmailLoading, setBulkEmailLoading] = useState(false);
+  const [resendFailedLoading, setResendFailedLoading] = useState(false);
   const [testEmailLoading, setTestEmailLoading] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   
@@ -555,14 +556,89 @@ export default function AdminSettings() {
                 </div>
               </div>
 
+              {/* Resend to Failed Only */}
+              <div className="p-4 border rounded-lg bg-background">
+                <Label className="font-medium text-base">Step 2: Resend to Failed Recipients</Label>
+                <p className="text-sm text-muted-foreground mt-1 mb-3">
+                  Only sends to customers who didn't receive the email (due to rate limiting or errors). This is the recommended option after initial send.
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="default" disabled={resendFailedLoading} className="min-h-[44px]">
+                      <Send className="h-4 w-4 mr-2" />
+                      {resendFailedLoading ? 'Sending...' : 'Resend to Failed Only'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Resend to Failed Recipients?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will only send emails to customers who didn't receive the previous email.
+                        Customers who already received the email successfully will be skipped.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          setResendFailedLoading(true);
+                          try {
+                            const { data: { session } } = await supabase.auth.getSession();
+                            if (!session) throw new Error('Not authenticated');
+                            
+                            const response = await fetch(
+                              `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/send-bulk-password-reset`,
+                              {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${session.access_token}`,
+                                },
+                                body: JSON.stringify({ resendFailed: true }),
+                              }
+                            );
+                            
+                            const result = await response.json();
+                            
+                            if (!response.ok) {
+                              throw new Error(result.error || 'Failed to send emails');
+                            }
+                            
+                            toast({
+                              title: "Emails Sent!",
+                              description: `Successfully sent ${result.sent} emails. ${result.failed} failed, ${result.skipped} skipped.`,
+                            });
+                            
+                            if (result.errors?.length > 0) {
+                              console.error('Email errors:', result.errors);
+                            }
+                          } catch (error: any) {
+                            console.error('Resend failed email error:', error);
+                            toast({
+                              title: "Error",
+                              description: error.message,
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setResendFailedLoading(false);
+                          }
+                        }}
+                      >
+                        Yes, Resend to Failed
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
               {/* Send to All */}
-              <div className="p-4 border border-amber-300 rounded-lg bg-amber-100/50">
+              <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <Label className="font-medium text-base">Step 2: Send to All Customers</Label>
+                    <Label className="font-medium text-base">Step 3: Send to ALL Customers (Use with Caution)</Label>
                     <p className="text-sm text-muted-foreground mt-1 mb-3">
-                      This will send password reset emails to ALL registered users. Make sure you've tested the email first!
+                      This will send password reset emails to ALL registered users, including those who already received one. Only use this if you need to start fresh.
                     </p>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -578,7 +654,7 @@ export default function AdminSettings() {
                             This will send password reset emails to ALL customers in the system. 
                             This action cannot be undone and may send hundreds of emails.
                             <br /><br />
-                            Make sure you have tested the email template first!
+                            <strong>Recommended:</strong> Use "Resend to Failed Only" instead to avoid sending duplicate emails.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
