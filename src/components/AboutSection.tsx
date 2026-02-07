@@ -50,35 +50,35 @@ export const AboutSection = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="relative py-24 overflow-hidden">
+      <section className="relative py-20 md:py-28 overflow-hidden min-h-[700px]">
         {/* Background Image with Overlay */}
         <div 
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{
             backgroundImage: `url('/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
           }}
         />
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
         
         <div className="relative max-w-6xl mx-auto px-6">
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-16 tracking-wider">
-            BENEFITS
+          <h2 className="text-5xl md:text-7xl font-bold text-white mb-14 md:mb-20 tracking-widest uppercase">
+            Benefits
           </h2>
           
-          <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
-            {benefits.slice(0, 6).map((benefit) => (
+          <div className="grid md:grid-cols-2 gap-x-16 lg:gap-x-24 gap-y-6 md:gap-y-8">
+            {benefits.slice(0, 6).map((benefit, index) => (
               <div 
                 key={benefit.number}
-                className="flex items-start gap-6 pb-6 border-b border-white/30"
+                className="flex items-start gap-5 md:gap-6 pb-5 md:pb-6 border-b border-white/20 group hover:border-white/40 transition-colors"
               >
-                <span className="text-4xl md:text-5xl font-bold text-white/90">
+                <span className="text-4xl md:text-5xl lg:text-6xl font-light text-white/80 tracking-tight min-w-[60px] md:min-w-[80px]">
                   {benefit.number}
                 </span>
-                <div className="pt-2">
-                  <h3 className="text-xl md:text-2xl font-medium text-white mb-1">
+                <div className="pt-1 md:pt-2">
+                  <h3 className="text-lg md:text-xl lg:text-2xl font-semibold text-white mb-1 group-hover:text-white/90 transition-colors">
                     {benefit.title}
                   </h3>
-                  <p className="text-white/70 text-sm md:text-base">
+                  <p className="text-white/60 text-sm md:text-base font-light">
                     {benefit.description}
                   </p>
                 </div>
@@ -87,23 +87,23 @@ export const AboutSection = () => {
           </div>
           
           {/* Centered 7th benefit */}
-          <div className="mt-8 pb-6 border-b border-white/30 md:flex md:justify-center">
-            <div className="flex items-start gap-6 md:max-w-md">
-              <span className="text-4xl md:text-5xl font-bold text-white/90">
+          <div className="mt-6 md:mt-8 flex justify-start md:justify-center">
+            <div className="flex items-start gap-5 md:gap-6 pb-5 md:pb-6 border-b border-white/20 md:max-w-md w-full group hover:border-white/40 transition-colors">
+              <span className="text-4xl md:text-5xl lg:text-6xl font-light text-white/80 tracking-tight min-w-[60px] md:min-w-[80px]">
                 {benefits[6].number}
               </span>
-              <div className="pt-2">
-                <h3 className="text-xl md:text-2xl font-medium text-white mb-1">
+              <div className="pt-1 md:pt-2">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-semibold text-white mb-1 group-hover:text-white/90 transition-colors">
                   {benefits[6].title}
                 </h3>
-                <p className="text-white/70 text-sm md:text-base">
+                <p className="text-white/60 text-sm md:text-base font-light">
                   {benefits[6].description}
                 </p>
               </div>
             </div>
           </div>
-      </div>
-    </section>
+        </div>
+      </section>
 
     {/* How It Started Section */}
     <section className="py-24 bg-gallery">
