@@ -505,7 +505,9 @@ const Booking = () => {
     ? pricing.private 
     : pricing.combined * formData.guestCount;
   const canUseCredits = creditStatus && creditStatus.totalCredits >= bookingCost && !canUseMembership && !canUseTokens;
-  const hasPartialCredit = creditStatus && creditStatus.totalCredits > 0 && creditStatus.totalCredits < bookingCost && !canUseMembership && !canUseTokens;
+  // Partial credit only available when balance is below minimum order price (£18 = 1800 pence)
+  const minOrderPrice = pricing.combined; // £18 - the smallest possible order
+  const hasPartialCredit = creditStatus && creditStatus.totalCredits > 0 && creditStatus.totalCredits < minOrderPrice && !canUseMembership && !canUseTokens;
 
   const handleMemberBooking = async () => {
     if (!validateForm() || !user?.id) {
