@@ -186,10 +186,11 @@ serve(async (req) => {
         ? `${partnerCodeRow.company_name} (${partnerCodeRow.promo_code})`
         : '';
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session - card only for bookings (no BACS direct debit)
     const sessionName = bookingType === 'private' ? 'Private Session' : 'Communal Session';
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail,
+      payment_method_types: ["card"], // Only card for session bookings - BACS is for memberships only
       line_items: [
         {
           price_data: {
