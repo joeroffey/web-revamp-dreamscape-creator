@@ -86,9 +86,9 @@ const GiftCards = () => {
 
       if (error) throw error;
 
-      // Redirect to Stripe checkout
+      // Redirect to Stripe checkout in same tab (avoids popup blockers)
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error('Gift card purchase error:', error);
