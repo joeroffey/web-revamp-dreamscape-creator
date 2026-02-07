@@ -1,14 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { 
+  Zap, 
+  Heart, 
+  Brain, 
+  Leaf, 
+  Moon, 
+  Shield,
+  Flame
+} from "lucide-react";
 
 const benefits = [
-  { number: "01", title: "Boosts Recovery", description: "Reduces muscle soreness" },
-  { number: "02", title: "Improves Circulation", description: "Enhances blood flow" },
-  { number: "03", title: "Stress Relief", description: "Nervous system regulation" },
-  { number: "04", title: "Mental Clarity", description: "Enhances focus" },
-  { number: "05", title: "Reduces Inflammation", description: "Manages joint stiffness" },
-  { number: "06", title: "Better Sleep", description: "Promotes sleep quality" },
-  { number: "07", title: "Builds Resilience", description: "Physical & mental stress" },
+  { icon: Zap, title: "Boosts Recovery", description: "Reduces muscle soreness" },
+  { icon: Heart, title: "Improves Circulation", description: "Enhances blood flow" },
+  { icon: Leaf, title: "Stress Relief", description: "Nervous system regulation" },
+  { icon: Brain, title: "Mental Clarity", description: "Enhances focus" },
+  { icon: Flame, title: "Reduces Inflammation", description: "Manages joint stiffness" },
+  { icon: Moon, title: "Better Sleep", description: "Promotes sleep quality" },
+  { icon: Shield, title: "Builds Resilience", description: "Physical & mental stress" },
 ];
 
 export const AboutSection = () => {
@@ -50,7 +59,7 @@ export const AboutSection = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="relative py-20 md:py-28 overflow-hidden min-h-[700px]">
+      <section className="relative py-20 md:py-28 overflow-hidden">
         {/* Background Image with Overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
@@ -58,49 +67,57 @@ export const AboutSection = () => {
             backgroundImage: `url('/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/80" />
         
         <div className="relative max-w-6xl mx-auto px-6">
-          <h2 className="text-5xl md:text-7xl font-bold text-white mb-14 md:mb-20 tracking-widest uppercase">
-            Benefits
-          </h2>
+          {/* Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-light text-white mb-4 tracking-wide">
+              The Benefits
+            </h2>
+            <p className="text-white/60 text-lg max-w-2xl mx-auto">
+              Experience the proven advantages of contrast therapy
+            </p>
+          </div>
           
-          <div className="grid md:grid-cols-2 gap-x-16 lg:gap-x-24 gap-y-6 md:gap-y-8">
-            {benefits.slice(0, 6).map((benefit, index) => (
+          {/* Benefits Grid - Icon Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {benefits.slice(0, 4).map((benefit) => (
               <div 
-                key={benefit.number}
-                className="flex items-start gap-5 md:gap-6 pb-5 md:pb-6 border-b border-white/20 group hover:border-white/40 transition-colors"
+                key={benefit.title}
+                className="group backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 text-center hover:bg-white/10 hover:border-white/20 transition-all duration-300"
               >
-                <span className="text-4xl md:text-5xl lg:text-6xl font-light text-white/80 tracking-tight min-w-[60px] md:min-w-[80px]">
-                  {benefit.number}
-                </span>
-                <div className="pt-1 md:pt-2">
-                  <h3 className="text-lg md:text-xl lg:text-2xl font-semibold text-white mb-1 group-hover:text-white/90 transition-colors">
-                    {benefit.title}
-                  </h3>
-                  <p className="text-white/60 text-sm md:text-base font-light">
-                    {benefit.description}
-                  </p>
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <benefit.icon className="w-6 h-6 text-white/80" />
                 </div>
+                <h3 className="text-white font-medium mb-2 text-sm md:text-base">
+                  {benefit.title}
+                </h3>
+                <p className="text-white/50 text-xs md:text-sm">
+                  {benefit.description}
+                </p>
               </div>
             ))}
           </div>
           
-          {/* Centered 7th benefit */}
-          <div className="mt-6 md:mt-8 flex justify-start md:justify-center">
-            <div className="flex items-start gap-5 md:gap-6 pb-5 md:pb-6 border-b border-white/20 md:max-w-md w-full group hover:border-white/40 transition-colors">
-              <span className="text-4xl md:text-5xl lg:text-6xl font-light text-white/80 tracking-tight min-w-[60px] md:min-w-[80px]">
-                {benefits[6].number}
-              </span>
-              <div className="pt-1 md:pt-2">
-                <h3 className="text-lg md:text-xl lg:text-2xl font-semibold text-white mb-1 group-hover:text-white/90 transition-colors">
-                  {benefits[6].title}
+          {/* Second Row - 3 cards centered */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6 max-w-4xl mx-auto">
+            {benefits.slice(4, 7).map((benefit) => (
+              <div 
+                key={benefit.title}
+                className="group backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 text-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 last:col-span-2 md:last:col-span-1"
+              >
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <benefit.icon className="w-6 h-6 text-white/80" />
+                </div>
+                <h3 className="text-white font-medium mb-2 text-sm md:text-base">
+                  {benefit.title}
                 </h3>
-                <p className="text-white/60 text-sm md:text-base font-light">
-                  {benefits[6].description}
+                <p className="text-white/50 text-xs md:text-sm">
+                  {benefit.description}
                 </p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
