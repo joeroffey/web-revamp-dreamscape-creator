@@ -44,42 +44,125 @@ serve(async (req) => {
       
       if (session.metadata?.type === "booking") {
         const timeSlotId = session.metadata.timeSlotId;
-        const stripeSessionId = session.id;
+        const customerName = session.metadata.customerName || '';
+        const customerEmail = session.metadata.customerEmail || session.customer_email || '';
+        const customerPhone = session.metadata.customerPhone || null;
+        const bookingType = (session.metadata.bookingType || 'communal') as 'communal' | 'private';
+        const guestCount = Number(session.metadata.guestCount || 1);
+        const specialRequests = session.metadata.specialRequests || null;
+        const originalAmount = Number(session.metadata.originalAmount || 0);
+        const discountAmount = Number(session.metadata.discountAmount || 0);
+        const finalAmount = Number(session.metadata.finalAmount || 0);
+        const discountCodeId = session.metadata.discountCodeId || null;
+        const slotDate = session.metadata.slotDate || '';
+        const slotTime = session.metadata.slotTime || '';
         
-        console.log("Processing booking confirmation for:", { timeSlotId, stripeSessionId });
+        console.log("Processing booking creation for:", { timeSlotId, customerEmail, bookingType, guestCount });
         
-        // Use the existing confirm_booking function
-        const { data, error } = await supabase.rpc('confirm_booking', {
-          p_time_slot_id: timeSlotId,
-          p_stripe_session_id: stripeSessionId
-        });
+        // Check if booking already exists (prevent duplicates)
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
         
-        if (error) {
-          console.error("Error confirming booking:", error);
-          throw error;
-        }
-        
-        console.log("Booking confirmed successfully:", data);
- 
-        // Promo redemption tracking (if a discount code was used)
-        const discountCodeId = session.metadata?.discountCodeId;
-        const originalAmount = Number(session.metadata?.originalAmount || 0);
-        const discountAmount = Number(session.metadata?.discountAmount || 0);
-        const finalAmount = Number(session.metadata?.finalAmount || 0);
-        if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0) {
-          const { data: bookingRow } = await supabase
+        if (existingBooking) {
+          console.log("Booking already exists for this session, skipping:", session.id);
+        } else {
+          // Verify slot availability one final time before creating booking
+          const { data: timeSlot } = await supabase
+            .from('time_slots')
+            .select('*')
+            .eq('id', timeSlotId)
+            .single();
+          
+          if (!timeSlot) {
+            console.error("Time slot not found:", timeSlotId);
+            throw new Error("Time slot not found");
+          }
+          
+          // Get current booking count (excluding cancelled)
+          const { data: currentBookings } = await supabase
             .from('bookings')
-            .select('id')
-            .eq('stripe_session_id', session.id)
-            .maybeSingle();
-
-          if (bookingRow?.id) {
+            .select('booking_type, guest_count')
+            .eq('time_slot_id', timeSlotId)
+            .eq('payment_status', 'paid')
+            .neq('booking_status', 'cancelled');
+          
+          const hasPrivateBooking = currentBookings?.some(b => b.booking_type === 'private');
+          const currentCommunalCount = currentBookings?.filter(b => b.booking_type === 'communal')
+            .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
+          
+          // Validate availability
+          if (bookingType === 'private' && (hasPrivateBooking || currentCommunalCount > 0)) {
+            console.error("Private booking not available - slot has existing bookings");
+            throw new Error("Time slot no longer available for private booking");
+          }
+          
+          if (bookingType === 'communal' && (hasPrivateBooking || currentCommunalCount + guestCount > 5)) {
+            console.error("Communal booking not available - insufficient spaces");
+            throw new Error("Not enough spaces available");
+          }
+          
+          // Create the booking (now that payment is confirmed)
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .insert({
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || timeSlot.slot_date,
+              session_time: slotTime || timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              stripe_session_id: session.id,
+              time_slot_id: timeSlotId,
+              special_requests: specialRequests,
+              payment_status: 'paid',
+              booking_status: 'confirmed',
+              booking_type: bookingType,
+              guest_count: guestCount,
+            })
+            .select()
+            .single();
+          
+          if (bookingError) {
+            console.error("Error creating booking:", bookingError);
+            throw bookingError;
+          }
+          
+          console.log("Booking created successfully:", booking?.id);
+          
+          // Update time slot availability
+          if (bookingType === 'private') {
+            await supabase
+              .from('time_slots')
+              .update({ is_available: false, booked_count: 5, updated_at: new Date().toISOString() })
+              .eq('id', timeSlotId);
+          } else {
+            const newBookedCount = currentCommunalCount + guestCount;
+            await supabase
+              .from('time_slots')
+              .update({
+                booked_count: newBookedCount,
+                is_available: newBookedCount < 5,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', timeSlotId);
+          }
+          
+          // Promo redemption tracking (if a discount code was used)
+          if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && booking?.id) {
             await supabase
               .from('discount_redemptions')
               .insert({
                 discount_code_id: discountCodeId,
                 entity_type: 'booking',
-                entity_id: bookingRow.id,
+                entity_id: booking.id,
                 original_amount: originalAmount,
                 discount_amount: discountAmount,
                 final_amount: finalAmount
@@ -188,6 +271,114 @@ serve(async (req) => {
         }
 
         console.log("Partial credit booking confirmed:", booking?.id);
+      }
+
+      // Handle member booking with paying guests
+      if (session.metadata?.type === "member_booking_with_guests") {
+        const timeSlotId = session.metadata.timeSlotId;
+        const userId = session.metadata.userId;
+        const membershipId = session.metadata.membershipId;
+        const customerName = session.metadata.customerName;
+        const customerEmail = session.metadata.customerEmail;
+        const payingGuestCount = Number(session.metadata.payingGuestCount || 0);
+        const totalGuestCount = Number(session.metadata.totalGuestCount || 1);
+
+        console.log("Processing member booking with guests:", { timeSlotId, userId, payingGuestCount });
+
+        // Check if booking already exists (prevent duplicates)
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingBooking) {
+          console.log("Member booking already exists for this session, skipping:", session.id);
+        } else {
+          // Get time slot details
+          const { data: timeSlot } = await supabase
+            .from('time_slots')
+            .select('*')
+            .eq('id', timeSlotId)
+            .single();
+
+          if (!timeSlot) {
+            console.error("Time slot not found for member booking with guests");
+            throw new Error("Time slot not found");
+          }
+
+          // Get pricing for guest payment calculation
+          const { data: pricingData } = await supabase
+            .from("pricing_config")
+            .select("price_amount")
+            .eq("service_type", "combined")
+            .eq("is_active", true)
+            .single();
+
+          const pricePerPerson = pricingData?.price_amount || 1800;
+          const guestTotalAmount = pricePerPerson * payingGuestCount;
+
+          // Create the booking (member + paying guests)
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .insert({
+              user_id: userId,
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              service_type: 'combined',
+              session_date: timeSlot.slot_date,
+              session_time: timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: guestTotalAmount,
+              final_amount: guestTotalAmount,
+              discount_amount: pricePerPerson, // Member's free session
+              stripe_session_id: session.id,
+              time_slot_id: timeSlotId,
+              payment_status: 'paid',
+              booking_status: 'confirmed',
+              booking_type: 'communal',
+              guest_count: totalGuestCount,
+            })
+            .select()
+            .single();
+
+          if (bookingError) {
+            console.error("Error creating member booking with guests:", bookingError);
+            throw bookingError;
+          }
+
+          // Update time slot availability
+          const newBookedCount = (timeSlot.booked_count || 0) + totalGuestCount;
+          await supabase
+            .from('time_slots')
+            .update({
+              booked_count: newBookedCount,
+              is_available: newBookedCount < 5,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', timeSlotId);
+
+          // Decrement membership sessions
+          if (membershipId) {
+            const { data: membership } = await supabase
+              .from('memberships')
+              .select('sessions_remaining, membership_type')
+              .eq('id', membershipId)
+              .single();
+
+            if (membership && membership.membership_type !== 'unlimited' && membership.sessions_remaining > 0) {
+              await supabase
+                .from('memberships')
+                .update({
+                  sessions_remaining: membership.sessions_remaining - 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', membershipId);
+            }
+          }
+
+          console.log("Member booking with guests created:", booking?.id);
+        }
       }
 
       if (session.metadata?.type === "gift_card") {

@@ -212,8 +212,10 @@ serve(async (req) => {
         timeSlotId: timeSlotId,
         customerName,
         customerEmail,
+        customerPhone: customerPhone || "",
         bookingType,
         guestCount: guestCount.toString(),
+        specialRequests: specialRequests || "",
         discountCode: discountCodeRow?.code || partnerCodeRow?.promo_code || "",
         discountCodeId: discountCodeRow?.id || "",
         partnerCodeId: partnerCodeRow?.id || "",
@@ -221,36 +223,16 @@ serve(async (req) => {
         originalAmount: originalAmount.toString(),
         discountAmount: discountAmount.toString(),
         finalAmount: finalAmount.toString(),
+        slotDate: timeSlot.slot_date,
+        slotTime: timeSlot.slot_time,
       }
     });
 
-    // Store booking in database
-    const { error: bookingError } = await supabase
-      .from("bookings")
-      .insert({
-        customer_name: customerName,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        service_type: "combined",
-        session_date: timeSlot.slot_date,
-        session_time: timeSlot.slot_time,
-        duration_minutes: 60,
-        price_amount: originalAmount,
-        discount_code_id: discountCodeRow?.id || null,
-        discount_amount: discountAmount,
-        final_amount: finalAmount,
-        stripe_session_id: session.id,
-        time_slot_id: timeSlotId,
-        special_requests: specialRequests,
-        payment_status: "pending",
-        booking_type: bookingType,
-        guest_count: guestCount,
-      });
+    // NOTE: We no longer create a pending booking here.
+    // The booking is created ONLY when payment succeeds (in the webhook).
+    // This prevents abandoned checkouts from blocking availability.
 
-    if (bookingError) {
-      console.error("Error storing booking:", bookingError);
-      throw new Error("Failed to store booking information");
-    }
+    console.log("Checkout session created:", session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
