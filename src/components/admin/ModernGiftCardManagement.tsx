@@ -206,7 +206,7 @@ export default function ModernGiftCardManagement() {
                           </Badge>
                         </div>
                         
-                        <div className="flex items-center text-sm text-gray-600 gap-6">
+                        <div className="flex items-center text-sm text-gray-600 gap-6 flex-wrap">
                           <div>From: {giftCard.purchaser_name} ({giftCard.purchaser_email})</div>
                           {giftCard.recipient_name && (
                             <div>To: {giftCard.recipient_name} ({giftCard.recipient_email})</div>
@@ -216,6 +216,12 @@ export default function ModernGiftCardManagement() {
                             {format(new Date(giftCard.created_at), "MMM d, yyyy")}
                           </div>
                         </div>
+                        
+                        {giftCard.stripe_session_id && (
+                          <div className="text-xs text-muted-foreground mt-1 font-mono" title={giftCard.stripe_session_id}>
+                            Stripe: {giftCard.stripe_session_id.slice(0, 25)}...
+                          </div>
+                        )}
                         
                         {giftCard.message && (
                           <div className="text-sm text-gray-600 mt-2 italic">

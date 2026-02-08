@@ -195,13 +195,19 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
                                 <div className="text-sm flex items-center gap-2">
                                   <span className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</span>
                                   <Badge className={getPaymentStatusColor(booking.payment_status)}>
                                     {booking.payment_status === 'pending' ? 'UNPAID' : booking.payment_status === 'cancelled' ? 'Cancelled' : 'Paid'}
                                   </Badge>
                                 </div>
+                                
+                                {booking.stripe_session_id && (
+                                  <div className="text-xs text-muted-foreground font-mono" title={booking.stripe_session_id}>
+                                    Stripe: {booking.stripe_session_id.slice(0, 20)}...
+                                  </div>
+                                )}
                                 
                                 {booking.special_requests && (
                                   <div className="text-xs text-muted-foreground max-w-xs truncate">
