@@ -2,7 +2,7 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Sparkles, LogIn, Gift, Loader2, Eye, EyeOff } from "lucide-react";
+import { Check, Star, Sparkles, LogIn, Gift, Loader2, Eye, EyeOff, Tag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,12 @@ const Memberships = () => {
   const [eligibilityReason, setEligibilityReason] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Promo code state for memberships
+  const [promoCode, setPromoCode] = useState("");
+  const [promoCodeError, setPromoCodeError] = useState<string | null>(null);
+  const [validatingPromo, setValidatingPromo] = useState(false);
+  const [promoDiscount, setPromoDiscount] = useState<{ type: string; value: number; code: string } | null>(null);
 
   // Pre-fill form and check eligibility if user is logged in
   useEffect(() => {
@@ -93,6 +99,96 @@ const Memberships = () => {
     }
   ];
 
+  const validatePromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoDiscount(null);
+      setPromoCodeError(null);
+      return;
+    }
+
+    setValidatingPromo(true);
+    setPromoCodeError(null);
+
+    try {
+      const code = promoCode.trim().toUpperCase();
+      
+      // Check discount_codes table first
+      const { data: discountCode } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (discountCode) {
+        const now = new Date();
+        const validFrom = discountCode.valid_from ? new Date(discountCode.valid_from) : null;
+        const validUntil = discountCode.valid_until ? new Date(discountCode.valid_until) : null;
+        
+        if (validFrom && validFrom > now) {
+          setPromoCodeError("This code is not yet valid");
+          setPromoDiscount(null);
+          return;
+        }
+        if (validUntil && validUntil < now) {
+          setPromoCodeError("This code has expired");
+          setPromoDiscount(null);
+          return;
+        }
+        if (discountCode.max_uses && (discountCode.current_uses || 0) >= discountCode.max_uses) {
+          setPromoCodeError("This code has reached its usage limit");
+          setPromoDiscount(null);
+          return;
+        }
+
+        setPromoDiscount({
+          type: discountCode.discount_type,
+          value: discountCode.discount_value,
+          code: discountCode.code
+        });
+        setPromoCodeError(null);
+        return;
+      }
+
+      // Check partner_codes table
+      const { data: partnerCode } = await supabase
+        .from('partner_codes')
+        .select('*')
+        .eq('promo_code', code)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (partnerCode) {
+        setPromoDiscount({
+          type: 'percentage',
+          value: partnerCode.discount_percentage,
+          code: partnerCode.promo_code
+        });
+        setPromoCodeError(null);
+        return;
+      }
+
+      setPromoCodeError("Invalid promo code");
+      setPromoDiscount(null);
+    } catch (error) {
+      console.error('Promo code validation error:', error);
+      setPromoCodeError("Error validating code");
+      setPromoDiscount(null);
+    } finally {
+      setValidatingPromo(false);
+    }
+  };
+
+  const calculateDiscountedPrice = (originalPrice: number) => {
+    if (!promoDiscount) return originalPrice;
+    
+    if (promoDiscount.type === 'percentage') {
+      return Math.round(originalPrice * (1 - promoDiscount.value / 100));
+    } else {
+      return Math.max(0, originalPrice - promoDiscount.value / 100); // Fixed amount in pounds
+    }
+  };
+
   const handleSubscribe = async (membershipType: string) => {
     setLoading(membershipType);
 
@@ -115,6 +211,7 @@ const Memberships = () => {
           membershipType,
           userId: session.user.id,
           autoRenew: true,
+          discountCode: promoDiscount?.code || "",
         }
       });
 
@@ -124,11 +221,11 @@ const Memberships = () => {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Membership purchase error:', error);
       toast({
         title: "Purchase Failed",
-        description: "There was an error processing your membership purchase. Please try again.",
+        description: error.message || "There was an error processing your membership purchase. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -373,6 +470,45 @@ const Memberships = () => {
               </div>
             )}
 
+            {/* Promo Code Input */}
+            {user && (
+              <div className="mb-8 max-w-md mx-auto">
+                <Card className="wellness-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Tag className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">Have a promo code?</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        className="flex-1"
+                      />
+                      <Button 
+                        variant="outline" 
+                        onClick={validatePromoCode}
+                        disabled={validatingPromo || !promoCode.trim()}
+                      >
+                        {validatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                      </Button>
+                    </div>
+                    {promoCodeError && (
+                      <p className="text-sm text-destructive mt-2">{promoCodeError}</p>
+                    )}
+                    {promoDiscount && (
+                      <div className="mt-2 p-2 bg-primary/10 rounded-md">
+                        <p className="text-sm text-primary font-medium">
+                          ✓ Code applied: {promoDiscount.value}% off your first month!
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-3 gap-8 mb-16">
               {membershipPlans.map((plan) => (
                 <Card 
@@ -393,8 +529,19 @@ const Memberships = () => {
                   <CardHeader className="text-center pb-4">
                     <CardTitle className="text-xl font-semibold mb-2">{plan.name}</CardTitle>
                     <div className="mb-4">
-                      <span className="text-4xl font-bold text-primary">£{plan.price}</span>
-                      <span className="text-muted-foreground">/{plan.period}</span>
+                      {promoDiscount ? (
+                        <>
+                          <span className="text-2xl text-muted-foreground line-through mr-2">£{plan.price}</span>
+                          <span className="text-4xl font-bold text-primary">£{calculateDiscountedPrice(plan.price)}</span>
+                          <span className="text-muted-foreground">/{plan.period}</span>
+                          <p className="text-xs text-primary mt-1">First month with {promoDiscount.code}</p>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-4xl font-bold text-primary">£{plan.price}</span>
+                          <span className="text-muted-foreground">/{plan.period}</span>
+                        </>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">{plan.description}</p>
                   </CardHeader>
