@@ -141,24 +141,10 @@ serve(async (req) => {
       }
     });
 
-    // Store pending booking
-    await supabase.from("bookings").insert({
-      user_id: userId,
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone || null,
-      service_type: "combined",
-      session_date: timeSlot.slot_date,
-      session_time: timeSlot.slot_time,
-      duration_minutes: 60,
-      price_amount: guestTotalAmount,
-      stripe_session_id: session.id,
-      time_slot_id: timeSlotId,
-      special_requests: specialRequests,
-      payment_status: "pending",
-      booking_type: "communal",
-      guest_count: totalNeeded,
-    });
+    // NOTE: We no longer create a pending booking here.
+    // The booking is created ONLY when payment succeeds (in the webhook).
+    // This prevents abandoned checkouts from blocking availability.
+    console.log("Member booking with guests checkout session created:", session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
