@@ -27,12 +27,12 @@ export default function ModernScheduleManagement() {
       setLoading(true);
       const dateStr = format(selectedDate, "yyyy-MM-dd");
       
-      // Fetch bookings for selected date only
+      // Fetch only paid bookings for selected date
       const { data, error } = await supabase
         .from("bookings")
         .select("*")
         .eq("session_date", dateStr)
-        .in("payment_status", ["paid", "pending"])
+        .eq("payment_status", "paid")
         .order("session_time", { ascending: true });
 
       if (error) throw error;
