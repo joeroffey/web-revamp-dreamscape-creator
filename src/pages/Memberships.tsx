@@ -179,14 +179,21 @@ const Memberships = () => {
     }
   };
 
-  const calculateDiscountedPrice = (originalPrice: number) => {
-    if (!promoDiscount) return originalPrice;
+  const calculateDiscountedPrice = (originalPrice: number): string => {
+    if (!promoDiscount) return originalPrice.toString();
     
+    let discountedPrice: number;
     if (promoDiscount.type === 'percentage') {
-      return Math.round(originalPrice * (1 - promoDiscount.value / 100));
+      discountedPrice = originalPrice * (1 - promoDiscount.value / 100);
     } else {
-      return Math.max(0, originalPrice - promoDiscount.value / 100); // Fixed amount in pounds
+      // Fixed amount stored in pence, convert to pounds for display
+      discountedPrice = Math.max(0, originalPrice - promoDiscount.value / 100);
     }
+    
+    // Return with decimals if not a whole number
+    return discountedPrice % 1 === 0 
+      ? discountedPrice.toString() 
+      : discountedPrice.toFixed(2);
   };
 
   const handleSubscribe = async (membershipType: string) => {
