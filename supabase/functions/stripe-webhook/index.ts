@@ -105,6 +105,10 @@ serve(async (req) => {
           }
           
           // Create the booking (now that payment is confirmed)
+          const paymentIntentId = typeof session.payment_intent === 'string' 
+            ? session.payment_intent 
+            : session.payment_intent?.id || null;
+          
           const { data: booking, error: bookingError } = await supabase
             .from('bookings')
             .insert({
@@ -120,6 +124,7 @@ serve(async (req) => {
               discount_amount: discountAmount,
               final_amount: finalAmount,
               stripe_session_id: session.id,
+              stripe_payment_id: paymentIntentId,
               time_slot_id: timeSlotId,
               special_requests: specialRequests,
               payment_status: 'paid',
@@ -222,6 +227,10 @@ serve(async (req) => {
         }
 
         // Create confirmed booking
+        const partialCreditPaymentId = typeof session.payment_intent === 'string' 
+          ? session.payment_intent 
+          : session.payment_intent?.id || null;
+        
         const { data: booking, error: bookingError } = await supabase
           .from('bookings')
           .insert({
@@ -243,6 +252,7 @@ serve(async (req) => {
             special_requests: specialRequests,
             payment_status: 'paid',
             stripe_session_id: session.id,
+            stripe_payment_id: partialCreditPaymentId,
           })
           .select()
           .single();
@@ -319,6 +329,10 @@ serve(async (req) => {
           const guestTotalAmount = pricePerPerson * payingGuestCount;
 
           // Create the booking (member + paying guests)
+          const memberGuestPaymentId = typeof session.payment_intent === 'string' 
+            ? session.payment_intent 
+            : session.payment_intent?.id || null;
+          
           const { data: booking, error: bookingError } = await supabase
             .from('bookings')
             .insert({
@@ -333,6 +347,7 @@ serve(async (req) => {
               final_amount: guestTotalAmount,
               discount_amount: pricePerPerson, // Member's free session
               stripe_session_id: session.id,
+              stripe_payment_id: memberGuestPaymentId,
               time_slot_id: timeSlotId,
               payment_status: 'paid',
               booking_status: 'confirmed',

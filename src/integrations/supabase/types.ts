@@ -103,6 +103,7 @@ export type Database = {
           session_date: string
           session_time: string
           special_requests: string | null
+          stripe_payment_id: string | null
           stripe_session_id: string | null
           time_slot_id: string | null
           updated_at: string
@@ -127,6 +128,7 @@ export type Database = {
           session_date: string
           session_time: string
           special_requests?: string | null
+          stripe_payment_id?: string | null
           stripe_session_id?: string | null
           time_slot_id?: string | null
           updated_at?: string
@@ -151,6 +153,7 @@ export type Database = {
           session_date?: string
           session_time?: string
           special_requests?: string | null
+          stripe_payment_id?: string | null
           stripe_session_id?: string | null
           time_slot_id?: string | null
           updated_at?: string
