@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import { CalendarIcon, Clock, Users, Plus, Eye } from 'lucide-react';
-import { ScheduleCalendarView } from '@/components/admin/ScheduleCalendarView';
+import { format } from 'date-fns';
+import { CalendarIcon, Plus } from 'lucide-react';
 import { DailyScheduleView } from '@/components/admin/DailyScheduleView';
 import { CreateBookingDialog } from '@/components/admin/CreateBookingDialog';
 
@@ -33,55 +31,32 @@ interface BookingData {
 
 export default function AdminSchedule() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'daily'>('calendar');
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [monthlyStats, setMonthlyStats] = useState<Record<string, number>>({});
   const [createBookingOpen, setCreateBookingOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchScheduleData();
-  }, [selectedDate, viewMode]);
+  }, [selectedDate]);
 
   const fetchScheduleData = async () => {
     try {
       setLoading(true);
       
-      let startDate, endDate;
-      
-      if (viewMode === 'calendar') {
-        startDate = startOfMonth(selectedDate);
-        endDate = endOfMonth(selectedDate);
-      } else {
-        startDate = new Date(selectedDate);
-        endDate = new Date(selectedDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-      }
+      // Always fetch for the selected date only (daily view)
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
       const { data: bookingsData, error } = await supabase
         .from('bookings')
         .select('*')
-        .gte('session_date', format(startDate, 'yyyy-MM-dd'))
-        .lte('session_date', format(endDate, 'yyyy-MM-dd'))
+        .eq('session_date', dateStr)
         .eq('payment_status', 'paid')
-        .order('session_date', { ascending: true })
         .order('session_time', { ascending: true });
 
       if (error) throw error;
 
       setBookings(bookingsData || []);
-
-      // Calculate monthly stats for calendar view
-      if (viewMode === 'calendar') {
-        const stats: Record<string, number> = {};
-        bookingsData?.forEach(booking => {
-          const dateKey = booking.session_date;
-          stats[dateKey] = (stats[dateKey] || 0) + 1;
-        });
-        setMonthlyStats(stats);
-      }
 
     } catch (error) {
       console.error('Error fetching schedule data:', error);
@@ -98,9 +73,6 @@ export default function AdminSchedule() {
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
-      if (viewMode === 'calendar') {
-        setViewMode('daily');
-      }
     }
   };
 
@@ -111,16 +83,6 @@ export default function AdminSchedule() {
       title: "Success",
       description: "Booking created successfully",
     });
-  };
-
-  const getTodayBookings = () => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    return bookings.filter(booking => booking.session_date === today);
-  };
-
-  const getSelectedDateBookings = () => {
-    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-    return bookings.filter(booking => booking.session_date === selectedDateStr);
   };
 
   if (loading) {
@@ -146,30 +108,11 @@ export default function AdminSchedule() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Schedule Management</h1>
             <p className="text-muted-foreground mt-2">
-              {viewMode === 'calendar' 
-                ? `Viewing ${format(selectedDate, 'MMMM yyyy')}` 
-                : `Daily schedule for ${format(selectedDate, 'EEEE, MMMM d, yyyy')}`
-              }
+              {`Daily schedule for ${format(selectedDate, 'EEEE, MMMM d, yyyy')}`}
             </p>
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === 'calendar' ? 'default' : 'outline'}
-              onClick={() => setViewMode('calendar')}
-              size="sm"
-            >
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Calendar
-            </Button>
-            <Button
-              variant={viewMode === 'daily' ? 'default' : 'outline'}
-              onClick={() => setViewMode('daily')}
-              size="sm"
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Daily
-            </Button>
             <Button
               onClick={() => setCreateBookingOpen(true)}
               size="sm"
@@ -182,38 +125,27 @@ export default function AdminSchedule() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Today's Bookings
+                Bookings
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{getTodayBookings().length}</div>
+              <div className="text-2xl font-bold">{bookings.length}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Selected Date
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{getSelectedDateBookings().length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Guests Today
+                Total Guests
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {getTodayBookings().reduce((sum, booking) => sum + booking.guest_count, 0)}
+                {bookings.reduce((sum, booking) => sum + booking.guest_count, 0)}
               </div>
             </CardContent>
           </Card>
@@ -235,47 +167,17 @@ export default function AdminSchedule() {
                 selected={selectedDate}
                 onSelect={handleDateSelect}
                 className="rounded-md border"
-                modifiers={{
-                  hasBookings: (date) => {
-                    const dateStr = format(date, 'yyyy-MM-dd');
-                    return monthlyStats[dateStr] > 0;
-                  }
-                }}
-                modifiersStyles={{
-                  hasBookings: {
-                    backgroundColor: 'hsl(var(--primary))',
-                    color: 'hsl(var(--primary-foreground))',
-                    borderRadius: '50%'
-                  }
-                }}
               />
-              
-              {/* Legend */}
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary"></div>
-                  <span>Has bookings</span>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          {/* Main Schedule View */}
+          {/* Daily Schedule View */}
           <div className="lg:col-span-2">
-            {viewMode === 'calendar' ? (
-              <ScheduleCalendarView
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-                monthlyStats={monthlyStats}
-                bookings={bookings}
-              />
-            ) : (
-              <DailyScheduleView
-                selectedDate={selectedDate}
-                bookings={getSelectedDateBookings()}
-                onRefresh={fetchScheduleData}
-              />
-            )}
+            <DailyScheduleView
+              selectedDate={selectedDate}
+              bookings={bookings}
+              onRefresh={fetchScheduleData}
+            />
           </div>
         </div>
 
@@ -283,7 +185,7 @@ export default function AdminSchedule() {
           open={createBookingOpen}
           onOpenChange={setCreateBookingOpen}
           onBookingCreated={handleBookingCreated}
-          preselectedDate={viewMode === 'daily' ? selectedDate : undefined}
+          preselectedDate={selectedDate}
         />
       </div>
     </AdminLayout>
