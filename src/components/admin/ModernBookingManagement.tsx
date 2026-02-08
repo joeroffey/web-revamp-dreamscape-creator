@@ -489,6 +489,11 @@ export default function ModernBookingManagement() {
                             </span>
                           )}
                         </div>
+                        {booking.stripe_session_id && (
+                          <div className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[180px]" title={booking.stripe_session_id}>
+                            Stripe: {booking.stripe_session_id.slice(0, 20)}...
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex items-center justify-end gap-2 flex-wrap">
