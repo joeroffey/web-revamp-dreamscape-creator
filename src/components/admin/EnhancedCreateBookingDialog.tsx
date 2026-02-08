@@ -345,6 +345,15 @@ export function EnhancedCreateBookingDialog({
       return;
     }
 
+    // Prevent overbooking for communal sessions - enforce 5 guest maximum
+    if (bookingForm.service_type === 'Communal Session' && selectedSlotInfo) {
+      const availableSpaces = selectedSlotInfo.availableSpaces;
+      if (bookingForm.guest_count > availableSpaces) {
+        toast.error(`Only ${availableSpaces} space(s) available. Cannot book ${bookingForm.guest_count} guests.`);
+        return;
+      }
+    }
+
     createBookingMutation.mutate(bookingForm);
   };
 
@@ -641,13 +650,28 @@ export function EnhancedCreateBookingDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="guest_count">Guest Count</Label>
+                <Label htmlFor="guest_count">
+                  Guest Count
+                  {selectedSlotInfo && bookingForm.service_type === 'Communal Session' && (
+                    <span className="text-muted-foreground font-normal ml-2">
+                      (max {selectedSlotInfo.availableSpaces} available)
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="guest_count"
                   type="number"
                   min="1"
+                  max={bookingForm.service_type === 'Communal Session' && selectedSlotInfo ? selectedSlotInfo.availableSpaces : undefined}
                   value={bookingForm.guest_count}
-                  onChange={(e) => setBookingForm({ ...bookingForm, guest_count: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    // Clamp value to available spaces for communal sessions
+                    const maxSpaces = bookingForm.service_type === 'Communal Session' && selectedSlotInfo 
+                      ? selectedSlotInfo.availableSpaces 
+                      : 5;
+                    setBookingForm({ ...bookingForm, guest_count: Math.min(value, maxSpaces) });
+                  }}
                 />
               </div>
             </div>
