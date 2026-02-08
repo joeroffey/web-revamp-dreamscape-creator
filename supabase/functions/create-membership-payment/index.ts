@@ -80,10 +80,15 @@ serve(async (req) => {
     }
 
     // Optional discount code (applied to first month only via lower unit_amount)
+    // Check both discount_codes and partner_codes tables
     let discountCodeRow: any = null;
+    let partnerCodeRow: any = null;
     let discountAmount = 0;
+    
     if (discountCode && typeof discountCode === 'string' && discountCode.trim().length > 0) {
       const code = discountCode.trim().toUpperCase();
+      
+      // First check discount_codes table
       const { data: dc, error: dcErr } = await supabaseClient
         .from('discount_codes')
         .select('*')
@@ -91,23 +96,43 @@ serve(async (req) => {
         .maybeSingle();
 
       if (dcErr) throw dcErr;
-      if (!dc) throw new Error('Invalid discount code');
+      
+      if (dc) {
+        // Validate discount code
+        const now = new Date();
+        const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
+        const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
+        const activeOk = dc.is_active !== false;
+        const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
+        const minOk = !dc.min_amount || plan.price >= dc.min_amount;
+        
+        if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
+          throw new Error('Discount code is not valid for this membership');
+        }
 
-      const now = new Date();
-      const validFromOk = !dc.valid_from || new Date(dc.valid_from) <= now;
-      const validUntilOk = !dc.valid_until || new Date(dc.valid_until) >= now;
-      const activeOk = dc.is_active !== false;
-      const usesOk = !dc.max_uses || (dc.current_uses || 0) < dc.max_uses;
-      const minOk = !dc.min_amount || plan.price >= dc.min_amount;
-      if (!activeOk || !validFromOk || !validUntilOk || !usesOk || !minOk) {
-        throw new Error('Discount code is not valid for this membership');
-      }
-
-      discountCodeRow = dc;
-      if (dc.discount_type === 'percentage') {
-        discountAmount = Math.round(plan.price * (dc.discount_value / 100));
+        discountCodeRow = dc;
+        if (dc.discount_type === 'percentage') {
+          discountAmount = Math.round(plan.price * (dc.discount_value / 100));
+        } else {
+          discountAmount = Math.min(plan.price, dc.discount_value);
+        }
       } else {
-        discountAmount = Math.min(plan.price, dc.discount_value);
+        // Check partner_codes table
+        const { data: pc, error: pcErr } = await supabaseClient
+          .from('partner_codes')
+          .select('*')
+          .eq('promo_code', code)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (pcErr) throw pcErr;
+        
+        if (pc) {
+          partnerCodeRow = pc;
+          discountAmount = Math.round(plan.price * (pc.discount_percentage / 100));
+        } else {
+          throw new Error('Invalid discount code');
+        }
       }
     }
 
@@ -153,8 +178,10 @@ serve(async (req) => {
           membershipType: membershipType,
           sessions_per_month: plan.sessions_per_month.toString(),
           discount_percentage: plan.discount_percentage.toString(),
-          discountCode: discountCodeRow?.code || "",
+          discountCode: discountCodeRow?.code || partnerCodeRow?.promo_code || "",
           discountCodeId: discountCodeRow?.id || "",
+          partnerCodeId: partnerCodeRow?.id || "",
+          partnerCompany: partnerCodeRow?.company_name || "",
           originalAmount: plan.price.toString(),
           discountAmount: discountAmount.toString(),
           finalAmount: finalAmount.toString(),
@@ -193,8 +220,10 @@ serve(async (req) => {
           membershipType: membershipType,
           sessions_per_month: plan.sessions_per_month.toString(),
           discount_percentage: plan.discount_percentage.toString(),
-          discountCode: discountCodeRow?.code || "",
+          discountCode: discountCodeRow?.code || partnerCodeRow?.promo_code || "",
           discountCodeId: discountCodeRow?.id || "",
+          partnerCodeId: partnerCodeRow?.id || "",
+          partnerCompany: partnerCodeRow?.company_name || "",
           originalAmount: plan.price.toString(),
           discountAmount: discountAmount.toString(),
           finalAmount: finalAmount.toString(),
