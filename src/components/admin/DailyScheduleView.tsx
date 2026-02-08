@@ -168,7 +168,7 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                         <div key={booking.id} className="bg-muted/50 rounded-lg p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-3 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-medium">{booking.customer_name}</h4>
                                 <Badge className={getBookingTypeColor(booking.booking_type)}>
                                   {booking.booking_type}
@@ -176,6 +176,15 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                 <Badge variant="secondary">
                                   {formatServiceType(booking.service_type)}
                                 </Badge>
+                                {booking.stripe_session_id ? (
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    Stripe
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                    Manual
+                                  </Badge>
+                                )}
                               </div>
                               
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-muted-foreground">

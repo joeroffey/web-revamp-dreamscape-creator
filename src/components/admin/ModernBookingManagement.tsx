@@ -479,21 +479,25 @@ export default function ModernBookingManagement() {
                       
                       <div>
                         <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
                             {booking.payment_status || 'pending'}
                           </Badge>
+                          {booking.stripe_session_id ? (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              Stripe
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                              Manual
+                            </Badge>
+                          )}
                           {booking.payment_status === 'pending' && booking.stripe_session_id && (
                             <span className="text-xs text-yellow-600" title="Has Stripe session - may need verification">
                               ⚠️
                             </span>
                           )}
                         </div>
-                        {booking.stripe_session_id && (
-                          <div className="text-xs text-muted-foreground mt-1 font-mono truncate max-w-[180px]" title={booking.stripe_session_id}>
-                            Stripe: {booking.stripe_session_id.slice(0, 20)}...
-                          </div>
-                        )}
                       </div>
                       
                       <div className="flex items-center justify-end gap-2 flex-wrap">
