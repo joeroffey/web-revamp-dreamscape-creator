@@ -16,10 +16,10 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-4 pointer-events-auto", className)}
+      className={cn("p-2 pointer-events-auto w-full", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-6",
+        months: "flex flex-col w-full",
+        month: "space-y-4 w-full",
         caption: "flex justify-center pt-1 relative items-center h-10",
         caption_label: "text-base font-semibold tracking-tight",
         nav: "space-x-2 flex items-center",
@@ -30,12 +30,12 @@ function Calendar({
         nav_button_previous: "absolute left-2",
         nav_button_next: "absolute right-2",
         table: "w-full border-collapse",
-        head_row: "flex justify-between mb-2",
+        head_row: "flex w-full mb-2",
         head_cell:
-          "text-muted-foreground w-10 font-medium text-xs uppercase tracking-wider",
-        row: "flex w-full justify-between",
+          "text-muted-foreground flex-1 text-center font-medium text-xs uppercase tracking-wider",
+        row: "flex w-full",
         cell: cn(
-          "relative h-10 w-10 text-center text-sm p-0",
+          "relative flex-1 aspect-square text-center text-sm p-0.5",
           "focus-within:relative focus-within:z-20",
           "[&:has([aria-selected])]:bg-primary/10 [&:has([aria-selected])]:rounded-lg",
           "[&:has([aria-selected].day-range-end)]:rounded-r-lg",
@@ -44,8 +44,8 @@ function Calendar({
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-10 w-10 p-0 font-normal rounded-lg transition-all duration-200",
-          "hover:bg-accent hover:text-accent-foreground hover:scale-105",
+          "w-full h-full p-0 font-normal rounded-lg transition-all duration-200",
+          "hover:bg-accent hover:text-accent-foreground",
           "aria-selected:opacity-100"
         ),
         day_range_end: "day-range-end",
