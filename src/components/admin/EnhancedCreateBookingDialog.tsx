@@ -372,6 +372,8 @@ export function EnhancedCreateBookingDialog({
     setAvailableTokens([]);
     setTotalTokens(0);
     setUseToken(false);
+    setUseMembership(false);
+    setMembershipData(null);
     setSelectedPartnerCode(null);
     setSelectedSlotInfo(null);
     setBookingForm({
