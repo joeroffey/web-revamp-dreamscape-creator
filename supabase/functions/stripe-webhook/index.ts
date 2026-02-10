@@ -141,6 +141,27 @@ serve(async (req) => {
           }
           
           console.log("Booking created successfully:", booking?.id);
+
+          // Send booking confirmation email
+          if (booking?.id) {
+            try {
+              const emailRes = await fetch(
+                `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-booking-confirmation`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                  },
+                  body: JSON.stringify({ bookingId: booking.id })
+                }
+              );
+              if (!emailRes.ok) console.error("Failed to send booking confirmation email:", await emailRes.text());
+              else console.log("Booking confirmation email sent");
+            } catch (emailErr) {
+              console.error("Error sending booking confirmation email:", emailErr);
+            }
+          }
           
           // Update time slot availability
           if (bookingType === 'private') {
@@ -393,6 +414,27 @@ serve(async (req) => {
           }
 
           console.log("Member booking with guests created:", booking?.id);
+
+          // Send booking confirmation email
+          if (booking?.id) {
+            try {
+              const emailRes = await fetch(
+                `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-booking-confirmation`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                  },
+                  body: JSON.stringify({ bookingId: booking.id })
+                }
+              );
+              if (!emailRes.ok) console.error("Failed to send member booking confirmation email:", await emailRes.text());
+              else console.log("Member booking confirmation email sent");
+            } catch (emailErr) {
+              console.error("Error sending member booking confirmation email:", emailErr);
+            }
+          }
         }
       }
 
@@ -509,6 +551,27 @@ serve(async (req) => {
               final_amount: Math.max(0, originalAmount - discountAmount)
             });
         }
+
+        // Send membership confirmation email
+        if (membershipRow?.id) {
+          try {
+            const emailRes = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-membership-confirmation`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                },
+                body: JSON.stringify({ membershipId: membershipRow.id })
+              }
+            );
+            if (!emailRes.ok) console.error("Failed to send membership confirmation email:", await emailRes.text());
+            else console.log("Membership confirmation email sent");
+          } catch (emailErr) {
+            console.error("Error sending membership confirmation email:", emailErr);
+          }
+        }
       }
 
       // Handle one-time membership payments (no auto-renew)
@@ -570,6 +633,27 @@ serve(async (req) => {
               discount_amount: discountAmount,
               final_amount: Math.max(0, originalAmount - discountAmount)
             });
+        }
+
+        // Send membership confirmation email
+        if (membershipRow?.id) {
+          try {
+            const emailRes = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-membership-confirmation`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                },
+                body: JSON.stringify({ membershipId: membershipRow.id })
+              }
+            );
+            if (!emailRes.ok) console.error("Failed to send one-time membership confirmation email:", await emailRes.text());
+            else console.log("One-time membership confirmation email sent");
+          } catch (emailErr) {
+            console.error("Error sending one-time membership confirmation email:", emailErr);
+          }
         }
       }
 
