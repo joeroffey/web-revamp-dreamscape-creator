@@ -24,6 +24,19 @@ export const AdminNavigation = () => {
   const location = useLocation();
   const { signOut } = useAuth();
 
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unread-messages-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('contact_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new');
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 30000,
+  });
+
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/schedule', icon: Calendar, label: 'Schedule' },
