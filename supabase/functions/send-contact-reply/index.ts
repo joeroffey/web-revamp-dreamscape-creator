@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +11,7 @@ const corsHeaders = {
 function formatReplyToHtml(text: string): string {
   return text
     .split(/\n\s*\n/)
-    .map((para) => `<p style="margin: 0 0 16px 0; line-height: 1.6;">${para.replace(/\n/g, "<br>")}</p>`)
+    .map((para) => `<p style="font-size: 15px; color: #52331F; line-height: 1.7; margin: 0 0 16px 0;">${para.replace(/\n/g, "<br>")}</p>`)
     .join("");
 }
 
@@ -23,19 +21,24 @@ serve(async (req) => {
   }
 
   try {
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) throw new Error("RESEND_API_KEY not configured");
+
+    const resend = new Resend(resendApiKey);
     const { messageId, replyText } = await req.json();
 
     if (!messageId || !replyText) {
       throw new Error("Message ID and reply text are required");
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
     );
 
     // Get the original message
-    const { data: msg, error: fetchError } = await supabaseAdmin
+    const { data: msg, error: fetchError } = await supabase
       .from("contact_messages")
       .select("*")
       .eq("id", messageId)
@@ -46,7 +49,7 @@ serve(async (req) => {
     }
 
     // Update the message record
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from("contact_messages")
       .update({
         status: "replied",
@@ -59,49 +62,72 @@ serve(async (req) => {
       throw new Error("Failed to update message");
     }
 
-    const logoUrl = "https://ismifvjzvvyleahdmdrz.supabase.co/storage/v1/object/public/data101/hub_logo.png";
+    const logoUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/data101/hub_logo.png`;
     const formattedReply = formatReplyToHtml(replyText);
 
-    // Send branded email
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #CCBBA8;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="min-height: 100vh;">
+            <tr>
+              <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" width="100%" style="max-width: 480px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(82, 51, 31, 0.12);">
+                  <tr>
+                    <td style="padding: 40px 32px;">
+                      <!-- Header Logo -->
+                      <div style="text-align: center; margin-bottom: 32px;">
+                        <img src="${logoUrl}" alt="Revitalise Hub" style="max-width: 180px; height: auto;" />
+                      </div>
+
+                      <!-- Main Content - exactly what the admin typed -->
+                      ${formattedReply}
+
+                      <!-- Divider -->
+                      <div style="border-top: 1px solid #e8e0d8; margin: 28px 0;"></div>
+
+                      <!-- Location & Contact -->
+                      <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 15px; color: #52331F; margin: 0 0 12px 0; font-weight: 600;">Find Us</h3>
+                        <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
+                          📍 Unit 7, Ensign Yard, 670 Ampress Lane, Lymington SO41 8QY
+                        </p>
+                      </div>
+
+                      <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 15px; color: #52331F; margin: 0 0 12px 0; font-weight: 600;">Contact Us</h3>
+                        <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
+                          📧 <a href="mailto:info@revitalisehub.co.uk" style="color: #967B5E; text-decoration: none;">info@revitalisehub.co.uk</a><br>
+                          🌐 <a href="https://revitalisehub.co.uk" style="color: #967B5E; text-decoration: none;">revitalisehub.co.uk</a>
+                        </p>
+                      </div>
+
+                      <!-- Divider -->
+                      <div style="border-top: 1px solid #e8e0d8; margin: 24px 0;"></div>
+
+                      <!-- Footer -->
+                      <p style="font-size: 12px; color: #967B5E; text-align: center; line-height: 1.6; margin: 0;">
+                        © Revitalise Hub | Cold Water & Contrast Therapy
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
     const emailResponse = await resend.emails.send({
       from: "Revitalise Hub <info@revitalisehub.co.uk>",
       to: [msg.email],
       subject: `Re: Your message to Revitalise Hub`,
-      html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f5f0eb; font-family: Arial, sans-serif;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-    <!-- Header -->
-    <div style="background-color: #2d5c3b; padding: 30px; text-align: center;">
-      <img src="${logoUrl}" alt="Revitalise Hub" style="max-width: 180px; height: auto;" />
-    </div>
-
-    <!-- Body -->
-    <div style="padding: 40px 30px;">
-      <p style="margin: 0 0 20px 0; color: #333; font-size: 16px;">Hi ${msg.name},</p>
-      <p style="margin: 0 0 20px 0; color: #333; font-size: 16px;">Thank you for getting in touch. Here is our response to your message:</p>
-      
-      <div style="background-color: #f8f6f3; border-left: 4px solid #2d5c3b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; color: #333; font-size: 15px;">
-        ${formattedReply}
-      </div>
-
-      <p style="margin: 20px 0 0 0; color: #333; font-size: 16px;">If you have any further questions, please don't hesitate to get in touch.</p>
-      <p style="margin: 16px 0 0 0; color: #333; font-size: 16px;">Warm regards,<br><strong>The Revitalise Hub Team</strong></p>
-    </div>
-
-    <!-- Footer -->
-    <div style="background-color: #2d5c3b; padding: 30px; text-align: center; color: #ffffff;">
-      <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">Revitalise Hub</p>
-      <p style="margin: 0 0 8px 0; font-size: 13px; color: #d4e4d9;">Unit 7, Ensign Yard, 670 Ampress Lane, Lymington SO41 8QY</p>
-      <p style="margin: 0 0 4px 0; font-size: 13px; color: #d4e4d9;">01590 698 691 | 0754 696 5111</p>
-      <p style="margin: 0; font-size: 13px; color: #d4e4d9;">info@revitalisehub.co.uk</p>
-    </div>
-  </div>
-</body>
-</html>
-      `,
+      html: emailHtml,
     });
 
     console.log("Reply email sent:", emailResponse);
