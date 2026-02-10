@@ -218,7 +218,7 @@ serve(async (req) => {
     const emailResponse = await resend.emails.send({
       from: "Revitalise Hub <info@revitalisehub.co.uk>",
       to: [customerEmail],
-      subject: `✅ Booking Confirmed — ${formattedDate} at ${formattedTime}`,
+      subject: `Booking Confirmed — ${formattedDate} at ${formattedTime}`,
       html: emailHtml,
     });
 
