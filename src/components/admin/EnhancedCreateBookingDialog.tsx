@@ -635,6 +635,63 @@ export function EnhancedCreateBookingDialog({
                 </CardContent>
               </Card>
             )}
+
+            {/* Membership Payment Option */}
+            {membershipData && bookingForm.service_type === 'Communal Session' && (
+              <Card className={cn(
+                "border-2 transition-colors",
+                useMembership ? "border-green-600 bg-green-50" : "border-dashed"
+              )}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-full",
+                        useMembership ? "bg-green-600 text-white" : "bg-muted"
+                      )}>
+                        <Crown className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Use Membership Credit</p>
+                        <p className="text-sm text-muted-foreground">
+                          {membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999
+                            ? 'Unlimited sessions available'
+                            : `${membershipData.sessions_remaining ?? 0} session(s) remaining`}
+                          {' • 1 guest only'}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={useMembership}
+                      onCheckedChange={setUseMembership}
+                      disabled={!membershipData.sessions_remaining && membershipData.membership_type !== 'unlimited' && membershipData.sessions_per_week !== 999}
+                    />
+                  </div>
+                  {!membershipData.sessions_remaining && membershipData.membership_type !== 'unlimited' && membershipData.sessions_per_week !== 999 && (
+                    <p className="text-sm text-destructive mt-2">
+                      No sessions remaining on this membership.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show message when membership available but private selected */}
+            {membershipData && bookingForm.service_type === 'Private Session' && (
+              <Card className="border-dashed border-muted-foreground/30">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <Crown className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Membership Credit Available</p>
+                      <p className="text-sm text-muted-foreground">Membership credits can only be used for communal sessions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Show message when tokens available but private selected */}
             {totalTokens > 0 && bookingForm.service_type === 'Private Session' && (
