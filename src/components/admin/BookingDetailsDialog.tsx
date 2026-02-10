@@ -30,6 +30,8 @@ interface BookingData {
   guest_count: number;
   payment_status: string;
   price_amount: number;
+  final_amount?: number | null;
+  stripe_session_id?: string;
   special_requests?: string;
   service_type: string;
   created_at?: string;
