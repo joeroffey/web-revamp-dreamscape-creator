@@ -167,10 +167,10 @@ serve(async (req) => {
                       <div style="margin: 24px 0;">
                         <h3 style="font-size: 15px; color: #52331F; margin: 0 0 12px 0; font-weight: 600;">What to Bring</h3>
                         <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
-                          🩱 Swimwear<br>
-                          🧖 Towel (or we have towels available)<br>
-                          💧 Water bottle<br>
-                          🔒 Padlock for locker (optional)
+                          Swimwear<br>
+                          Towel (or we have towels available)<br>
+                          Water bottle<br>
+                          Padlock for locker (optional)
                         </p>
                       </div>
 
