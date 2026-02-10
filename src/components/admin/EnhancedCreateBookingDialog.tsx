@@ -51,6 +51,8 @@ export function EnhancedCreateBookingDialog({
   const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
+  const [useMembership, setUseMembership] = useState(false);
+  const [membershipData, setMembershipData] = useState<any>(null);
   const [selectedPartnerCode, setSelectedPartnerCode] = useState<PartnerCode | null>(null);
   const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number } | null>(null);
   const [bookingForm, setBookingForm] = useState({
