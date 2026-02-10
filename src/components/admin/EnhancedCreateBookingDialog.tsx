@@ -562,6 +562,28 @@ export function EnhancedCreateBookingDialog({
               </Card>
             )}
 
+            {/* Show membership info if customer has active membership */}
+            {membershipData && (
+              <Card className="border-green-500/50 bg-green-50/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-green-600 text-white">
+                      <Crown className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Active Membership</p>
+                      <p className="text-sm text-muted-foreground">
+                        {membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999
+                          ? 'Unlimited sessions'
+                          : `${membershipData.sessions_remaining ?? 0} session(s) remaining`}
+                        {' • Can be used for booking in the next step'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Button onClick={() => setStep(3)} className="w-full">
               Continue to Booking Details
             </Button>
