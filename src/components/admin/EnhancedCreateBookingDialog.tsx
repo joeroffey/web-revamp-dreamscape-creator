@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCustomerSearch } from "@/hooks/useCustomerSearch";
-import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2 } from "lucide-react";
+import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminTimeSlotPicker } from "./AdminTimeSlotPicker";
