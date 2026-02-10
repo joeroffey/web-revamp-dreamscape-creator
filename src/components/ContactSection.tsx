@@ -42,8 +42,19 @@ export const ContactSection = () => {
     }
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(
+        "https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/send-contact-notification",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to send message");
+      }
       
       toast({
         title: "Message sent successfully!",
