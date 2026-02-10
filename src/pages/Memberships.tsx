@@ -507,7 +507,7 @@ const Memberships = () => {
                     {promoDiscount && (
                       <div className="mt-2 p-2 bg-primary/10 rounded-md">
                         <p className="text-sm text-primary font-medium">
-                          ✓ Code applied: {promoDiscount.value}% off your first month!
+                          ✓ Code applied: {promoDiscount.value}% off every month!
                         </p>
                       </div>
                     )}
@@ -541,7 +541,7 @@ const Memberships = () => {
                           <span className="text-2xl text-muted-foreground line-through mr-2">£{plan.price}</span>
                           <span className="text-4xl font-bold text-primary">£{calculateDiscountedPrice(plan.price)}</span>
                           <span className="text-muted-foreground">/{plan.period}</span>
-                          <p className="text-xs text-primary mt-1">First month with {promoDiscount.code}</p>
+                          <p className="text-xs text-primary mt-1">Every month with {promoDiscount.code}</p>
                         </>
                       ) : (
                         <>
