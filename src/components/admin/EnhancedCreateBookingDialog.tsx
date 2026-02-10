@@ -325,9 +325,12 @@ export function EnhancedCreateBookingDialog({
       queryClient.invalidateQueries({ queryKey: ["daily-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["customer-tokens"] });
       queryClient.invalidateQueries({ queryKey: ["time-slots"] });
-      toast.success(useToken 
-        ? `Booking created using ${bookingForm.guest_count} token(s)`
-        : "Booking created successfully"
+      queryClient.invalidateQueries({ queryKey: ["memberships"] });
+      toast.success(useMembership
+        ? "Booking created using membership credit"
+        : useToken 
+          ? `Booking created using ${bookingForm.guest_count} token(s)`
+          : "Booking created successfully"
       );
       resetForm();
     },
