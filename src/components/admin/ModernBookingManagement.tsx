@@ -157,8 +157,7 @@ export default function ModernBookingManagement() {
   const formatCurrency = formatGBP;
 
   const isMembershipBooking = (booking: Booking) => {
-    return booking.special_requests?.includes('[Membership booking]') || 
-      (booking.final_amount === 0 && booking.discount_amount > 0 && booking.price_amount > 0 && !booking.stripe_session_id);
+    return booking.special_requests?.includes('[Membership booking]');
   };
 
   const isTokenBooking = (booking: Booking) => {

@@ -169,7 +169,7 @@ export const BookingDetailsDialog = ({
                 <div>
                   <p className="text-sm text-muted-foreground">Price</p>
                   <p className="font-medium">
-                    {(booking.special_requests?.includes('[Membership booking]') || (booking.final_amount === 0 && booking.price_amount > 0 && !booking.stripe_session_id))
+                    {booking.special_requests?.includes('[Membership booking]')
                       ? '£0.00 (Membership)'
                       : `£${((booking.final_amount ?? booking.price_amount) / 100).toFixed(2)}`}
                   </p>
