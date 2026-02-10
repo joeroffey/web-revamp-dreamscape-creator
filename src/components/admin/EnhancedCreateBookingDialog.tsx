@@ -936,7 +936,7 @@ export function EnhancedCreateBookingDialog({
                 onClick={handleCreateBooking}
                 disabled={createBookingMutation.isPending}
               >
-                {useToken ? `Create Booking (${bookingForm.guest_count} Token${bookingForm.guest_count > 1 ? 's' : ''})` : 'Create Booking'}
+                {useMembership ? 'Create Booking (Membership)' : useToken ? `Create Booking (${bookingForm.guest_count} Token${bookingForm.guest_count > 1 ? 's' : ''})` : 'Create Booking'}
               </Button>
             </div>
           </div>
