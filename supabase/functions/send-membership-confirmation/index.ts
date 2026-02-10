@@ -171,9 +171,6 @@ serve(async (req) => {
                         <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0 0 12px 0;">
                           To book a session, simply log in to your account on our website and choose your preferred date and time. Your member sessions will be used automatically — no need to enter any payment details.
                         </p>
-                        <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
-                          As a member, you also enjoy a <strong>discount on additional guest bookings</strong> when you bring friends along!
-                        </p>
                       </div>
 
                       <!-- CTA Button -->
