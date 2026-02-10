@@ -215,7 +215,7 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                               <div className="flex items-center justify-between flex-wrap gap-2">
                                 <div className="text-sm flex items-center gap-2">
                                   <span className="font-medium">
-                                    {(booking.final_amount === 0 || booking.final_amount === null) && !booking.stripe_session_id
+                                    {booking.special_requests?.includes('[Membership booking]')
                                       ? '£0.00 (Membership)'
                                       : `£${((booking.final_amount ?? booking.price_amount) / 100).toFixed(2)}`}
                                   </span>
