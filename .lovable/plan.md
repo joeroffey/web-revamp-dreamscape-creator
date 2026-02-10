@@ -1,104 +1,81 @@
 
 
-# Plan: Fix Three Critical Issues
+# Contact Messages System
 
-## Issues Identified
-
-### Issue 1: Disappearing Bookings
-**Root Cause**: Bookings are not disappearing from the database - they exist but remain in `payment_status: 'pending'` status because:
-1. The customer starts a booking, creates a "pending" record
-2. The customer either abandons checkout OR completes payment but the Stripe webhook fails to confirm
-3. The `confirm_booking` function in the webhook only updates status when called successfully
-
-The bookings ARE stored - I found 18+ pending bookings in the database. The issue is that:
-- Pending bookings may not be prominently visible in admin
-- If webhook fails, paid bookings stay as "pending"
-- There's no cleanup or alerting for abandoned pending bookings
-
-### Issue 2: Membership Purchase Errors (Popup Blocked)
-**Root Cause**: In `src/pages/Memberships.tsx` line 125, the code uses:
-```javascript
-window.open(data.url, '_blank');
-```
-This opens a new tab which Safari/Mac blocks as a popup. The intro offer on line 279 correctly uses `window.location.href` but the main membership subscription flow does not.
-
-### Issue 3: Gift Card Popup Being Blocked on Mac
-**Status**: The code in `src/pages/GiftCards.tsx` already uses `window.location.href` correctly (line 91). However, if users are still experiencing this, it could be:
-- Browser caching an old version
-- An edge case in async timing on Safari
+## What This Does
+When someone fills out the contact form on your website, three things will happen:
+1. **You get an email** at info@revitalisehub.co.uk with their message
+2. **The message is saved** to a new "Messages" section in your admin panel
+3. **You can reply directly from admin** -- the reply is sent as a branded email using your logo, colours, and contact details
 
 ---
 
-## Solution Plan
+## How It Works
 
-### Fix 1: Membership Redirect (Popup Issue)
-**File**: `src/pages/Memberships.tsx`
+1. **New database table** -- `contact_messages` stores every submission (name, email, phone, message, read/replied status, and any admin reply)
 
-Change line 125 from:
-```javascript
-window.open(data.url, '_blank');
-```
-To:
-```javascript
-window.location.href = data.url;
-```
+2. **New edge function: `send-contact-notification`** -- When someone submits the contact form, this function:
+   - Saves the message to the database
+   - Sends a notification email to info@revitalisehub.co.uk with the customer's details
 
-This ensures the same-tab navigation that works for gift cards and intro offers.
+3. **New edge function: `send-contact-reply`** -- When an admin replies from the admin panel, this function sends a branded email to the customer using the same template style as your booking/membership confirmations (logo, colours, footer with address). The admin's reply text preserves paragraph formatting.
 
-### Fix 2: Improve Booking Visibility in Admin
-**File**: `src/components/admin/ModernBookingManagement.tsx`
+4. **Updated contact form** -- The form will call the new edge function instead of simulating a submission
 
-Add visual distinction and alerts for pending bookings:
-1. Add a prominent warning banner when there are recent pending bookings with Stripe sessions (potential payment issues)
-2. Add a "Pending" filter option that's more visible
-3. Color-code pending bookings more prominently in the list
-4. Add a note explaining that pending bookings are awaiting payment
+5. **New admin page: `/admin/messages`** -- Shows all contact messages in a list with:
+   - Unread/read indicators
+   - Customer name, email, date
+   - Click to view full message
+   - Reply button that opens a text area to compose a response
+   - Status badges (New, Read, Replied)
 
-### Fix 3: Add Booking Reliability Safeguards
-Create additional safeguards:
-
-1. **Add webhook retry/verification**: Create an admin button to manually re-check Stripe session status for pending bookings
-2. **Pending booking alerts**: Show a count of pending bookings in the dashboard stats
-3. **Audit logging**: Ensure booking creation and status changes are logged for debugging
+6. **Admin navigation updated** -- A "Messages" link added to both desktop and mobile admin nav
 
 ---
 
 ## Technical Details
 
-### Changes to `src/pages/Memberships.tsx`
-- Line 125: Replace `window.open(data.url, '_blank')` with `window.location.href = data.url`
+### Database Migration
+```sql
+CREATE TABLE public.contact_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new',  -- new, read, replied
+  admin_reply TEXT,
+  replied_at TIMESTAMPTZ,
+  replied_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-### Changes to `src/components/admin/ModernBookingManagement.tsx`
-1. Add a warning banner component that appears when there are pending bookings with Stripe session IDs (possible webhook failures)
-2. Add "Pending Payments" as a highlighted filter option
-3. Add tooltips explaining payment statuses
-4. Add a "Verify Payment" button for pending bookings that have stripe_session_id
+-- RLS: only admins can read/write
+ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
-### New Edge Function: `verify-booking-payment`
-Create a function that:
-- Takes a booking ID
-- Fetches the Stripe session by its ID
-- If payment is complete, calls `confirm_booking` to update status
-- Returns the result
+CREATE POLICY "Admins can manage contact messages"
+  ON public.contact_messages FOR ALL
+  USING (public.is_admin(auth.uid()));
 
-This allows admins to manually verify and fix bookings where the webhook may have failed.
+-- Update trigger
+CREATE TRIGGER update_contact_messages_updated_at
+  BEFORE UPDATE ON public.contact_messages
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+```
 
----
+### Edge Functions
+- **`send-contact-notification`** -- Receives form data, inserts into `contact_messages`, emails info@revitalisehub.co.uk
+- **`send-contact-reply`** -- Receives message ID + reply text, updates the record, sends branded email to customer (converts newlines to `<p>` tags for proper paragraph formatting)
 
-## Benefits
+### Files to Create
+- `supabase/functions/send-contact-notification/index.ts`
+- `supabase/functions/send-contact-reply/index.ts`
+- `src/components/admin/ModernMessageManagement.tsx` -- admin messages page
 
-1. **Membership purchases work on Safari/Mac** - no popup blocking
-2. **All bookings remain visible** - pending bookings shown prominently with clear status
-3. **Recovery mechanism** - admins can verify and fix stuck bookings
-4. **Better visibility** - dashboard shows pending booking count as a warning
-
----
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/pages/Memberships.tsx` | Fix Stripe redirect to use `window.location.href` |
-| `src/components/admin/ModernBookingManagement.tsx` | Add pending booking warnings and verify payment functionality |
-| `supabase/functions/verify-booking-payment/index.ts` | New function to manually verify Stripe payment status |
+### Files to Modify
+- `src/components/ContactSection.tsx` -- call the edge function instead of simulating
+- `src/App.tsx` -- add `/admin/messages` route
+- `src/components/AdminNavigation.tsx` -- add Messages nav item
+- `src/components/MobileAdminNav.tsx` -- add Messages nav item
 
