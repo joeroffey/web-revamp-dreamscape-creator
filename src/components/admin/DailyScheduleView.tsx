@@ -180,6 +180,10 @@ export const DailyScheduleView = ({ selectedDate, bookings, onRefresh }: DailySc
                                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                     Stripe
                                   </Badge>
+                                ) : (booking.final_amount === 0 || booking.final_amount === null) && !booking.stripe_session_id ? (
+                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                    Membership
+                                  </Badge>
                                 ) : (
                                   <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                                     Manual
