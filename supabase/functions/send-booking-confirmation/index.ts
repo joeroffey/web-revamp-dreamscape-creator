@@ -111,10 +111,9 @@ serve(async (req) => {
                 <table role="presentation" width="100%" style="max-width: 480px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(82, 51, 31, 0.12);">
                   <tr>
                     <td style="padding: 40px 32px;">
-                      <!-- Header -->
+                      <!-- Header Logo -->
                       <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="font-size: 22px; font-weight: 600; letter-spacing: 3px; color: #52331F; margin: 0 0 8px 0;">REVITALISE HUB</h1>
-                        <div style="width: 60px; height: 2px; background: #967B5E; margin: 0 auto;"></div>
+                        <img src="${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/data101/hub_logo.png" alt="Revitalise Hub" style="max-width: 180px; height: auto;" />
                       </div>
 
                       <!-- Icon -->
