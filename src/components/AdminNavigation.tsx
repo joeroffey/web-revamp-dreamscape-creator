@@ -74,7 +74,14 @@ export const AdminNavigation = () => {
                         : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <div className="relative">
+                      <Icon className="h-4 w-4" />
+                      {item.href === '/admin/messages' && unreadCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </div>
                     <span>{item.label}</span>
                   </Link>
                 );
