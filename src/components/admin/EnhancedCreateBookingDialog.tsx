@@ -177,6 +177,32 @@ export function EnhancedCreateBookingDialog({
     }
   }, [bookingForm.guest_count, totalTokens, useToken, bookingForm.service_type]);
 
+  // Membership and token are mutually exclusive
+  useEffect(() => {
+    if (useMembership && useToken) {
+      setUseToken(false);
+    }
+  }, [useMembership]);
+
+  useEffect(() => {
+    if (useToken && useMembership) {
+      setUseMembership(false);
+    }
+  }, [useToken]);
+
+  // When membership is toggled on, lock to communal + 1 guest
+  useEffect(() => {
+    if (useMembership) {
+      setBookingForm(prev => ({
+        ...prev,
+        service_type: 'Communal Session',
+        booking_type: 'communal',
+        guest_count: 1,
+        payment_status: 'paid'
+      }));
+    }
+  }, [useMembership]);
+
   const createBookingMutation = useMutation({
     mutationFn: async (booking: any) => {
       // If creating a new customer or if no customer is selected, upsert the customer record first.
