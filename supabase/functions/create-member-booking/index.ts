@@ -128,7 +128,7 @@ serve(async (req) => {
         discount_amount: priceAmount, // Full discount applied
         booking_type: 'communal',
         guest_count: 1, // Members can only book for themselves
-        special_requests: specialRequests || null,
+        special_requests: specialRequests ? `${specialRequests} [Membership booking]` : '[Membership booking]',
         payment_status: 'paid',
         booking_status: 'confirmed'
       })
