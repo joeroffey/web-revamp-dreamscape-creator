@@ -17,7 +17,8 @@ import {
   X,
   Building2,
   BarChart3,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 
 export const MobileAdminNav = () => {
@@ -35,6 +36,7 @@ export const MobileAdminNav = () => {
     { href: '/admin/partner-codes', icon: Building2, label: 'Partner Codes' },
     { href: '/admin/events', icon: Calendar, label: 'Events' },
     { href: '/admin/blog', icon: FileText, label: 'Blog' },
+    { href: '/admin/messages', icon: MessageSquare, label: 'Messages' },
     { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
   ];

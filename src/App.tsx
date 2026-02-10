@@ -39,6 +39,7 @@ import ModernScheduleManagement from "./components/admin/ModernScheduleManagemen
 import AdminBlog from "./pages/admin/Blog";
 import PartnerCodes from "./pages/admin/PartnerCodes";
 import AdminEvents from "./pages/admin/Events";
+import ModernMessageManagement from "./components/admin/ModernMessageManagement";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="/admin/blog" element={<AdminBlog />} />
             <Route path="/admin/partner-codes" element={<PartnerCodes />} />
             <Route path="/admin/events" element={<AdminEvents />} />
+            <Route path="/admin/messages" element={<ModernMessageManagement />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

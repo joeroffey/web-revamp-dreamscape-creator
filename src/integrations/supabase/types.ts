@@ -176,6 +176,48 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          admin_reply: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          replied_at: string | null
+          replied_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          replied_at?: string | null
+          replied_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_reply?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          replied_at?: string | null
+          replied_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_credits: {
         Row: {
           created_at: string
