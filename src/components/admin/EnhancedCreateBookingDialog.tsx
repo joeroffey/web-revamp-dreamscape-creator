@@ -124,7 +124,6 @@ export function EnhancedCreateBookingDialog({
         .gt('tokens_remaining', 0);
 
       if (!error && data) {
-        // Filter: tokens that never expire OR haven't expired yet
         const validTokens = data.filter(token => 
           !token.expires_at || new Date(token.expires_at) > new Date()
         );
@@ -138,6 +137,37 @@ export function EnhancedCreateBookingDialog({
     };
 
     fetchTokens();
+  }, [bookingForm.customer_email]);
+
+  // Fetch membership when email changes
+  useEffect(() => {
+    const fetchMembership = async () => {
+      const email = bookingForm.customer_email?.toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        setMembershipData(null);
+        setUseMembership(false);
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('customer_email', email)
+        .eq('status', 'active')
+        .gte('end_date', today)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setMembershipData(data[0]);
+      } else {
+        setMembershipData(null);
+        setUseMembership(false);
+      }
+    };
+
+    fetchMembership();
   }, [bookingForm.customer_email]);
 
   // Reset useToken when guest count exceeds available tokens OR when switching to private session
