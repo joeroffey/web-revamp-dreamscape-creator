@@ -507,7 +507,7 @@ const Memberships = () => {
                     {promoDiscount && (
                       <div className="mt-2 p-2 bg-primary/10 rounded-md">
                         <p className="text-sm text-primary font-medium">
-                          ✓ Code applied: {promoDiscount.value}% off your first month!
+                          ✓ Code applied: {promoDiscount.value}% off every month!
                         </p>
                       </div>
                     )}
