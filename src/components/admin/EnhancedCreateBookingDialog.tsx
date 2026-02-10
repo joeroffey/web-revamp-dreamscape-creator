@@ -859,12 +859,15 @@ export function EnhancedCreateBookingDialog({
                     min="0"
                     value={bookingForm.price_amount === 0 ? '' : bookingForm.price_amount / 100}
                     onChange={(e) => setBookingForm({ ...bookingForm, price_amount: Math.round(parseFloat(e.target.value || '0') * 100) })}
-                    className={cn("pl-8", useToken && "opacity-50")}
-                    disabled={useToken}
+                    className={cn("pl-8", (useToken || useMembership) && "opacity-50")}
+                    disabled={useToken || useMembership}
                     placeholder="18"
                   />
                 </div>
-                {useToken && (
+                {useMembership && (
+                  <p className="text-xs text-muted-foreground">Price will be £0 (membership credit)</p>
+                )}
+                {useToken && !useMembership && (
                   <p className="text-xs text-muted-foreground">Price will be £0 (paid with tokens)</p>
                 )}
                 {selectedPartnerCode && !useToken && bookingForm.price_amount > 0 && (
