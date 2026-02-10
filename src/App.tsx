@@ -39,6 +39,7 @@ import ModernScheduleManagement from "./components/admin/ModernScheduleManagemen
 import AdminBlog from "./pages/admin/Blog";
 import PartnerCodes from "./pages/admin/PartnerCodes";
 import AdminEvents from "./pages/admin/Events";
+import ModernMessageManagement from "./components/admin/ModernMessageManagement";
 const queryClient = new QueryClient();
 
 const App = () => (
