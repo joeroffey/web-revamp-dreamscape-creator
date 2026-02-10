@@ -14,7 +14,8 @@ import {
   Home,
   BarChart3,
   FileText,
-  Building2
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 
 export const AdminNavigation = () => {
