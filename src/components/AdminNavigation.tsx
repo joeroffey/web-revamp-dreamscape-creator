@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthContext';
 import { MobileAdminNav } from './MobileAdminNav';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   LayoutDashboard, 
   Users, 
