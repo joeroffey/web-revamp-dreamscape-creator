@@ -17,7 +17,8 @@ import {
   X,
   Building2,
   BarChart3,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 
 export const MobileAdminNav = () => {
