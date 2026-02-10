@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCustomerSearch } from "@/hooks/useCustomerSearch";
-import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2 } from "lucide-react";
+import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminTimeSlotPicker } from "./AdminTimeSlotPicker";
@@ -51,6 +51,8 @@ export function EnhancedCreateBookingDialog({
   const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
   const [totalTokens, setTotalTokens] = useState(0);
   const [useToken, setUseToken] = useState(false);
+  const [useMembership, setUseMembership] = useState(false);
+  const [membershipData, setMembershipData] = useState<any>(null);
   const [selectedPartnerCode, setSelectedPartnerCode] = useState<PartnerCode | null>(null);
   const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number } | null>(null);
   const [bookingForm, setBookingForm] = useState({
@@ -122,7 +124,6 @@ export function EnhancedCreateBookingDialog({
         .gt('tokens_remaining', 0);
 
       if (!error && data) {
-        // Filter: tokens that never expire OR haven't expired yet
         const validTokens = data.filter(token => 
           !token.expires_at || new Date(token.expires_at) > new Date()
         );
@@ -138,12 +139,69 @@ export function EnhancedCreateBookingDialog({
     fetchTokens();
   }, [bookingForm.customer_email]);
 
+  // Fetch membership when email changes
+  useEffect(() => {
+    const fetchMembership = async () => {
+      const email = bookingForm.customer_email?.toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        setMembershipData(null);
+        setUseMembership(false);
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('customer_email', email)
+        .eq('status', 'active')
+        .gte('end_date', today)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setMembershipData(data[0]);
+      } else {
+        setMembershipData(null);
+        setUseMembership(false);
+      }
+    };
+
+    fetchMembership();
+  }, [bookingForm.customer_email]);
+
   // Reset useToken when guest count exceeds available tokens OR when switching to private session
   useEffect(() => {
     if (useToken && (bookingForm.guest_count > totalTokens || bookingForm.service_type === 'Private Session')) {
       setUseToken(false);
     }
   }, [bookingForm.guest_count, totalTokens, useToken, bookingForm.service_type]);
+
+  // Membership and token are mutually exclusive
+  useEffect(() => {
+    if (useMembership && useToken) {
+      setUseToken(false);
+    }
+  }, [useMembership]);
+
+  useEffect(() => {
+    if (useToken && useMembership) {
+      setUseMembership(false);
+    }
+  }, [useToken]);
+
+  // When membership is toggled on, lock to communal + 1 guest
+  useEffect(() => {
+    if (useMembership) {
+      setBookingForm(prev => ({
+        ...prev,
+        service_type: 'Communal Session',
+        booking_type: 'communal',
+        guest_count: 1,
+        payment_status: 'paid'
+      }));
+    }
+  }, [useMembership]);
 
   const createBookingMutation = useMutation({
     mutationFn: async (booking: any) => {
@@ -173,15 +231,17 @@ export function EnhancedCreateBookingDialog({
         discountNote = ` [Partner: ${selectedPartnerCode.company_name} - ${selectedPartnerCode.discount_percentage}% off]`;
       }
 
-      // Adjust payment if using tokens
+      // Adjust payment if using membership or tokens
       const finalBooking = {
         ...booking,
-        payment_status: useToken ? 'paid' : booking.payment_status,
-        discount_amount: useToken ? 0 : discountAmount,
-        final_amount: useToken ? 0 : finalAmount,
-        special_requests: useToken 
-          ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
-          : `${booking.special_requests || ''}${discountNote}`.trim(),
+        payment_status: (useToken || useMembership) ? 'paid' : booking.payment_status,
+        discount_amount: (useToken || useMembership) ? 0 : discountAmount,
+        final_amount: (useToken || useMembership) ? 0 : finalAmount,
+        special_requests: useMembership
+          ? `${booking.special_requests || ''} [Membership booking]`.trim()
+          : useToken 
+            ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
+            : `${booking.special_requests || ''}${discountNote}`.trim(),
       };
 
       const { data, error } = await supabase
@@ -244,6 +304,20 @@ export function EnhancedCreateBookingDialog({
         }
       }
 
+      // Decrement membership sessions if using membership
+      if (useMembership && membershipData) {
+        const isUnlimited = membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999;
+        if (!isUnlimited) {
+          await supabase
+            .from('memberships')
+            .update({
+              sessions_remaining: Math.max(0, (membershipData.sessions_remaining || 0) - 1),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', membershipData.id);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -251,9 +325,12 @@ export function EnhancedCreateBookingDialog({
       queryClient.invalidateQueries({ queryKey: ["daily-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["customer-tokens"] });
       queryClient.invalidateQueries({ queryKey: ["time-slots"] });
-      toast.success(useToken 
-        ? `Booking created using ${bookingForm.guest_count} token(s)`
-        : "Booking created successfully"
+      queryClient.invalidateQueries({ queryKey: ["memberships"] });
+      toast.success(useMembership
+        ? "Booking created using membership credit"
+        : useToken 
+          ? `Booking created using ${bookingForm.guest_count} token(s)`
+          : "Booking created successfully"
       );
       resetForm();
     },
@@ -295,6 +372,8 @@ export function EnhancedCreateBookingDialog({
     setAvailableTokens([]);
     setTotalTokens(0);
     setUseToken(false);
+    setUseMembership(false);
+    setMembershipData(null);
     setSelectedPartnerCode(null);
     setSelectedSlotInfo(null);
     setBookingForm({
@@ -483,6 +562,28 @@ export function EnhancedCreateBookingDialog({
               </Card>
             )}
 
+            {/* Show membership info if customer has active membership */}
+            {membershipData && (
+              <Card className="border-green-500/50 bg-green-50/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-green-600 text-white">
+                      <Crown className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Active Membership</p>
+                      <p className="text-sm text-muted-foreground">
+                        {membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999
+                          ? 'Unlimited sessions'
+                          : `${membershipData.sessions_remaining ?? 0} session(s) remaining`}
+                        {' • Can be used for booking in the next step'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Button onClick={() => setStep(3)} className="w-full">
               Continue to Booking Details
             </Button>
@@ -534,6 +635,63 @@ export function EnhancedCreateBookingDialog({
                 </CardContent>
               </Card>
             )}
+
+            {/* Membership Payment Option */}
+            {membershipData && bookingForm.service_type === 'Communal Session' && (
+              <Card className={cn(
+                "border-2 transition-colors",
+                useMembership ? "border-green-600 bg-green-50" : "border-dashed"
+              )}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-full",
+                        useMembership ? "bg-green-600 text-white" : "bg-muted"
+                      )}>
+                        <Crown className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Use Membership Credit</p>
+                        <p className="text-sm text-muted-foreground">
+                          {membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999
+                            ? 'Unlimited sessions available'
+                            : `${membershipData.sessions_remaining ?? 0} session(s) remaining`}
+                          {' • 1 guest only'}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={useMembership}
+                      onCheckedChange={setUseMembership}
+                      disabled={!membershipData.sessions_remaining && membershipData.membership_type !== 'unlimited' && membershipData.sessions_per_week !== 999}
+                    />
+                  </div>
+                  {!membershipData.sessions_remaining && membershipData.membership_type !== 'unlimited' && membershipData.sessions_per_week !== 999 && (
+                    <p className="text-sm text-destructive mt-2">
+                      No sessions remaining on this membership.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show message when membership available but private selected */}
+            {membershipData && bookingForm.service_type === 'Private Session' && (
+              <Card className="border-dashed border-muted-foreground/30">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <Crown className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Membership Credit Available</p>
+                      <p className="text-sm text-muted-foreground">Membership credits can only be used for communal sessions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Show message when tokens available but private selected */}
             {totalTokens > 0 && bookingForm.service_type === 'Private Session' && (
@@ -555,7 +713,7 @@ export function EnhancedCreateBookingDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="service_type">Service Type *</Label>
-                <Select value={bookingForm.service_type} onValueChange={(value) => setBookingForm({ ...bookingForm, service_type: value })}>
+                <Select value={bookingForm.service_type} onValueChange={(value) => setBookingForm({ ...bookingForm, service_type: value })} disabled={useMembership}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
@@ -666,12 +824,12 @@ export function EnhancedCreateBookingDialog({
                   value={bookingForm.guest_count}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 1;
-                    // Clamp value to available spaces for communal sessions
                     const maxSpaces = bookingForm.service_type === 'Communal Session' && selectedSlotInfo 
                       ? selectedSlotInfo.availableSpaces 
                       : 5;
                     setBookingForm({ ...bookingForm, guest_count: Math.min(value, maxSpaces) });
                   }}
+                  disabled={useMembership}
                 />
               </div>
             </div>
@@ -689,8 +847,9 @@ export function EnhancedCreateBookingDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="price_amount">
-                  Price (£) {useToken && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
-                  {selectedPartnerCode && !useToken && <Badge variant="outline" className="ml-2">{selectedPartnerCode.discount_percentage}% off</Badge>}
+                  Price (£) {useMembership && <Badge variant="secondary" className="ml-2">Membership</Badge>}
+                  {useToken && !useMembership && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
+                  {selectedPartnerCode && !useToken && !useMembership && <Badge variant="outline" className="ml-2">{selectedPartnerCode.discount_percentage}% off</Badge>}
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">£</span>
@@ -700,12 +859,15 @@ export function EnhancedCreateBookingDialog({
                     min="0"
                     value={bookingForm.price_amount === 0 ? '' : bookingForm.price_amount / 100}
                     onChange={(e) => setBookingForm({ ...bookingForm, price_amount: Math.round(parseFloat(e.target.value || '0') * 100) })}
-                    className={cn("pl-8", useToken && "opacity-50")}
-                    disabled={useToken}
+                    className={cn("pl-8", (useToken || useMembership) && "opacity-50")}
+                    disabled={useToken || useMembership}
                     placeholder="18"
                   />
                 </div>
-                {useToken && (
+                {useMembership && (
+                  <p className="text-xs text-muted-foreground">Price will be £0 (membership credit)</p>
+                )}
+                {useToken && !useMembership && (
                   <p className="text-xs text-muted-foreground">Price will be £0 (paid with tokens)</p>
                 )}
                 {selectedPartnerCode && !useToken && bookingForm.price_amount > 0 && (
@@ -718,7 +880,7 @@ export function EnhancedCreateBookingDialog({
             </div>
 
             {/* Partner Code Selection */}
-            {partnerCodes && partnerCodes.length > 0 && !useToken && (
+            {partnerCodes && partnerCodes.length > 0 && !useToken && !useMembership && (
               <div className="space-y-2">
                 <Label>Partner Company Discount</Label>
                 <Select 
@@ -774,7 +936,7 @@ export function EnhancedCreateBookingDialog({
                 onClick={handleCreateBooking}
                 disabled={createBookingMutation.isPending}
               >
-                {useToken ? `Create Booking (${bookingForm.guest_count} Token${bookingForm.guest_count > 1 ? 's' : ''})` : 'Create Booking'}
+                {useMembership ? 'Create Booking (Membership)' : useToken ? `Create Booking (${bookingForm.guest_count} Token${bookingForm.guest_count > 1 ? 's' : ''})` : 'Create Booking'}
               </Button>
             </div>
           </div>

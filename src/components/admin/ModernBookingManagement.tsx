@@ -478,7 +478,11 @@ export default function ModernBookingManagement() {
                       </div>
                       
                       <div>
-                        <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
+                        <p className="font-medium">
+                          {(booking.final_amount === 0 || booking.final_amount === null) && !booking.stripe_session_id
+                            ? '£0.00 (Membership)'
+                            : formatCurrency(booking.final_amount ?? booking.price_amount)}
+                        </p>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
                             {booking.payment_status || 'pending'}
@@ -486,6 +490,10 @@ export default function ModernBookingManagement() {
                           {booking.stripe_session_id ? (
                             <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                               Stripe
+                            </Badge>
+                          ) : (booking.final_amount === 0 || booking.final_amount === null) && !booking.stripe_session_id ? (
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              Membership
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
@@ -550,7 +558,11 @@ export default function ModernBookingManagement() {
                                     <p><strong>Service:</strong> {selectedBooking.service_type}</p>
                                     <p><strong>Date:</strong> {formatDate(selectedBooking.session_date)}</p>
                                     <p><strong>Time:</strong> {selectedBooking.session_time}</p>
-                                    <p><strong>Price:</strong> {formatCurrency(selectedBooking.price_amount)}</p>
+                                    <p><strong>Price:</strong> {
+                                      (selectedBooking.final_amount === 0 || selectedBooking.final_amount === null) && !selectedBooking.stripe_session_id
+                                        ? '£0.00 (Membership)'
+                                        : formatCurrency(selectedBooking.final_amount ?? selectedBooking.price_amount)
+                                    }</p>
                                   </div>
                                 </div>
                                 <div>

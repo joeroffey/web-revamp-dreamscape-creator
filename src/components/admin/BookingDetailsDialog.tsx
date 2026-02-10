@@ -30,6 +30,8 @@ interface BookingData {
   guest_count: number;
   payment_status: string;
   price_amount: number;
+  final_amount?: number | null;
+  stripe_session_id?: string;
   special_requests?: string;
   service_type: string;
   created_at?: string;
@@ -166,7 +168,11 @@ export const BookingDetailsDialog = ({
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</p>
+                  <p className="font-medium">
+                    {(booking.final_amount === 0 || booking.final_amount === null) && !booking.stripe_session_id
+                      ? '£0.00 (Membership)'
+                      : `£${((booking.final_amount ?? booking.price_amount) / 100).toFixed(2)}`}
+                  </p>
                 </div>
               </div>
             </div>
