@@ -824,12 +824,12 @@ export function EnhancedCreateBookingDialog({
                   value={bookingForm.guest_count}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 1;
-                    // Clamp value to available spaces for communal sessions
                     const maxSpaces = bookingForm.service_type === 'Communal Session' && selectedSlotInfo 
                       ? selectedSlotInfo.availableSpaces 
                       : 5;
                     setBookingForm({ ...bookingForm, guest_count: Math.min(value, maxSpaces) });
                   }}
+                  disabled={useMembership}
                 />
               </div>
             </div>
