@@ -169,8 +169,7 @@ serve(async (req) => {
                         <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
                           Swimwear<br>
                           Towel (or we have towels available)<br>
-                          Water bottle<br>
-                          Padlock for locker (optional)
+                          Water bottle
                         </p>
                       </div>
 
