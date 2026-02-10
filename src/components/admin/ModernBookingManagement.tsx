@@ -508,13 +508,15 @@ export default function ModernBookingManagement() {
                                     Manual
                                   </Badge>
                                 )}
-                          {booking.payment_status === 'pending' && booking.stripe_session_id && (
-                            <span className="text-xs text-yellow-600" title="Has Stripe session - may need verification">
-                              ⚠️
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                                {booking.payment_status === 'pending' && booking.stripe_session_id && (
+                                  <span className="text-xs text-yellow-600" title="Has Stripe session - may need verification">
+                                    ⚠️
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
                       
                       <div className="flex items-center justify-end gap-2 flex-wrap">
                         {/* Verify Payment Button for pending bookings with Stripe sessions */}
