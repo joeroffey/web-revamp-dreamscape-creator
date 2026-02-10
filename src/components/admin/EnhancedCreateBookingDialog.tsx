@@ -713,7 +713,7 @@ export function EnhancedCreateBookingDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="service_type">Service Type *</Label>
-                <Select value={bookingForm.service_type} onValueChange={(value) => setBookingForm({ ...bookingForm, service_type: value })}>
+                <Select value={bookingForm.service_type} onValueChange={(value) => setBookingForm({ ...bookingForm, service_type: value })} disabled={useMembership}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
