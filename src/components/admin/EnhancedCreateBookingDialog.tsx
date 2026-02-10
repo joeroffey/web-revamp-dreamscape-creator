@@ -231,15 +231,17 @@ export function EnhancedCreateBookingDialog({
         discountNote = ` [Partner: ${selectedPartnerCode.company_name} - ${selectedPartnerCode.discount_percentage}% off]`;
       }
 
-      // Adjust payment if using tokens
+      // Adjust payment if using membership or tokens
       const finalBooking = {
         ...booking,
-        payment_status: useToken ? 'paid' : booking.payment_status,
-        discount_amount: useToken ? 0 : discountAmount,
-        final_amount: useToken ? 0 : finalAmount,
-        special_requests: useToken 
-          ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
-          : `${booking.special_requests || ''}${discountNote}`.trim(),
+        payment_status: (useToken || useMembership) ? 'paid' : booking.payment_status,
+        discount_amount: (useToken || useMembership) ? 0 : discountAmount,
+        final_amount: (useToken || useMembership) ? 0 : finalAmount,
+        special_requests: useMembership
+          ? `${booking.special_requests || ''} [Membership booking]`.trim()
+          : useToken 
+            ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
+            : `${booking.special_requests || ''}${discountNote}`.trim(),
       };
 
       const { data, error } = await supabase
