@@ -486,46 +486,38 @@ export default function ModernBookingManagement() {
                         </div>
                       </div>
                       
-                      <div>
-                        {(() => {
-                          const isMembership = booking.special_requests?.includes('[Membership booking]') || 
-                            (booking.final_amount === 0 && booking.discount_amount > 0 && booking.price_amount > 0 && !booking.stripe_session_id);
-                          const isToken = booking.special_requests?.includes('[Paid with');
-                          return (
-                            <>
-                              <p className="font-medium">
-                                {isMembership ? '£0.00 (Membership)' : formatCurrency(booking.final_amount ?? booking.price_amount)}
-                              </p>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
-                                  {booking.payment_status || 'pending'}
-                                </Badge>
-                                {booking.stripe_session_id ? (
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    Stripe
-                                  </Badge>
-                                ) : isMembership ? (
-                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                    Membership
-                                  </Badge>
-                                ) : isToken ? (
-                                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                                    Token
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                                    Manual
-                                  </Badge>
-                                )}
-                                {booking.payment_status === 'pending' && booking.stripe_session_id && (
-                                  <span className="text-xs text-yellow-600" title="Has Stripe session - may need verification">
-                                    ⚠️
-                                  </span>
-                                )}
-                              </div>
-                            </>
-                          );
-                        })()}
+                       <div>
+                        <p className="font-medium">
+                          {isMembershipBooking(booking) ? '£0.00 (Membership)' : formatCurrency(booking.final_amount ?? booking.price_amount)}
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
+                            {booking.payment_status || 'pending'}
+                          </Badge>
+                          {booking.stripe_session_id ? (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              Stripe
+                            </Badge>
+                          ) : isMembershipBooking(booking) ? (
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              Membership
+                            </Badge>
+                          ) : isTokenBooking(booking) ? (
+                            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                              Token
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                              Manual
+                            </Badge>
+                          )}
+                          {booking.payment_status === 'pending' && booking.stripe_session_id && (
+                            <span className="text-xs text-yellow-600" title="Has Stripe session - may need verification">
+                              ⚠️
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       
                       <div className="flex items-center justify-end gap-2 flex-wrap">
                         {/* Verify Payment Button for pending bookings with Stripe sessions */}
