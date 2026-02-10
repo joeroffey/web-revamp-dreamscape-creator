@@ -304,6 +304,20 @@ export function EnhancedCreateBookingDialog({
         }
       }
 
+      // Decrement membership sessions if using membership
+      if (useMembership && membershipData) {
+        const isUnlimited = membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999;
+        if (!isUnlimited) {
+          await supabase
+            .from('memberships')
+            .update({
+              sessions_remaining: Math.max(0, (membershipData.sessions_remaining || 0) - 1),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', membershipData.id);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
