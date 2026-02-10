@@ -558,7 +558,11 @@ export default function ModernBookingManagement() {
                                     <p><strong>Service:</strong> {selectedBooking.service_type}</p>
                                     <p><strong>Date:</strong> {formatDate(selectedBooking.session_date)}</p>
                                     <p><strong>Time:</strong> {selectedBooking.session_time}</p>
-                                    <p><strong>Price:</strong> {formatCurrency(selectedBooking.price_amount)}</p>
+                                    <p><strong>Price:</strong> {
+                                      (selectedBooking.final_amount === 0 || selectedBooking.final_amount === null) && !selectedBooking.stripe_session_id
+                                        ? '£0.00 (Membership)'
+                                        : formatCurrency(selectedBooking.final_amount ?? selectedBooking.price_amount)
+                                    }</p>
                                   </div>
                                 </div>
                                 <div>
