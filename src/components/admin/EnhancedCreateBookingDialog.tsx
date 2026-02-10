@@ -880,7 +880,7 @@ export function EnhancedCreateBookingDialog({
             </div>
 
             {/* Partner Code Selection */}
-            {partnerCodes && partnerCodes.length > 0 && !useToken && (
+            {partnerCodes && partnerCodes.length > 0 && !useToken && !useMembership && (
               <div className="space-y-2">
                 <Label>Partner Company Discount</Label>
                 <Select 
