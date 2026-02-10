@@ -167,10 +167,10 @@ serve(async (req) => {
                       <div style="margin: 24px 0;">
                         <h3 style="font-size: 15px; color: #52331F; margin: 0 0 12px 0; font-weight: 600;">What to Bring</h3>
                         <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
-                          🩱 Swimwear<br>
-                          🧖 Towel (or we have towels available)<br>
-                          💧 Water bottle<br>
-                          🔒 Padlock for locker (optional)
+                          Swimwear<br>
+                          Towel (or we have towels available)<br>
+                          Water bottle<br>
+                          Padlock for locker (optional)
                         </p>
                       </div>
 
@@ -181,8 +181,7 @@ serve(async (req) => {
                       <div style="margin-bottom: 24px;">
                         <h3 style="font-size: 15px; color: #52331F; margin: 0 0 12px 0; font-weight: 600;">Find Us</h3>
                         <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
-                          📍 Unit 7, Ensign Yard, 670 Ampress Lane,<br>
-                          &nbsp;&nbsp;&nbsp;&nbsp; Lymington SO41 8QY
+                          📍 Unit 7, Ensign Yard, 670 Ampress Lane, Lymington SO41 8QY
                         </p>
                       </div>
 
@@ -218,7 +217,7 @@ serve(async (req) => {
     const emailResponse = await resend.emails.send({
       from: "Revitalise Hub <info@revitalisehub.co.uk>",
       to: [customerEmail],
-      subject: `✅ Booking Confirmed — ${formattedDate} at ${formattedTime}`,
+      subject: `Booking Confirmed — ${formattedDate} at ${formattedTime}`,
       html: emailHtml,
     });
 
