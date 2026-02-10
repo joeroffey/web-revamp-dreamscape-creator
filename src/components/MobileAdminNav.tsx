@@ -4,6 +4,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/components/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Menu,
   LayoutDashboard, 
@@ -25,6 +27,19 @@ export const MobileAdminNav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { signOut } = useAuth();
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unread-messages-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('contact_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new');
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 30000,
+  });
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -91,7 +106,14 @@ export const MobileAdminNav = () => {
                     }`}
                     onClick={closeSheet}
                   >
-                    <Icon className="h-5 w-5" />
+                    <div className="relative">
+                      <Icon className="h-5 w-5" />
+                      {item.href === '/admin/messages' && unreadCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </div>
                     <span>{item.label}</span>
                   </Link>
                 );
