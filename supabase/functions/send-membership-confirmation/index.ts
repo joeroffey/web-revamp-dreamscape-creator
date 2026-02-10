@@ -191,8 +191,7 @@ serve(async (req) => {
                       <div style="margin-bottom: 24px;">
                         <h3 style="font-size: 15px; color: #52331F; margin: 0 0 12px 0; font-weight: 600;">Find Us</h3>
                         <p style="font-size: 14px; color: #52331F; line-height: 1.7; margin: 0;">
-                          📍 Unit 7, Ensign Yard, 670 Ampress Lane,<br>
-                          &nbsp;&nbsp;&nbsp;&nbsp; Lymington SO41 8QY
+                          📍 Unit 7, Ensign Yard, 670 Ampress Lane, Lymington SO41 8QY
                         </p>
                       </div>
 
