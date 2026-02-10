@@ -847,8 +847,9 @@ export function EnhancedCreateBookingDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="price_amount">
-                  Price (£) {useToken && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
-                  {selectedPartnerCode && !useToken && <Badge variant="outline" className="ml-2">{selectedPartnerCode.discount_percentage}% off</Badge>}
+                  Price (£) {useMembership && <Badge variant="secondary" className="ml-2">Membership</Badge>}
+                  {useToken && !useMembership && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
+                  {selectedPartnerCode && !useToken && !useMembership && <Badge variant="outline" className="ml-2">{selectedPartnerCode.discount_percentage}% off</Badge>}
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">£</span>
