@@ -1,81 +1,52 @@
 
 
-# Contact Messages System
+# Membership Booking Improvements
 
-## What This Does
-When someone fills out the contact form on your website, three things will happen:
-1. **You get an email** at info@revitalisehub.co.uk with their message
-2. **The message is saved** to a new "Messages" section in your admin panel
-3. **You can reply directly from admin** -- the reply is sent as a branded email using your logo, colours, and contact details
+## What Changes
 
----
+### 1. Price display for membership bookings
+Membership bookings (where `final_amount` is 0 and the booking was made via membership) will show **"£0.00 (Membership)"** instead of the misleading "£18.00" in the admin schedule and booking views. The system already stores `final_amount = 0` for membership bookings -- the display just needs to use `final_amount` instead of `price_amount`.
 
-## How It Works
+### 2. New "Membership" tag replacing "Manual"
+Currently, bookings without a `stripe_session_id` show a "Manual" badge. Membership bookings (identifiable by `final_amount = 0` with no `stripe_session_id`) will instead show a **green "Membership"** badge. The logic will be:
+- Has `stripe_session_id` --> "Stripe" (blue badge)
+- `final_amount === 0` and no `stripe_session_id` --> "Membership" (green badge)
+- No `stripe_session_id` and `final_amount > 0` or standard manual --> "Manual" (amber badge)
 
-1. **New database table** -- `contact_messages` stores every submission (name, email, phone, message, read/replied status, and any admin reply)
-
-2. **New edge function: `send-contact-notification`** -- When someone submits the contact form, this function:
-   - Saves the message to the database
-   - Sends a notification email to info@revitalisehub.co.uk with the customer's details
-
-3. **New edge function: `send-contact-reply`** -- When an admin replies from the admin panel, this function sends a branded email to the customer using the same template style as your booking/membership confirmations (logo, colours, footer with address). The admin's reply text preserves paragraph formatting.
-
-4. **Updated contact form** -- The form will call the new edge function instead of simulating a submission
-
-5. **New admin page: `/admin/messages`** -- Shows all contact messages in a list with:
-   - Unread/read indicators
-   - Customer name, email, date
-   - Click to view full message
-   - Reply button that opens a text area to compose a response
-   - Status badges (New, Read, Replied)
-
-6. **Admin navigation updated** -- A "Messages" link added to both desktop and mobile admin nav
+### 3. Admin can book using a customer's membership credits
+The `EnhancedCreateBookingDialog` will be updated to:
+- Check if the selected customer has an active membership (query `memberships` table by email)
+- If they do, show a "Use Membership Credit" option (similar to the existing token toggle)
+- Display sessions remaining
+- When toggled on: set `final_amount = 0`, `payment_status = 'paid'`, guest count locked to 1, service type locked to communal
+- On submit: decrement `sessions_remaining` on the membership record
 
 ---
 
 ## Technical Details
 
-### Database Migration
-```sql
-CREATE TABLE public.contact_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  phone TEXT,
-  message TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'new',  -- new, read, replied
-  admin_reply TEXT,
-  replied_at TIMESTAMPTZ,
-  replied_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+### Files to modify
 
--- RLS: only admins can read/write
-ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
+**`src/components/admin/DailyScheduleView.tsx`**
+- Line 209: Change price display from `price_amount` to use `final_amount` when available (show "£0.00 (Membership)" for membership bookings)
+- Lines 179-187: Add "Membership" badge logic -- if `final_amount === 0` and no `stripe_session_id`, show green "Membership" badge instead of amber "Manual"
 
-CREATE POLICY "Admins can manage contact messages"
-  ON public.contact_messages FOR ALL
-  USING (public.is_admin(auth.uid()));
+**`src/components/admin/ModernBookingManagement.tsx`**
+- Same badge logic update (around line 490)
+- Revenue calculations should use `final_amount` where available
 
--- Update trigger
-CREATE TRIGGER update_contact_messages_updated_at
-  BEFORE UPDATE ON public.contact_messages
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-```
+**`src/components/admin/BookingDetailsDialog.tsx`**
+- Update price display to show `final_amount` and indicate membership usage
 
-### Edge Functions
-- **`send-contact-notification`** -- Receives form data, inserts into `contact_messages`, emails info@revitalisehub.co.uk
-- **`send-contact-reply`** -- Receives message ID + reply text, updates the record, sends branded email to customer (converts newlines to `<p>` tags for proper paragraph formatting)
-
-### Files to Create
-- `supabase/functions/send-contact-notification/index.ts`
-- `supabase/functions/send-contact-reply/index.ts`
-- `src/components/admin/ModernMessageManagement.tsx` -- admin messages page
-
-### Files to Modify
-- `src/components/ContactSection.tsx` -- call the edge function instead of simulating
-- `src/App.tsx` -- add `/admin/messages` route
-- `src/components/AdminNavigation.tsx` -- add Messages nav item
-- `src/components/MobileAdminNav.tsx` -- add Messages nav item
+**`src/components/admin/EnhancedCreateBookingDialog.tsx`**
+- Add membership lookup query (by `customer_email`, status `active`, `end_date >= today`)
+- Add state for `useMembership` toggle and membership data
+- Show "Use Membership Credit" card (similar to token card) with sessions remaining count
+- When membership toggle is on:
+  - Lock service type to "Communal Session"
+  - Lock guest count to 1
+  - Set `final_amount = 0`, `payment_status = 'paid'`
+  - Add `[Membership booking]` to special_requests
+- On successful booking: decrement `sessions_remaining` on the membership record
+- Membership option should be mutually exclusive with token payment
 
