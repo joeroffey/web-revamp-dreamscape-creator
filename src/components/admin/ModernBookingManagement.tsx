@@ -156,6 +156,15 @@ export default function ModernBookingManagement() {
 
   const formatCurrency = formatGBP;
 
+  const isMembershipBooking = (booking: Booking) => {
+    return booking.special_requests?.includes('[Membership booking]') || 
+      (booking.final_amount === 0 && booking.discount_amount > 0 && booking.price_amount > 0 && !booking.stripe_session_id);
+  };
+
+  const isTokenBooking = (booking: Booking) => {
+    return booking.special_requests?.includes('[Paid with');
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
   };
@@ -477,11 +486,9 @@ export default function ModernBookingManagement() {
                         </div>
                       </div>
                       
-                      <div>
+                       <div>
                         <p className="font-medium">
-                          {booking.special_requests?.includes('[Membership booking]')
-                            ? '£0.00 (Membership)'
-                            : formatCurrency(booking.final_amount ?? booking.price_amount)}
+                          {isMembershipBooking(booking) ? '£0.00 (Membership)' : formatCurrency(booking.final_amount ?? booking.price_amount)}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
@@ -491,11 +498,11 @@ export default function ModernBookingManagement() {
                             <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                               Stripe
                             </Badge>
-                          ) : booking.special_requests?.includes('[Membership booking]') ? (
+                          ) : isMembershipBooking(booking) ? (
                             <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                               Membership
                             </Badge>
-                          ) : booking.special_requests?.includes('[Paid with') ? (
+                          ) : isTokenBooking(booking) ? (
                             <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
                               Token
                             </Badge>
