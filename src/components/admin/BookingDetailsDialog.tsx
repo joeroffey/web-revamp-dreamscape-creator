@@ -170,7 +170,7 @@ export const BookingDetailsDialog = ({
                   <p className="text-sm text-muted-foreground">Price</p>
                   <p className="font-medium">
                     {booking.special_requests?.includes('[Membership booking]')
-                      ? '£0.00 (Membership)'
+                      ? 'Membership'
                       : `£${((booking.final_amount ?? booking.price_amount) / 100).toFixed(2)}`}
                   </p>
                 </div>
