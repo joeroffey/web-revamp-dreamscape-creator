@@ -487,7 +487,7 @@ export default function ModernBookingManagement() {
                       
                        <div>
                         <p className="font-medium">
-                          {isMembershipBooking(booking) ? '£0.00 (Membership)' : formatCurrency(booking.final_amount ?? booking.price_amount)}
+                          {isMembershipBooking(booking) ? 'Membership' : formatCurrency(booking.final_amount ?? booking.price_amount)}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className={`text-xs ${getPaymentStatusColor(booking.payment_status)}`}>
