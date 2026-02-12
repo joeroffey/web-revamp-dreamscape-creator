@@ -320,7 +320,7 @@ export function EnhancedCreateBookingDialog({
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["daily-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["customer-tokens"] });
@@ -332,6 +332,20 @@ export function EnhancedCreateBookingDialog({
           ? `Booking created using ${bookingForm.guest_count} token(s)`
           : "Booking created successfully"
       );
+
+      // Send confirmation email to the customer
+      if (data?.id) {
+        supabase.functions.invoke('send-booking-confirmation', {
+          body: { bookingId: data.id }
+        }).then(({ error }) => {
+          if (error) {
+            console.error("Failed to send confirmation email:", error);
+          } else {
+            console.log("Confirmation email sent for booking:", data.id);
+          }
+        });
+      }
+
       resetForm();
     },
     onError: (error) => {
