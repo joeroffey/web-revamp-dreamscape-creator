@@ -830,21 +830,34 @@ export function EnhancedCreateBookingDialog({
                     </span>
                   )}
                 </Label>
-                <Input
-                  id="guest_count"
-                  type="number"
-                  min="1"
-                  max={bookingForm.service_type === 'Communal Session' && selectedSlotInfo ? selectedSlotInfo.availableSpaces : undefined}
-                  value={bookingForm.guest_count}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 1;
-                    const maxSpaces = bookingForm.service_type === 'Communal Session' && selectedSlotInfo 
-                      ? selectedSlotInfo.availableSpaces 
-                      : 5;
-                    setBookingForm({ ...bookingForm, guest_count: Math.min(value, maxSpaces) });
-                  }}
-                  disabled={useMembership}
-                />
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    disabled={useMembership || bookingForm.guest_count <= 1}
+                    onClick={() => setBookingForm({ ...bookingForm, guest_count: Math.max(1, bookingForm.guest_count - 1) })}
+                  >
+                    <span className="text-lg font-medium">−</span>
+                  </Button>
+                  <span className="text-xl font-semibold w-8 text-center">{bookingForm.guest_count}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    disabled={useMembership || bookingForm.guest_count >= (bookingForm.service_type === 'Communal Session' && selectedSlotInfo ? selectedSlotInfo.availableSpaces : 5)}
+                    onClick={() => {
+                      const maxSpaces = bookingForm.service_type === 'Communal Session' && selectedSlotInfo
+                        ? selectedSlotInfo.availableSpaces
+                        : 5;
+                      setBookingForm({ ...bookingForm, guest_count: Math.min(bookingForm.guest_count + 1, maxSpaces) });
+                    }}
+                  >
+                    <span className="text-lg font-medium">+</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
