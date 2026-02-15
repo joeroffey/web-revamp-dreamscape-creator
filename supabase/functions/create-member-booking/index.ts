@@ -160,6 +160,27 @@ serve(async (req) => {
         .eq('id', membership.id);
     }
 
+    // Send booking confirmation email
+    if (booking?.id) {
+      try {
+        const emailRes = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-booking-confirmation`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+            },
+            body: JSON.stringify({ bookingId: booking.id })
+          }
+        );
+        if (!emailRes.ok) console.error("Failed to send booking confirmation email:", await emailRes.text());
+        else console.log("Membership booking confirmation email sent");
+      } catch (emailErr) {
+        console.error("Error sending booking confirmation email:", emailErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
