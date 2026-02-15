@@ -55,7 +55,7 @@ serve(async (req) => {
     const amountInPounds = (giftCard.amount / 100).toFixed(2);
     
     // Create redemption URL with gift code
-    const baseUrl = Deno.env.get("SITE_URL") || "https://id-preview--43cef0a9-9833-4433-9a09-ceddae85b529.lovable.app";
+    const baseUrl = "https://www.revitalisehub.co.uk";
     const redeemUrl = `${baseUrl}/redeem-gift-card?code=${giftCard.gift_code}`;
 
     // Build email content
