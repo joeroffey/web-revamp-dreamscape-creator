@@ -36,12 +36,18 @@ const BookingSuccess = () => {
       try {
         const { data, error } = await supabase
           .from("bookings")
-          .select("customer_name, customer_email, session_date, session_time, service_type, booking_type, guest_count, duration_minutes, price_amount, final_amount, discount_amount")
+          .select("id, customer_name, customer_email, session_date, session_time, service_type, booking_type, guest_count, duration_minutes, price_amount, final_amount, discount_amount")
           .eq("stripe_session_id", sessionId)
           .maybeSingle();
 
         if (!error && data) {
           setBooking(data);
+          // Send confirmation email as fallback (idempotent — Resend deduplicates)
+          if (data.id) {
+            supabase.functions.invoke('send-booking-confirmation', {
+              body: { bookingId: data.id }
+            }).catch(err => console.error("Email send error:", err));
+          }
         }
       } catch (err) {
         console.error("Error fetching booking:", err);
