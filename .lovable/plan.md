@@ -1,13 +1,50 @@
 
+## SEO Optimisation: Sitemap, Meta Tags, and robots.txt
 
-## Remove "lovable-uploads" from Favicon Path
+### 1. Create `public/sitemap.xml`
 
-The favicon on line 9 of `index.html` currently points to `/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png`, which exposes "lovable" in the page source.
+A static sitemap listing all public-facing pages with your production domain. Only indexable pages will be included (no admin, auth, success, or utility pages).
 
-### Fix
+Pages to include:
+- `/` (Home) -- priority 1.0
+- `/about` -- priority 0.8
+- `/booking` -- priority 0.9
+- `/memberships` -- priority 0.8
+- `/gift-cards` -- priority 0.7
+- `/events` -- priority 0.7
+- `/blog` -- priority 0.7
+- `/fitness-recovery` -- priority 0.7
+- `/your-visit` -- priority 0.7
+- `/our-hub` -- priority 0.6
+- `/contact` -- priority 0.6
+- `/privacy-policy` -- priority 0.3
+- `/terms-conditions` -- priority 0.3
+- `/cookie-policy` -- priority 0.3
+- `/redeem-gift-card` -- priority 0.4
 
-1. **Copy the favicon image** from `public/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png` to `public/favicon.png`
-2. **Update `index.html`** to reference `/favicon.png` instead of the lovable-uploads path
+Pages excluded (not for search engines): `/auth`, `/dashboard`, `/reset-password`, `/booking-success`, `/membership-success`, `/gift-card-success`, `/intro-offer-success`, all `/admin/*` routes.
 
-This is the only remaining Lovable reference visible in the deployed page source. The `lovable-uploads` folder itself stays (it holds all your uploaded images used throughout the site), but no public-facing HTML will reference it by name since browsers don't expose image paths from React components in view-source.
+### 2. Update `public/robots.txt`
 
+- Add `Sitemap: https://www.revitalisehub.co.uk/sitemap.xml`
+- Add `Disallow` rules for admin, auth, dashboard, and success pages so crawlers skip them
+- Simplify to a single `User-agent: *` block
+
+### 3. Enhance `index.html` meta tags
+
+- Update `<title>` to: `Revitalise Hub | Cold Water & Contrast Therapy | Lymington`
+- Update `meta description` to a keyword-rich description
+- Add `og:url` and `og:site_name` meta tags
+- Add canonical link tag
+- Add `twitter:card` meta tag (without any third-party references)
+
+### 4. Add per-page `<title>` and meta descriptions
+
+Install `react-helmet-async` and add unique titles and descriptions to key pages so each page has its own SEO-friendly metadata rather than sharing the generic one from `index.html`. Pages to update:
+- Home, About, Booking, Memberships, Gift Cards, Events, Blog, Fitness Recovery, Your Visit, Our Hub, Contact, Privacy Policy, Terms, Cookie Policy
+
+### Technical Details
+
+- `sitemap.xml` will use the standard XML sitemap protocol with `lastmod` dates and `changefreq` values
+- `react-helmet-async` will wrap the app in a `HelmetProvider` and each page will use `<Helmet>` to set page-specific titles and meta descriptions
+- No references to Lovable anywhere in any of these changes
