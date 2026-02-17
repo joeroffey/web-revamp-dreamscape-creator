@@ -358,9 +358,17 @@ const YourVisit = () => {
               <p className="text-muted-foreground font-light mb-4">
                 Ready to relax, recover, and reset?
               </p>
-              <Link to="/booking">
-                <Button className="rounded-full px-8">Book Your Visit</Button>
-              </Link>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link to="/booking">
+                  <Button className="rounded-full px-8">Book Your Visit</Button>
+                </Link>
+                <Link to="/memberships">
+                  <Button variant="outline" className="rounded-full px-8">View Memberships</Button>
+                </Link>
+                <Link to="/our-hub">
+                  <Button variant="ghost" className="rounded-full px-8">Explore Our Hub</Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

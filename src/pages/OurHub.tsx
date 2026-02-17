@@ -140,25 +140,39 @@ const OurHub = () => {
         </section>
 
 
-        {/* Features Section */}
+        {/* Internal Links Section */}
         <section className="py-16 bg-gallery">
-          <div className="max-w-4xl mx-auto px-6">
-            <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
-              What Makes Us Special
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-light text-center mb-10">
+              Explore More
             </h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              {features.map((feature, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                  <span className="text-muted-foreground">{feature}</span>
-                </div>
-              ))}
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <Card className="wellness-card text-center">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Your First Visit</h3>
+                  <p className="text-muted-foreground text-sm mb-4">What to expect, what to bring, and how your session works.</p>
+                  <a href="/your-visit" className="text-primary font-medium text-sm hover:underline">Read the guide →</a>
+                </CardContent>
+              </Card>
+              <Card className="wellness-card text-center">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Membership Plans</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Regular visitor? Save with our weekly membership options.</p>
+                  <a href="/memberships" className="text-primary font-medium text-sm hover:underline">View memberships →</a>
+                </CardContent>
+              </Card>
+              <Card className="wellness-card text-center">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Upcoming Events</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Breathwork, yoga, and guided contrast therapy experiences.</p>
+                  <a href="/events" className="text-primary font-medium text-sm hover:underline">See events →</a>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
 
-        {/* Contact Section */}
+        {/* Contact CTA Section */}
         <section className="py-16">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-light mb-6">

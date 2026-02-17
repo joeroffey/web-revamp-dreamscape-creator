@@ -265,6 +265,22 @@ export const AboutSection = () => {
               <p>
                 Our facility will feature two ice baths and an eight-person sauna, allowing us to accommodate up to five customers per hour for personalised and impactful sessions.
               </p>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button 
+                  className="rounded-full px-6"
+                  onClick={() => navigate('/booking')}
+                >
+                  Book a Session
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="rounded-full px-6"
+                  onClick={() => navigate('/your-visit')}
+                >
+                  Plan Your Visit
+                </Button>
+              </div>
             </div>
           </div>
         </div>

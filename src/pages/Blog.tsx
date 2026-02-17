@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -114,6 +115,20 @@ const Blog = () => {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Internal Links CTA */}
+            <div className="mt-16 p-8 bg-muted/30 rounded-2xl text-center max-w-4xl mx-auto">
+              <h3 className="text-xl font-light mb-3">Ready to experience contrast therapy?</h3>
+              <p className="text-muted-foreground mb-6">Discover the benefits first-hand at Revitalise Hub, Lymington.</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link to="/booking" className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5 rounded-full text-sm font-medium transition-colors">
+                  Book a Session
+                </Link>
+                <Link to="/your-visit" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2.5 rounded-full text-sm font-medium transition-colors">
+                  Plan Your Visit
+                </Link>
+              </div>
             </div>
           </div>
         </section>
