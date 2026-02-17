@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,7 @@ const FitnessRecovery = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Fitness & Recovery" description="Our 8-week Fitness and Recovery coaching package. Expert-guided training with contrast therapy sessions at Revitalise Hub, Lymington." path="/fitness-recovery" />
       <Navigation />
       
       <main className="pt-20">

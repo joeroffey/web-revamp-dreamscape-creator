@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -30,6 +31,7 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Blog" description="Read the latest insights on cold water therapy, contrast therapy, recovery science and wellness from the Revitalise Hub team." path="/blog" />
       <Navigation />
       
       <main className="pt-32 pb-20">

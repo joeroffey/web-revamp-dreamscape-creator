@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -62,6 +63,7 @@ const Events = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Events" description="Discover upcoming wellness events at Revitalise Hub, Lymington. Breathwork, yoga, workshops and community gatherings." path="/events" />
       <Navigation />
       
       <main className="pt-32 pb-20">

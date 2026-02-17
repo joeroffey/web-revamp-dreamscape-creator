@@ -1,9 +1,11 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 const CookiePolicy = () => {
   return (
     <div className="min-h-screen">
+      <SEOHead title="Cookie Policy" description="Revitalise Hub cookie policy. Understand how we use cookies and similar technologies on our website." path="/cookie-policy" />
       <Navigation />
       <main className="py-24 px-6">
         <div className="max-w-4xl mx-auto">

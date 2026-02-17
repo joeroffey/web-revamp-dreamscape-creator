@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -103,6 +104,7 @@ const YourVisit = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Your Visit" description="Everything you need to know before visiting Revitalise Hub. What to bring, session guide, and tips for your contrast therapy experience." path="/your-visit" />
       <Navigation />
 
       <main className="pt-20">
