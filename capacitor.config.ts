@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.43cef0a9983344339a09ceddae85b529',
-  appName: 'web-revamp-dreamscape-creator',
+  appId: 'co.uk.revitalisehub.app',
+  appName: 'Revitalise Hub',
   webDir: 'dist',
   server: {
-    url: 'https://43cef0a9-9833-4433-9a09-ceddae85b529.lovableproject.com?forceHideBadge=true',
+    url: 'https://www.revitalisehub.co.uk',
     cleartext: true
   },
   plugins: {

@@ -135,7 +135,7 @@ export const AboutSection = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{
-            backgroundImage: `url('/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
+            backgroundImage: `url('/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/70 to-black/85" />
@@ -236,7 +236,7 @@ export const AboutSection = () => {
           {/* Image */}
           <div className="rounded-2xl overflow-hidden shadow-lg">
             <img
-              src="/lovable-uploads/founders-lewis-tommy.png"
+              src="/images/founders-lewis-tommy.png"
               alt="Lewis and Tommy, founders of Revitalise Hub"
               className="w-full h-auto object-cover"
               loading="lazy"

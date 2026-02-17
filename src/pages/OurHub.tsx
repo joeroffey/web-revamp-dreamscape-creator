@@ -10,25 +10,25 @@ const OurHub = () => {
       title: "Ice Baths",
       description: "State-of-the-art cold immersion tanks maintained at optimal temperatures for maximum therapeutic benefit.",
       icon: Snowflake,
-      image: "/lovable-uploads/e66be255-48c0-42a2-92bb-1f189a14976d.png"
+      image: "/images/e66be255-48c0-42a2-92bb-1f189a14976d.png"
     },
     {
       title: "Traditional Saunas", 
       description: "Premium traditional sauna pods designed for deep heat therapy and complete relaxation.",
       icon: Thermometer,
-      image: "/lovable-uploads/8e9e8578-24af-421e-9d1c-3b71d4e13523.png"
+      image: "/images/8e9e8578-24af-421e-9d1c-3b71d4e13523.png"
     },
     {
       title: "Recovery Lounge",
       description: "Comfortable relaxation area for post-session recovery with refreshments and amenities.",
       icon: Users,
-      image: "/lovable-uploads/0f10c721-e834-4cf4-9182-2bd24811ad45.png"
+      image: "/images/0f10c721-e834-4cf4-9182-2bd24811ad45.png"
     },
     {
       title: "EIRA Therapy Equipment",
       description: "Professional-grade therapy equipment including our signature ice baths for optimal recovery.",
       icon: Waves,
-      image: "/lovable-uploads/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
+      image: "/images/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
     }
   ];
 

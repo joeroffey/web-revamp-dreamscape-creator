@@ -37,7 +37,7 @@ export const LocalBusinessSchema = () => {
       }
     ],
     "priceRange": "££",
-    "image": "https://www.revitalisehub.co.uk/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png",
+    "image": "https://www.revitalisehub.co.uk/images/7213f936-2c10-4a80-a628-96054c5c6507.png",
     "sameAs": [
       "https://www.instagram.com/revitalise.hub",
       "https://www.facebook.com/share/1Ak6ZqBrd1/"

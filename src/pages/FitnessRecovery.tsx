@@ -25,7 +25,7 @@ const coaches: Coach[] = [
     title: "Hypertrophy Specialist",
     specialties: ["Hypertrophy Training", "Muscle Building", "Mindset Coaching"],
     bio: "I'm Harrison, a dedicated online fitness coach based in Southampton who has built my reputation on unwavering honesty and genuine care for my clients' success. Specialising in hypertrophy training, I understand that building muscle requires more than just lifting weights—it demands a comprehensive approach addressing mindset, consistency, and realistic goal-setting. What sets me apart is my commitment to telling clients exactly what they need to hear, not what they want to hear.\n\nAt the core of my coaching philosophy is the belief that transformation goes far beyond physical changes. Rather than simply providing cookie-cutter meal plans and training programmes, I invest in building deep, meaningful relationships with each client. I focus on helping clients become the best version of themselves, understanding that lasting change comes from addressing the whole person. This personalised approach creates a supportive environment where clients feel genuinely understood and empowered on their fitness journey.",
-    images: ["/lovable-uploads/3f5b3af8-dcde-4341-b68a-caf6ed772c1e.png", "/lovable-uploads/4dfd9a96-05b7-459b-b777-9c96aec3003f.png"]
+    images: ["/images/3f5b3af8-dcde-4341-b68a-caf6ed772c1e.png", "/images/4dfd9a96-05b7-459b-b777-9c96aec3003f.png"]
   },
   {
     id: "emily",
@@ -33,7 +33,7 @@ const coaches: Coach[] = [
     title: "Women's Fitness & Pre/Postnatal Specialist",
     specialties: ["Women's Fitness", "Pre/Postnatal Training", "Nutrition Education"],
     bio: "I'm Emily, an experienced personal trainer turned online coach, passionate about helping women at every stage of life feel strong, confident, and happy in their own bodies and minds.\n\nWith over 5 years of in-person coaching and a specialist qualification in pre and postnatal training, I bring both expertise and empathy to every client journey. I don't believe in diets, instead, I educate my clients on how to fuel their bodies, unlearn toxic food rules, and build a healthy relationship with nutrition that lasts for life.\n\nEvery plan is designed to fit around your lifestyle, so you can still enjoy social events, holidays, and your favourite foods without guilt. Whether you're returning to fitness, chasing a glow-up, or just want to love what you see in the mirror, my coaching combines structure, flexibility, and empowerment so you whatever your goal, you'll be set up for success.",
-    images: ["/lovable-uploads/e5bb958f-0a62-45ad-8c9c-dcefc4f82e50.png", "/lovable-uploads/f428a21e-0a4a-4154-ac78-9e17d4a46904.png"]
+    images: ["/images/e5bb958f-0a62-45ad-8c9c-dcefc4f82e50.png", "/images/f428a21e-0a4a-4154-ac78-9e17d4a46904.png"]
   },
   {
     id: "ross",
@@ -41,7 +41,7 @@ const coaches: Coach[] = [
     title: "Functional Fitness Trainer & Official Hyrox Coach",
     specialties: ["Functional Fitness", "Hyrox Training", "Recovery Methods", "Yoga & Mobility"],
     bio: "As the head coach at Hyrox Training Club Christchurch & a background in swimming and triathlon, Ross brings a functional fitness approach to training.\n\n\"Being a Dad with a 6 month old can make it tricky but I squeeze in quality workouts as and when I can. For me it's always about having a specific intention with each session - training smarter and harder is the only way to hit your goals in this day and age where we are ALL busy.\"\n\n\"Getting a good night's sleep is not always a guarantee for me so that's exactly why I put so much emphasis on recovery methods like contrast therapy. It's literally the best recovery hack and if you're not doing it then you're missing a trick!\"\n\nRoss has a few strings to his bow including a holistic health, lifestyle & nutrition certification, and is also working towards his L4 strength and conditioning qualification… oh and he is also a qualified yoga teacher and animal flow instructor should you be lacking in the flexibility & mobility department.\n\nIf you're looking for a holistic & hybrid approach to training then look no further. Ross is your man.",
-    images: ["/lovable-uploads/05b15c5b-db98-4def-88f6-429bf8dbba01.png", "/lovable-uploads/48eb7f4e-7e37-4f1e-8be2-5307d912b288.png"]
+    images: ["/images/05b15c5b-db98-4def-88f6-429bf8dbba01.png", "/images/48eb7f4e-7e37-4f1e-8be2-5307d912b288.png"]
   },
   {
     id: "amy",
@@ -49,7 +49,7 @@ const coaches: Coach[] = [
     title: "Holistic Coach & Mindset Specialist",
     specialties: ["Holistic Coaching", "Mindset Training", "Chronic Illness Support", "Fat Loss"],
     bio: "Hello All, My name is Amy and own AGPT Coaching. I'm a holistic coach with a personal, adaptable approach, supporting hundreds of clients across all walks of life to create real, lasting change in body, mind, and self belief.\n\nSince launching my coaching business in 2018, I've helped women and men achieve powerful physical results, but the heart of what I do goes deeper than just workouts and calories.\n\nMy focus? Mindset first. Always.\nWhat the mind believes the body achieves. Together, we shift the way you think, feel, and speak to yourself so your goals aren't just achieved… they're sustained.\n\nEvery journey is unique and so is your plan. Whether your goal is fat loss, strength, energy, confidence, chronic illness control or simply feeling like you again, I'll meet you where you are. You'll never be given a generic plan. This is coaching that listens. That adapts. That supports the whole of you.\n\nMy promise? You will feel Fully supported, Fully seen, Fully capable, even when life gets a little messy.\n\nIf you're ready to stop starting over, and want coaching that changes more than just your body. let's go. Your next chapter starts here.",
-    images: ["/lovable-uploads/fe479004-3f98-4313-8139-cd56fc0fc351.png", "/lovable-uploads/08e4b0dd-5745-49a2-b9e4-49bb9ddfee94.png"]
+    images: ["/images/fe479004-3f98-4313-8139-cd56fc0fc351.png", "/images/08e4b0dd-5745-49a2-b9e4-49bb9ddfee94.png"]
   }
 ];
 
@@ -78,7 +78,7 @@ const FitnessRecovery = () => {
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
-              src="/lovable-uploads/c6e090ae-1284-4412-996c-21d0b99ffa2c.png" 
+              src="/images/c6e090ae-1284-4412-996c-21d0b99ffa2c.png" 
               alt="Our Expert Coaching Team"
               className="w-full h-full object-cover opacity-60"
             />

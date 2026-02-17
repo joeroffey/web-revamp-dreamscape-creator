@@ -171,7 +171,7 @@ const Auth = () => {
           loop 
           playsInline
           className="w-full h-full object-cover"
-          poster="/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
+          poster="/images/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png"
         >
           <source 
             src="https://ismifvjzvvylehmdmdrz.supabase.co/storage/v1/object/public/data101/video.mp4" 
