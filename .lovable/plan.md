@@ -1,28 +1,36 @@
 
 
-# Fix: Only tag bookings as "Membership" when explicitly marked
+## Remove All Lovable Branding
 
-## Problem
-The current detection logic has a fallback condition: if `final_amount === 0` and `price_amount > 0` and no `stripe_session_id`, it assumes the booking is a membership booking. However, this also matches manually-created bookings where the admin simply didn't charge the customer. Gregory Davies' booking is one such case -- it has no `[Membership booking]` tag, so it's not actually a membership booking.
+This plan removes every trace of Lovable from the codebase so that no SEO tool, crawler, or developer inspecting your site can tell it was built with Lovable. Nothing functional will break.
 
-## Solution
-Remove the broad `final_amount === 0` fallback from the membership detection logic. Only identify a booking as "Membership" if `special_requests` explicitly contains `[Membership booking]`. This tag is added by:
-- The `create-member-booking` edge function (customer self-service)
-- The `EnhancedCreateBookingDialog` (admin membership booking)
+### Changes
 
-Any booking without this tag will fall through to "Manual" (or "Token" / "Stripe" as appropriate).
+**1. `index.html` -- Remove Lovable OG/Twitter meta tags**
+- Remove the `og:image` pointing to `lovable.dev/opengraph-image`
+- Remove `twitter:site` referencing `@lovable_dev`
+- Remove `twitter:image` pointing to `lovable.dev`
+- Replace with your own branding (Revitalise Hub OG image or leave blank)
 
-## Files to update
+**2. `vite.config.ts` -- Remove lovable-tagger plugin**
+- Remove the `import { componentTagger } from "lovable-tagger"` line
+- Remove the `componentTagger()` call from the plugins array
+- This plugin injects data attributes into components in dev mode -- not needed on Vercel
 
-**`src/components/admin/DailyScheduleView.tsx`** (line 183)
-- Change condition from `(booking.special_requests?.includes('[Membership booking]') || (booking.final_amount === 0 && (booking.price_amount ?? 0) > 0 && !booking.stripe_session_id))` to just `booking.special_requests?.includes('[Membership booking]')`
-- Same change for the price display (around line 209)
+**3. `package.json` -- Remove lovable-tagger dependency**
+- Remove `"lovable-tagger": "^1.1.7"` from devDependencies
 
-**`src/components/admin/ModernBookingManagement.tsx`**
-- Update the `isMembershipBooking` helper to only check for the `[Membership booking]` tag
+**4. `README.md` -- Replace with generic project README**
+- Replace the entire Lovable-branded README with a simple Revitalise Hub project description
 
-**`src/components/admin/BookingDetailsDialog.tsx`**
-- Same condition update for badge and price display
+**5. `supabase/functions/send-contact-notification/index.ts` -- Update admin link**
+- Change the admin panel URL from `web-revamp-dreamscape-creator.lovable.app` to `www.revitalisehub.co.uk`
 
-All three files get the same simple change: remove the `final_amount === 0` fallback, rely solely on the `[Membership booking]` string tag.
+**6. `.lovable/plan.md` -- Remove**
+- This is a Lovable-specific file that can be deleted
+
+### What stays unchanged
+- The `public/lovable-uploads/` folder -- these are just your uploaded images. The folder name is internal and not exposed in any meta tags or visible HTML. Renaming it would break dozens of image references across the site for no SEO benefit since the paths are only in your source code, not in any crawlable metadata.
+- `package-lock.json` -- will auto-update when `lovable-tagger` is removed from `package.json`
+- All site functionality, Stripe, Supabase, bookings, emails remain completely untouched
 
