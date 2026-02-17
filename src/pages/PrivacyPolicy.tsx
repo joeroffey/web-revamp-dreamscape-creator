@@ -1,9 +1,11 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen">
+      <SEOHead title="Privacy Policy" description="Read the Revitalise Hub privacy policy. Learn how we collect, use and protect your personal information." path="/privacy-policy" />
       <Navigation />
       
       <main className="pt-20">

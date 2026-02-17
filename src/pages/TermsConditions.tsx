@@ -1,9 +1,11 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 
 const TermsConditions = () => {
   return (
     <div className="min-h-screen">
+      <SEOHead title="Terms & Conditions" description="Terms and conditions for sessions at Revitalise Hub. Understand our policies on bookings, cancellations and use of services." path="/terms-conditions" />
       <Navigation />
       
       <main className="pt-20">

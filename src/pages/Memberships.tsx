@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -396,6 +397,7 @@ const Memberships = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead title="Memberships" description="Join Revitalise Hub with flexible membership plans. Unlimited or weekly contrast therapy sessions in Lymington, Hampshire." path="/memberships" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">

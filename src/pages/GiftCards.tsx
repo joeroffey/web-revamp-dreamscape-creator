@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -104,6 +105,7 @@ const GiftCards = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead title="Gift Cards" description="Give the gift of wellness. Purchase a Revitalise Hub gift card for cold water therapy and recovery sessions in Lymington." path="/gift-cards" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">

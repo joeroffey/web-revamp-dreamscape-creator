@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, Thermometer, Snowflake, Waves, Users } from "lucide-react";
@@ -43,6 +44,7 @@ const OurHub = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Our Hub" description="Explore Revitalise Hub's facilities in Lymington. Ice baths, traditional saunas, recovery lounge and professional-grade therapy equipment." path="/our-hub" />
       <Navigation />
       
       <main className="pt-20">
