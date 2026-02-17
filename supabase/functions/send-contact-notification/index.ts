@@ -52,7 +52,7 @@ serve(async (req) => {
             <p><strong>Message:</strong></p>
             <div style="background: white; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${message}</div>
           </div>
-          <p style="color: #666; font-size: 14px;">You can reply to this message from the <a href="https://web-revamp-dreamscape-creator.lovable.app/admin/messages">Admin Panel</a>.</p>
+          <p style="color: #666; font-size: 14px;">You can reply to this message from the <a href="https://www.revitalisehub.co.uk/admin/messages">Admin Panel</a>.</p>
         </div>
       `,
     });
