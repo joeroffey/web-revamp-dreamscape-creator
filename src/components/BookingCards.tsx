@@ -11,7 +11,7 @@ export const BookingCards = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
+          backgroundImage: `url('/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />

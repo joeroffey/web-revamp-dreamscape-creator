@@ -205,7 +205,7 @@ export const HeroSection = () => {
         <div 
           className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: `url(/lovable-uploads/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png)`,
+            backgroundImage: `url(/images/25076f47-c2aa-4331-9cda-ba7cb683f9d4.png)`,
             display: (!videoLoaded || videoError) ? 'block' : 'none'
           }}
         />

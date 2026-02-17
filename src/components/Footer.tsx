@@ -34,7 +34,7 @@ export const Footer = () => {
               <div className="flex flex-col items-center w-fit">
                 <Link to="/" className="mb-4">
                   <img 
-                    src="/lovable-uploads/7213f936-2c10-4a80-a628-96054c5c6507.png" 
+                    src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
                     alt="Revitalise Hub Logo" 
                     className="h-32 w-auto"
                   />

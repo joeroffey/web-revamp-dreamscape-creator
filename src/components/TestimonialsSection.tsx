@@ -5,21 +5,21 @@ export const TestimonialsSection = () => {
   const testimonials = [
     {
       name: "Sarah M.",
-      image: "/lovable-uploads/2f950cd7-4515-4f21-ab0c-9005a8bde6c2.png",
+      image: "/images/2f950cd7-4515-4f21-ab0c-9005a8bde6c2.png",
       rating: 5,
       text: "The ice bath experience at Revitalise Hub is incredible. I feel energized and recovered after every session. The team is so knowledgeable and supportive!",
       treatment: "Ice Bath Therapy"
     },
     {
       name: "Emma K.",
-      image: "/lovable-uploads/029c3081-4504-4d35-b1af-8c8ec751d983.png",
+      image: "/images/029c3081-4504-4d35-b1af-8c8ec751d983.png",
       rating: 5,
       text: "I never thought I'd enjoy cold water therapy, but the atmosphere here makes it amazing. The benefits I've experienced are beyond what I expected.",
       treatment: "Contrast Therapy"
     },
     {
       name: "Jessica L.",
-      image: "/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png",
+      image: "/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png",
       rating: 5,
       text: "The combination of ice baths and sauna has transformed my recovery routine. I sleep better, feel stronger, and have so much more energy.",
       treatment: "Full Wellness Program"

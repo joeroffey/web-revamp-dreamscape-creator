@@ -54,21 +54,21 @@ export const ServicesSection = () => {
         <div className="grid md:grid-cols-3 gap-6 mb-16 animate-fade-in">
           <div className="wellness-card overflow-hidden">
             <img 
-              src="/lovable-uploads/2f950cd7-4515-4f21-ab0c-9005a8bde6c2.png" 
+              src="/images/2f950cd7-4515-4f21-ab0c-9005a8bde6c2.png" 
               alt="Ice bath experience" 
               className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
             />
           </div>
           <div className="wellness-card overflow-hidden">
             <img 
-              src="/lovable-uploads/029c3081-4504-4d35-b1af-8c8ec751d983.png" 
+              src="/images/029c3081-4504-4d35-b1af-8c8ec751d983.png" 
               alt="Cold therapy wellness" 
               className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
             />
           </div>
           <div className="wellness-card overflow-hidden">
             <img 
-              src="/lovable-uploads/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png" 
+              src="/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png" 
               alt="Wellness experience" 
               className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
             />
