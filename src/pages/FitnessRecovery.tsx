@@ -69,7 +69,7 @@ const FitnessRecovery = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Fitness & Recovery" description="Our 8-week Fitness and Recovery coaching package. Expert-guided training with contrast therapy sessions at Revitalise Hub, Lymington." path="/fitness-recovery" />
+      <SEOHead title="Fitness & Recovery - Coaching Package" description="Our 8-week Fitness and Recovery coaching package. Expert-guided training with contrast therapy sessions at Revitalise Hub, Lymington." path="/fitness-recovery" />
       <Navigation />
       
       <main className="pt-20">

@@ -105,7 +105,7 @@ const GiftCards = () => {
 
   return (
     <div className="min-h-screen">
-      <SEOHead title="Gift Cards" description="Give the gift of wellness. Purchase a Revitalise Hub gift card for cold water therapy and recovery sessions in Lymington." path="/gift-cards" />
+      <SEOHead title="Gift Cards - Wellness Vouchers" description="Give the gift of wellness. Purchase a Revitalise Hub gift card for cold water therapy and recovery sessions in Lymington." path="/gift-cards" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">

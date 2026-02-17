@@ -832,7 +832,7 @@ const Booking = () => {
 
   return (
     <div className="min-h-screen">
-      <SEOHead title="Book a Session" description="Book your cold water therapy, sauna or contrast therapy session at Revitalise Hub, Lymington. Choose communal or private sessions." path="/booking" />
+      <SEOHead title="Book a Session - Ice Bath & Sauna" description="Book your cold water therapy, sauna or contrast therapy session at Revitalise Hub, Lymington. Choose communal or private sessions." path="/booking" />
       <Navigation />
       
       <main className="pt-20 sm:pt-24 md:pt-28 lg:pt-32 bg-gallery">

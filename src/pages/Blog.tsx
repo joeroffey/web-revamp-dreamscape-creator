@@ -32,7 +32,7 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Blog" description="Read the latest insights on cold water therapy, contrast therapy, recovery science and wellness from the Revitalise Hub team." path="/blog" />
+      <SEOHead title="Blog - Contrast Therapy Insights" description="Read the latest insights on cold water therapy, contrast therapy, recovery science and wellness from the Revitalise Hub team." path="/blog" />
       <Navigation />
       
       <main className="pt-32 pb-20">

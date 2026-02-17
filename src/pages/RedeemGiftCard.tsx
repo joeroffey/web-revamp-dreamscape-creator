@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -99,6 +100,7 @@ const RedeemGiftCard = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead title="Redeem Gift Card" description="Redeem your Revitalise Hub gift card code and add credit to your account for cold water therapy and sauna sessions." path="/redeem-gift-card" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">

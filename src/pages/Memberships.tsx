@@ -397,7 +397,7 @@ const Memberships = () => {
 
   return (
     <div className="min-h-screen">
-      <SEOHead title="Memberships" description="Join Revitalise Hub with flexible membership plans. Unlimited or weekly contrast therapy sessions in Lymington, Hampshire." path="/memberships" />
+      <SEOHead title="Memberships - Contrast Therapy Plans" description="Join Revitalise Hub with flexible membership plans. Unlimited or weekly contrast therapy sessions in Lymington, Hampshire." path="/memberships" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">
