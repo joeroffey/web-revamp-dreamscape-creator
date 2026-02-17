@@ -7,7 +7,7 @@ import { SEOHead } from "@/components/SEOHead";
 const Contact = () => {
   return (
     <div className="min-h-screen">
-      <SEOHead title="Contact" description="Get in touch with Revitalise Hub in Lymington. Ask about our cold water therapy, sauna sessions, memberships, or book a visit." path="/contact" />
+      <SEOHead title="Contact Us - Book Your Visit" description="Get in touch with Revitalise Hub in Lymington. Ask about our cold water therapy, sauna sessions, memberships, or book a visit." path="/contact" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">

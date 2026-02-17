@@ -104,7 +104,7 @@ const YourVisit = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Your Visit" description="Everything you need to know before visiting Revitalise Hub. What to bring, session guide, and tips for your contrast therapy experience." path="/your-visit" />
+      <SEOHead title="Your Visit - Session Guide" description="Everything you need to know before visiting Revitalise Hub. What to bring, session guide, and tips for your contrast therapy experience." path="/your-visit" />
       <Navigation />
 
       <main className="pt-20">

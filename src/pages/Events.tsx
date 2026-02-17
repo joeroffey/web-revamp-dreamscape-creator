@@ -63,7 +63,7 @@ const Events = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Events" description="Discover upcoming wellness events at Revitalise Hub, Lymington. Breathwork, yoga, workshops and community gatherings." path="/events" />
+      <SEOHead title="Events - Wellness Workshops" description="Discover upcoming wellness events at Revitalise Hub, Lymington. Breathwork, yoga, workshops and community gatherings." path="/events" />
       <Navigation />
       
       <main className="pt-32 pb-20">
