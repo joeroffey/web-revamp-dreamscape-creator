@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { NoIndexHead } from "@/components/NoIndexHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Gift, Mail, Home } from "lucide-react";
@@ -7,6 +8,7 @@ import { Link } from "react-router-dom";
 const GiftCardSuccess = () => {
   return (
     <div className="min-h-screen">
+      <NoIndexHead />
       <Navigation />
       
       <main className="pt-20">

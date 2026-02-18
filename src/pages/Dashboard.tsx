@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
+import { NoIndexHead } from "@/components/NoIndexHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -228,6 +229,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gallery">
+      <NoIndexHead />
       <Navigation />
       
       <main className="pt-20">
