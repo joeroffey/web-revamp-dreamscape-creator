@@ -36,8 +36,9 @@ export const PhotoGallery = () => {
   ];
 
   return (
-    <section className="py-16 bg-gallery">
+    <section className="py-16 bg-gallery" aria-labelledby="gallery-heading">
       <div className="max-w-7xl mx-auto px-6">
+        <h2 id="gallery-heading" className="sr-only">Our Facilities</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((image, index) => (
             <div 

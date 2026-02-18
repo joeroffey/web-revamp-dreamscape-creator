@@ -6,7 +6,7 @@ export const BookingCards = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative py-24 overflow-hidden">
+    <section className="relative py-24 overflow-hidden" aria-labelledby="book-session-heading">
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
@@ -18,7 +18,7 @@ export const BookingCards = () => {
       
       <div className="relative max-w-5xl mx-auto px-6">
         {/* Section Title */}
-        <h2 className="text-4xl md:text-6xl font-bold text-white text-center mb-16 tracking-wider">
+        <h2 id="book-session-heading" className="text-4xl md:text-6xl font-bold text-white text-center mb-16 tracking-wider">
           BOOK A SESSION
         </h2>
         
