@@ -85,6 +85,17 @@ Deno.serve(async (req) => {
       (u) => u.email?.toLowerCase() === trimmedCurrentEmail
     );
 
+    // Check if new email already belongs to a different auth user
+    const conflictUser = users.find(
+      (u) => u.email?.toLowerCase() === trimmedNewEmail
+    );
+    if (conflictUser && (!authUser || conflictUser.id !== authUser.id)) {
+      return new Response(
+        JSON.stringify({ error: "This email is already associated with another account." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!authUser) {
       // No auth account — just update the customers table
       const { error: custError } = await supabaseAdmin
@@ -100,28 +111,14 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Also update bookings
-      await supabaseAdmin
-        .from("bookings")
-        .update({ customer_email: trimmedNewEmail })
-        .eq("customer_email", trimmedCurrentEmail);
-
-      // Update memberships
-      await supabaseAdmin
-        .from("memberships")
-        .update({ customer_email: trimmedNewEmail })
-        .eq("customer_email", trimmedCurrentEmail);
-
-      // Update customer_tokens
-      await supabaseAdmin
-        .from("customer_tokens")
-        .update({ customer_email: trimmedNewEmail })
-        .eq("customer_email", trimmedCurrentEmail);
+      await supabaseAdmin.from("bookings").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
+      await supabaseAdmin.from("memberships").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
+      await supabaseAdmin.from("customer_tokens").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Customer email updated. No auth account was found, so no confirmation email was sent.",
+          message: "Customer email updated. No auth account was found.",
           hasAuthAccount: false,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -142,35 +139,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the customers table
-    await supabaseAdmin
-      .from("customers")
-      .update({ email: trimmedNewEmail })
-      .eq("email", trimmedCurrentEmail);
-
-    // Update bookings
-    await supabaseAdmin
-      .from("bookings")
-      .update({ customer_email: trimmedNewEmail })
-      .eq("customer_email", trimmedCurrentEmail);
-
-    // Update memberships
-    await supabaseAdmin
-      .from("memberships")
-      .update({ customer_email: trimmedNewEmail })
-      .eq("customer_email", trimmedCurrentEmail);
-
-    // Update customer_tokens
-    await supabaseAdmin
-      .from("customer_tokens")
-      .update({ customer_email: trimmedNewEmail })
-      .eq("customer_email", trimmedCurrentEmail);
-
-    // Update customer_credits
-    await supabaseAdmin
-      .from("customer_credits")
-      .update({ customer_email: trimmedNewEmail })
-      .eq("customer_email", trimmedCurrentEmail);
+    // Only update DB tables after auth update succeeded
+    await supabaseAdmin.from("customers").update({ email: trimmedNewEmail }).eq("email", trimmedCurrentEmail);
+    await supabaseAdmin.from("bookings").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
+    await supabaseAdmin.from("memberships").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
+    await supabaseAdmin.from("customer_tokens").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
+    await supabaseAdmin.from("customer_credits").update({ customer_email: trimmedNewEmail }).eq("customer_email", trimmedCurrentEmail);
 
     return new Response(
       JSON.stringify({
