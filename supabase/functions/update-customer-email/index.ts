@@ -71,22 +71,31 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find the auth user by current email
-    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    if (listError) {
-      console.error("Error listing users:", listError);
-      return new Response(
-        JSON.stringify({ error: "Failed to look up user" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Fetch ALL auth users with pagination (default only returns 50)
+    let allUsers: any[] = [];
+    let page = 1;
+    const perPage = 1000;
+    while (true) {
+      const { data: { users: pageUsers }, error: pageError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+      if (pageError) {
+        console.error("Error listing users page", page, pageError);
+        return new Response(
+          JSON.stringify({ error: "Failed to look up user" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      allUsers.push(...pageUsers);
+      if (pageUsers.length < perPage) break;
+      page++;
     }
+    console.log(`Fetched ${allUsers.length} total auth users across ${page} page(s)`);
 
-    const authUser = users.find(
+    const authUser = allUsers.find(
       (u) => u.email?.toLowerCase() === trimmedCurrentEmail
     );
 
     // Check if new email already belongs to a different auth user
-    const conflictUser = users.find(
+    const conflictUser = allUsers.find(
       (u) => u.email?.toLowerCase() === trimmedNewEmail
     );
     if (conflictUser && (!authUser || conflictUser.id !== authUser.id)) {
