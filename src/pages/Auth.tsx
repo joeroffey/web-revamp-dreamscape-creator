@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { NoIndexHead } from "@/components/NoIndexHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,6 +164,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen relative">
+      <NoIndexHead />
       {/* Background Video/Image */}
       <div className="absolute inset-0 z-0">
         <video 

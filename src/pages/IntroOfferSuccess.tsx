@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { NoIndexHead } from "@/components/NoIndexHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Gift, Check, Mail, Calendar, Home } from "lucide-react";
@@ -16,6 +17,7 @@ const IntroOfferSuccess = () => {
 
   return (
     <div className="min-h-screen">
+      <NoIndexHead />
       <Navigation />
       
       <main className="pt-20 bg-gallery">
