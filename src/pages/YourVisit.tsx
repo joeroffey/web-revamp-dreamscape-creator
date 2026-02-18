@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { FAQSection } from "@/components/FAQSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -291,84 +292,34 @@ const YourVisit = () => {
         </section>
 
         {/* FAQ */}
-        <section className="py-20 bg-white">
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-light text-foreground mb-4 tracking-tight">
-                Frequently Asked Questions
-              </h2>
-              <p className="text-muted-foreground font-light text-lg">
-                Helpful guidance for beginners and regulars.
-              </p>
-            </div>
+        <FAQSection
+          faqs={[
+            { question: "How long should I stay in the ice bath?", answer: "We recommend starting with 1–3 minutes. For most people, around 3 minutes is enough to gain the benefits of cold exposure. The maximum recommended time is 10 minutes. Always listen to your body and exit if you feel uncomfortable." },
+            { question: "How long should I stay in the sauna?", answer: "For optimal health and recovery benefits, we recommend 5–20 minutes. Beginners may prefer shorter durations, while experienced users can build up gradually over time." },
+            { question: "How many times should I alternate between sauna and ice bath?", answer: "There's no strict rule. Most guests alternate 2–4 rounds, depending on how their body feels and how much time they have within the 1-hour session." },
+            { question: "Can I use the sauna and ice baths if I train at the gym?", answer: "Yes — sauna and ice bath therapy can be a great addition to training. Many people use the hub after strength training, cardio, or sport to support recovery, reduce muscle soreness, and promote relaxation. If your primary goal is muscle growth, consider using ice baths strategically and not immediately after every heavy lifting session." },
+            { question: "Is this suitable for first-timers?", answer: "Absolutely. Revitalise Hub is beginner-friendly, and our team will guide you through everything on your first visit so you feel confident and comfortable." },
+            { question: "Do I need to bring anything with me?", answer: "We recommend bringing swimwear and a towel. If you forget your towel, we have towels available at the hub — just ask at reception." },
+          ]}
+          title="Frequently Asked Questions"
+          subtitle="Helpful guidance for beginners and regulars."
+        />
 
-            <Card className="wellness-card">
-              <CardContent className="p-2 sm:p-6">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="ice-time">
-                    <AccordionTrigger>How long should I stay in the ice bath?</AccordionTrigger>
-                    <AccordionContent>
-                      We recommend starting with 1–3 minutes. For most people, around 3 minutes is enough to gain the
-                      benefits of cold exposure. The maximum recommended time is 10 minutes. Always listen to your body
-                      and exit if you feel uncomfortable.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="sauna-time">
-                    <AccordionTrigger>How long should I stay in the sauna?</AccordionTrigger>
-                    <AccordionContent>
-                      For optimal health and recovery benefits, we recommend 5–20 minutes. Beginners may prefer shorter
-                      durations, while experienced users can build up gradually over time.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="alternations">
-                    <AccordionTrigger>How many times should I alternate between sauna and ice bath?</AccordionTrigger>
-                    <AccordionContent>
-                      There’s no strict rule. Most guests alternate 2–4 rounds, depending on how their body feels and how
-                      much time they have within the 1-hour session.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="gym">
-                    <AccordionTrigger>Can I use the sauna and ice baths if I train at the gym?</AccordionTrigger>
-                    <AccordionContent>
-                      Yes — sauna and ice bath therapy can be a great addition to training. Many people use the hub after
-                      strength training, cardio, or sport to support recovery, reduce muscle soreness, and promote
-                      relaxation. If your primary goal is muscle growth, consider using ice baths strategically and not
-                      immediately after every heavy lifting session.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="first-timers">
-                    <AccordionTrigger>Is this suitable for first-timers?</AccordionTrigger>
-                    <AccordionContent>
-                      Absolutely. Revitalise Hub is beginner-friendly, and our team will guide you through everything on
-                      your first visit so you feel confident and comfortable.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="bring">
-                    <AccordionTrigger>Do I need to bring anything with me?</AccordionTrigger>
-                    <AccordionContent>
-                      We recommend bringing swimwear and a towel. If you forget your towel, we have towels available at the
-                      hub — just ask at reception.
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
-
-            <div className="mt-10 text-center">
-              <p className="text-muted-foreground font-light mb-4">
-                Ready to relax, recover, and reset?
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link to="/booking">
-                  <Button className="rounded-full px-8">Book Your Visit</Button>
-                </Link>
-                <Link to="/memberships">
-                  <Button variant="outline" className="rounded-full px-8">View Memberships</Button>
-                </Link>
-                <Link to="/our-hub">
-                  <Button variant="ghost" className="rounded-full px-8">Explore Our Hub</Button>
-                </Link>
-              </div>
+        <section className="py-10 bg-white">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <p className="text-muted-foreground font-light mb-4">
+              Ready to relax, recover, and reset?
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link to="/booking">
+                <Button className="rounded-full px-8">Book Your Visit</Button>
+              </Link>
+              <Link to="/memberships">
+                <Button variant="outline" className="rounded-full px-8">View Memberships</Button>
+              </Link>
+              <Link to="/our-hub">
+                <Button variant="ghost" className="rounded-full px-8">Explore Our Hub</Button>
+              </Link>
             </div>
           </div>
         </section>
