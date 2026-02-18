@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { FAQSection } from "@/components/FAQSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,25 @@ import { Gift, Heart, Star, User, Mail } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const giftCardFaqs = [
+  {
+    question: "How long are gift cards valid?",
+    answer: "Gift cards are valid for 12 months from the date of purchase. The expiry date is included in the gift card email sent to the recipient."
+  },
+  {
+    question: "Can I use a gift card for memberships?",
+    answer: "Gift cards can be redeemed as credit towards individual session bookings. They cannot currently be applied directly to recurring membership subscriptions."
+  },
+  {
+    question: "How does the recipient redeem their gift card?",
+    answer: "The recipient will receive an email with a unique gift card code. They can redeem it by creating an account on our website and entering the code on the Redeem Gift Card page. The value is added to their account as credit."
+  },
+  {
+    question: "Can I get a refund on a gift card?",
+    answer: "Gift cards are non-refundable once purchased. If you have any issues with your gift card, please contact us and we'll do our best to help."
+  },
+];
 
 const GiftCards = () => {
   const { toast } = useToast();
@@ -324,6 +344,12 @@ const GiftCards = () => {
             </div>
           </div>
         </section>
+
+        <FAQSection
+          faqs={giftCardFaqs}
+          title="Gift Card FAQs"
+          subtitle="Common questions about purchasing and using gift cards."
+        />
       </main>
       
       <Footer />

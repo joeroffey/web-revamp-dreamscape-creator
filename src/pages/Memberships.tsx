@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { FAQSection } from "@/components/FAQSection";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -600,6 +601,17 @@ const Memberships = () => {
             </div>
           </div>
         </section>
+        <FAQSection
+          faqs={[
+            { question: "Can I cancel my membership anytime?", answer: "Yes, all memberships come with a flexible 30-day cancellation policy. Simply contact us to cancel, and your membership will end at the close of your current billing period." },
+            { question: "What happens if I miss a session?", answer: "Sessions are allocated per billing period. Unused sessions do not roll over to the next period, so we encourage you to make the most of your allocation each month." },
+            { question: "Can I upgrade or downgrade my membership?", answer: "Yes, you can change your membership plan at any time. Contact us and we'll adjust your subscription from your next billing cycle." },
+            { question: "Is there a joining fee?", answer: "No, there are no joining fees or hidden costs. You simply pay the monthly membership price and can cancel with 30 days' notice." },
+            { question: "Can I share my membership with someone else?", answer: "Memberships are for personal use only and cannot be shared or transferred to other people. Each person needs their own membership to book sessions." },
+          ]}
+          title="Membership FAQs"
+          subtitle="Everything you need to know about our membership plans."
+        />
       </main>
 
       {/* Introductory Offer Dialog */}

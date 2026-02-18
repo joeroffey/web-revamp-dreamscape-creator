@@ -2,6 +2,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { FAQSection } from "@/components/FAQSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1690,6 +1691,17 @@ const Booking = () => {
             </div>
           </div>
         </section>
+        <FAQSection
+          faqs={[
+            { question: "How long is a session?", answer: "All sessions at Revitalise Hub last 1 hour. This gives you plenty of time to alternate between the sauna and ice baths at your own pace." },
+            { question: "What's the difference between communal and private sessions?", answer: "Communal sessions share the space with other guests (up to 5 people total). Private sessions give you exclusive use of the entire facility for your group — ideal for 4+ people or those wanting a more personal experience." },
+            { question: "Do I need to bring anything?", answer: "Just bring swimwear and a towel. If you forget your towel, we have spares available at reception. Everything else is provided." },
+            { question: "Can I cancel or reschedule my booking?", answer: "Yes, you can cancel or reschedule your booking. Please contact us as early as possible if you need to make changes. Cancellation policies may apply depending on your booking type." },
+            { question: "Is contrast therapy safe for everyone?", answer: "Contrast therapy is generally safe for healthy adults. However, if you have heart conditions, are pregnant, or have other health concerns, please consult your doctor before booking. We'll ask you to complete a short health questionnaire on your first visit." },
+          ]}
+          title="Booking FAQs"
+          subtitle="Common questions about booking your session."
+        />
       </main>
       
       <Footer />
