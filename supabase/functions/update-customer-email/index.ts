@@ -128,10 +128,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the auth user's email — Supabase sends a confirmation email to the new address
+    // Update the auth user's email directly (admin override, no confirmation needed)
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       authUser.id,
-      { email: trimmedNewEmail }
+      { email: trimmedNewEmail, email_confirm: true }
     );
 
     if (updateError) {
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Email updated. A confirmation email has been sent to the new address.",
+        message: "Email updated successfully.",
         hasAuthAccount: true,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
