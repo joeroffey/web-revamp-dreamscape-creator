@@ -1,81 +1,72 @@
 
-## SEO Issues Fix Plan
 
-Based on the Screaming Frog report, here are the issues that can be fixed without affecting site functionality, grouped by priority.
+## SEO Enhancement Plan
 
----
-
-### HIGH Priority
-
-**1. Fix Multiple Conflicting Canonicals (13 pages)**
-The `index.html` has a hardcoded `<link rel="canonical">` and each page's `SEOHead` component adds another one via react-helmet. This creates two conflicting canonicals per page.
-
-- **Fix:** Remove the `<link rel="canonical">` from `index.html`. The per-page `SEOHead` component already handles this correctly.
-
-**2. Fix Multiple Meta Descriptions (14 pages)**
-Same root cause -- `index.html` has a hardcoded `<meta name="description">` and `SEOHead` adds a page-specific one. Two descriptions confuse search engines.
-
-- **Fix:** Remove the `<meta name="description">` from `index.html`. Per-page descriptions via `SEOHead` are already correct.
+Based on the audit recommendations, here is what can be done and what is already complete or not applicable.
 
 ---
 
-### MEDIUM Priority
+### Already Done (No Action Needed)
 
-**3. Expand Short Page Titles (8 pages below 30 characters)**
-Several page titles are too short to make use of available keyword space. Updated titles:
+- **LocalBusinessSchema enhancements** (`@id`, `areaServed`, `hasMap`, multiple images, `priceRange`) -- all already present
+- **og:image default fallback** -- already configured in `SEOHead` component with a default image
 
-| Current Title | New Title |
-|---|---|
-| About Us \| Revitalise Hub | About Us - Cold Water Therapy Centre \| Revitalise Hub |
-| Contact \| Revitalise Hub | Contact Us - Book Your Visit \| Revitalise Hub |
-| Blog \| Revitalise Hub | Blog - Contrast Therapy Insights \| Revitalise Hub |
-| Events \| Revitalise Hub | Events - Wellness Workshops \| Revitalise Hub |
-| Gift Cards \| Revitalise Hub | Gift Cards - Wellness Vouchers \| Revitalise Hub |
-| Our Hub \| Revitalise Hub | Our Hub - Facilities & Location \| Revitalise Hub |
-| Your Visit \| Revitalise Hub | Your Visit - Session Guide \| Revitalise Hub |
-| Booking \| Revitalise Hub | Book a Session - Ice Bath & Sauna \| Revitalise Hub |
+### Not Feasible
 
-**4. Add Missing SEOHead to RedeemGiftCard page**
-This page has no SEO metadata at all.
+- **Pre-rendering (SSG)** -- requires migrating to Next.js or a similar framework, which is outside Lovable's capabilities. Google handles JavaScript-rendered content well for modern SPAs, so this is not critical.
 
 ---
 
-### LOW Priority
+### Changes To Implement
 
-**5. Fix H1 Missing (1 page)**
-The `RedeemGiftCard` page renders its h1, but the OurHub page is missing a Footer (cosmetic, already has h1). Most likely candidate is a page where the h1 only appears conditionally. Will verify and ensure all pages have a proper h1.
+#### 1. Add FAQ Schema (JSON-LD) to Your Visit Page
 
-**6. Add H2 to pages missing them (3 pages)**
-Pages like Privacy Policy, Terms & Conditions, and Cookie Policy use `<h2>` elements already. The 3 pages flagged are likely the success/redirect pages or pages with sparse content. The Home page's main section uses h3 in BookingCards -- will promote to h2 where appropriate.
+The `/your-visit` page already has a rich FAQ section with 6 questions. Adding `FAQPage` structured data will make these eligible for rich results in Google Search, which significantly boosts click-through rates.
+
+**File:** `src/pages/YourVisit.tsx`
+- Add a JSON-LD `FAQPage` schema block via `react-helmet-async` containing all 6 existing FAQ items
+
+#### 2. Add FAQ Sections + Schema to Key Service Pages
+
+Add short FAQ sections with structured data to pages that currently lack them, boosting content depth and enabling rich results:
+
+**a. Booking page** (`src/pages/Booking.tsx`)
+- Add 4-5 FAQs below the booking form (e.g., "How long is a session?", "What's the difference between communal and private?", "Do I need to bring anything?", "Can I cancel or reschedule?")
+- Include `FAQPage` JSON-LD schema
+
+**b. Memberships page** (`src/pages/Memberships.tsx`)
+- Add 4-5 FAQs below membership cards (e.g., "Can I cancel anytime?", "What happens if I miss a session?", "Can I upgrade my membership?", "Is there a joining fee?")
+- Include `FAQPage` JSON-LD schema
+
+**c. Gift Cards page** (`src/pages/GiftCards.tsx`)
+- Add 3-4 FAQs below the purchase form (e.g., "How long are gift cards valid?", "Can I use a gift card for memberships?", "How does the recipient redeem it?")
+- Include `FAQPage` JSON-LD schema
+
+#### 3. Create Reusable FAQ Schema Component
+
+To keep things clean, create a small reusable component that takes an array of Q&A pairs and renders both the visible accordion and the JSON-LD schema.
+
+**New file:** `src/components/FAQSchema.tsx`
+- Accepts `faqs: { question: string; answer: string }[]` prop
+- Renders JSON-LD `FAQPage` schema via Helmet
+- Optionally renders the visible FAQ accordion UI
 
 ---
 
-### Not fixable within Lovable (noted for awareness)
-
-- **Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, Referrer-Policy headers** -- These are server-level response headers. They need to be configured in your hosting provider (Vercel) via `vercel.json`, not in the app code. I will add these to `vercel.json`.
-- **JavaScript-rendered content** -- Inherent to React SPAs. Google handles this fine, but it's flagged as a warning.
-- **Blocked resources by robots.txt** -- Will check if any linked internal URL is accidentally blocked.
-- **Images over 100KB / missing size attributes** -- Can be improved but would require image optimisation and adding width/height to every `<img>` tag across the site. This is a separate task.
-
----
-
-### Technical Summary of Changes
+### Technical Summary
 
 | File | Change |
 |---|---|
-| `index.html` | Remove hardcoded canonical and meta description |
-| `src/components/SEOHead.tsx` | Update title format to use longer, keyword-rich titles |
-| `src/pages/About.tsx` | Update SEOHead title |
-| `src/pages/Contact.tsx` | Update SEOHead title |
-| `src/pages/Blog.tsx` | Update SEOHead title |
-| `src/pages/Events.tsx` | Update SEOHead title |
-| `src/pages/GiftCards.tsx` | Update SEOHead title |
-| `src/pages/OurHub.tsx` | Update SEOHead title |
-| `src/pages/YourVisit.tsx` | Update SEOHead title |
-| `src/pages/Booking.tsx` | Update SEOHead title |
-| `src/pages/Memberships.tsx` | Update SEOHead title |
-| `src/pages/FitnessRecovery.tsx` | Update SEOHead title |
-| `src/pages/RedeemGiftCard.tsx` | Add SEOHead component |
-| `vercel.json` | Add security response headers |
+| `src/components/FAQSchema.tsx` | New reusable component for FAQ structured data |
+| `src/pages/YourVisit.tsx` | Add FAQPage JSON-LD schema for existing 6 FAQs |
+| `src/pages/Booking.tsx` | Add FAQ section + schema (4-5 questions) |
+| `src/pages/Memberships.tsx` | Add FAQ section + schema (4-5 questions) |
+| `src/pages/GiftCards.tsx` | Add FAQ section + schema (3-4 questions) |
 
-No visual or functional changes to the site. Only metadata and response headers are affected.
+### Impact
+
+- FAQ rich results can increase click-through rate by 20-30%
+- Additional content depth on service pages improves topical relevance
+- No visual or functional changes to existing features -- FAQs are added below existing content
+- Structured data validates instantly with Google's Rich Results Test
+
