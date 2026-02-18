@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX, ArrowUpDown, ArrowUp, ArrowDown, UserPlus } from "lucide-react";
+import { Users, Search, Eye, Phone, Mail, Calendar, PoundSterling, TrendingUp, Plus, Pencil, Trash2, Upload, Download, MoreHorizontal, UserX, ArrowUpDown, ArrowUp, ArrowDown, UserPlus, MailPlus } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -70,6 +70,9 @@ export default function ModernCustomerManagement() {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [creatingAccounts, setCreatingAccounts] = useState(false);
+  const [changeEmailOpen, setChangeEmailOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
   const { session } = useAuth();
 
   const queryClient = useQueryClient();
@@ -441,6 +444,49 @@ export default function ModernCustomerManagement() {
       toast.error(error.message || "Failed to create auth accounts");
     } finally {
       setCreatingAccounts(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!selectedCustomer || !newEmail.trim()) {
+      toast.error("Please enter a new email address");
+      return;
+    }
+    if (!session?.access_token) {
+      toast.error("You must be logged in");
+      return;
+    }
+
+    setChangingEmail(true);
+    try {
+      const response = await fetch(
+        `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/update-customer-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            currentEmail: selectedCustomer.email,
+            newEmail: newEmail.trim(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update email");
+
+      toast.success(data.message);
+      setChangeEmailOpen(false);
+      setNewEmail("");
+      setShowCustomerDetails(false);
+      queryClient.invalidateQueries({ queryKey: ["modern-customers"] });
+    } catch (error: any) {
+      console.error("Email change error:", error);
+      toast.error(error.message || "Failed to change email");
+    } finally {
+      setChangingEmail(false);
     }
   };
 
@@ -1046,7 +1092,20 @@ export default function ModernCustomerManagement() {
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div><strong>Name:</strong> {selectedCustomer.full_name || 'No name provided'}</div>
-                      <div><strong>Email:</strong> {selectedCustomer.email}</div>
+                      <div className="flex items-center justify-between">
+                        <div><strong>Email:</strong> {selectedCustomer.email}</div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setNewEmail("");
+                            setChangeEmailOpen(true);
+                          }}
+                        >
+                          <MailPlus className="h-4 w-4 mr-1" />
+                          Change
+                        </Button>
+                      </div>
                       <div><strong>Phone:</strong> {selectedCustomer.phone || 'No phone provided'}</div>
                       <div><strong>Type:</strong> <Badge variant={selectedCustomer.customer_type === 'vip' ? 'default' : 'secondary'}>{selectedCustomer.customer_type?.toUpperCase() || 'NEW'}</Badge></div>
                     </CardContent>
@@ -1114,6 +1173,39 @@ export default function ModernCustomerManagement() {
                 </Card>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Email Dialog */}
+        <Dialog open={changeEmailOpen} onOpenChange={setChangeEmailOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Change Customer Email</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Current Email</label>
+                <Input value={selectedCustomer?.email || ""} disabled />
+              </div>
+              <div>
+                <label className="text-sm font-medium">New Email</label>
+                <Input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="Enter new email address"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This will update the email across all records (bookings, memberships, tokens). If the customer has a login account, they will receive a confirmation email at the new address.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setChangeEmailOpen(false)}>Cancel</Button>
+              <Button onClick={handleChangeEmail} disabled={changingEmail || !newEmail.trim()}>
+                {changingEmail ? "Updating..." : "Update Email"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
