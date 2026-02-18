@@ -2,6 +2,7 @@
 import { Navigation } from "@/components/Navigation";
 import { HeroSection } from "@/components/HeroSection";
 import { BookingCards } from "@/components/BookingCards";
+import { HomeCTASection } from "@/components/HomeCTASection";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
@@ -17,6 +18,7 @@ const Home = () => {
       <main className="bg-gallery">
         <HeroSection />
         <BookingCards />
+        <HomeCTASection />
         <PhotoGallery />
       </main>
       
