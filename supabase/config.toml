@@ -35,6 +35,3 @@ verify_jwt = false
 
 [functions.send-contact-reply]
 verify_jwt = false
-
-[functions.update-customer-email]
-verify_jwt = false
