@@ -1,28 +1,51 @@
 
+## Fix: Email Change Not Working Due to User Pagination
 
-## Fix: Email Change Collision Detection
+### Root Cause
 
-### The Problem
+The Supabase `auth.admin.listUsers()` call returns only the **first 50 users** by default. Your project has **904 auth users**, so the target user is almost never found in the results. The function falls into the "no auth account found" branch and only updates the `customers` table, leaving the auth email unchanged.
 
-The edge function doesn't check whether the new email already belongs to another Supabase Auth user. When it does, the `updateUserById` call fails, but the function continues to update database tables anyway -- leaving things in an inconsistent state.
-
-### Changes
+### The Fix
 
 **File: `supabase/functions/update-customer-email/index.ts`**
 
-1. After finding the auth user for the current email, check if the new email already belongs to a **different** auth user. If it does, return an error: "This email is already associated with another account."
+Replace the `listUsers()` approach with paginated fetching that retrieves ALL users, or better yet, use a targeted lookup approach:
 
-2. Only proceed with database table updates (customers, bookings, memberships, tokens, credits) **after** confirming the auth email update succeeded -- not before or independently.
+1. **Find the auth user by email** -- Instead of listing all users and filtering, paginate through `listUsers()` until the target user is found, or use multiple pages. The most reliable approach is to loop through pages of 1000 users each until all are fetched.
 
-3. Properly check the error response from `updateUserById` and return it clearly to the admin UI.
+2. **Check for email conflicts** using the same full user list.
 
-### No other files need changes
+3. The rest of the logic (collision check, auth update, DB updates) stays the same.
 
-The admin UI dialog already displays error messages from the edge function response, so the new error will surface automatically.
+### Immediate Data Fix
+
+The customer record is currently mismatched (customers table says `jazzybearr99@gmail.com` but auth still says `josephh.roffey@gmail.com`). After deploying the fix, re-run the email change from admin to sync them, or revert the customer record back to `josephh.roffey@gmail.com` first.
+
+### Technical Detail
+
+Replace:
+```typescript
+const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+```
+
+With a loop that fetches all pages:
+```typescript
+let allUsers = [];
+let page = 1;
+const perPage = 1000;
+while (true) {
+  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+  if (error) throw error;
+  allUsers.push(...users);
+  if (users.length < perPage) break;
+  page++;
+}
+```
+
+Then use `allUsers` for both the current email lookup and the conflict check.
 
 ### Summary
 
 | File | Change |
 |---|---|
-| `supabase/functions/update-customer-email/index.ts` | Add duplicate email check before auth update; only update DB tables after auth succeeds |
-
+| `supabase/functions/update-customer-email/index.ts` | Replace single `listUsers()` call with paginated fetch to cover all 904+ users |
