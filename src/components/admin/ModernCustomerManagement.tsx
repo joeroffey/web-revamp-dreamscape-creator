@@ -459,17 +459,25 @@ export default function ModernCustomerManagement() {
 
     setChangingEmail(true);
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("update-customer-email", {
-        body: {
-          currentEmail: selectedCustomer.email,
-          newEmail: newEmail.trim(),
-        },
-      });
+      const response = await fetch(
+        `https://ismifvjzvvyleahdmdrz.supabase.co/functions/v1/update-customer-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            currentEmail: selectedCustomer.email,
+            newEmail: newEmail.trim(),
+          }),
+        }
+      );
 
-      if (fnError) throw new Error(fnError.message || "Failed to update email");
-      if (result?.error) throw new Error(result.error);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update email");
 
-      toast.success(result?.message || "Email updated successfully");
+      toast.success(data.message);
       setChangeEmailOpen(false);
       setNewEmail("");
       setShowCustomerDetails(false);

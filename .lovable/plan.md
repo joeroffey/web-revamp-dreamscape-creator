@@ -1,51 +1,72 @@
 
-## Fix: Email Change Not Working Due to User Pagination
 
-### Root Cause
+## SEO Enhancement Plan
 
-The Supabase `auth.admin.listUsers()` call returns only the **first 50 users** by default. Your project has **904 auth users**, so the target user is almost never found in the results. The function falls into the "no auth account found" branch and only updates the `customers` table, leaving the auth email unchanged.
+Based on the audit recommendations, here is what can be done and what is already complete or not applicable.
 
-### The Fix
+---
 
-**File: `supabase/functions/update-customer-email/index.ts`**
+### Already Done (No Action Needed)
 
-Replace the `listUsers()` approach with paginated fetching that retrieves ALL users, or better yet, use a targeted lookup approach:
+- **LocalBusinessSchema enhancements** (`@id`, `areaServed`, `hasMap`, multiple images, `priceRange`) -- all already present
+- **og:image default fallback** -- already configured in `SEOHead` component with a default image
 
-1. **Find the auth user by email** -- Instead of listing all users and filtering, paginate through `listUsers()` until the target user is found, or use multiple pages. The most reliable approach is to loop through pages of 1000 users each until all are fetched.
+### Not Feasible
 
-2. **Check for email conflicts** using the same full user list.
+- **Pre-rendering (SSG)** -- requires migrating to Next.js or a similar framework, which is outside Lovable's capabilities. Google handles JavaScript-rendered content well for modern SPAs, so this is not critical.
 
-3. The rest of the logic (collision check, auth update, DB updates) stays the same.
+---
 
-### Immediate Data Fix
+### Changes To Implement
 
-The customer record is currently mismatched (customers table says `jazzybearr99@gmail.com` but auth still says `josephh.roffey@gmail.com`). After deploying the fix, re-run the email change from admin to sync them, or revert the customer record back to `josephh.roffey@gmail.com` first.
+#### 1. Add FAQ Schema (JSON-LD) to Your Visit Page
 
-### Technical Detail
+The `/your-visit` page already has a rich FAQ section with 6 questions. Adding `FAQPage` structured data will make these eligible for rich results in Google Search, which significantly boosts click-through rates.
 
-Replace:
-```typescript
-const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-```
+**File:** `src/pages/YourVisit.tsx`
+- Add a JSON-LD `FAQPage` schema block via `react-helmet-async` containing all 6 existing FAQ items
 
-With a loop that fetches all pages:
-```typescript
-let allUsers = [];
-let page = 1;
-const perPage = 1000;
-while (true) {
-  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
-  if (error) throw error;
-  allUsers.push(...users);
-  if (users.length < perPage) break;
-  page++;
-}
-```
+#### 2. Add FAQ Sections + Schema to Key Service Pages
 
-Then use `allUsers` for both the current email lookup and the conflict check.
+Add short FAQ sections with structured data to pages that currently lack them, boosting content depth and enabling rich results:
 
-### Summary
+**a. Booking page** (`src/pages/Booking.tsx`)
+- Add 4-5 FAQs below the booking form (e.g., "How long is a session?", "What's the difference between communal and private?", "Do I need to bring anything?", "Can I cancel or reschedule?")
+- Include `FAQPage` JSON-LD schema
+
+**b. Memberships page** (`src/pages/Memberships.tsx`)
+- Add 4-5 FAQs below membership cards (e.g., "Can I cancel anytime?", "What happens if I miss a session?", "Can I upgrade my membership?", "Is there a joining fee?")
+- Include `FAQPage` JSON-LD schema
+
+**c. Gift Cards page** (`src/pages/GiftCards.tsx`)
+- Add 3-4 FAQs below the purchase form (e.g., "How long are gift cards valid?", "Can I use a gift card for memberships?", "How does the recipient redeem it?")
+- Include `FAQPage` JSON-LD schema
+
+#### 3. Create Reusable FAQ Schema Component
+
+To keep things clean, create a small reusable component that takes an array of Q&A pairs and renders both the visible accordion and the JSON-LD schema.
+
+**New file:** `src/components/FAQSchema.tsx`
+- Accepts `faqs: { question: string; answer: string }[]` prop
+- Renders JSON-LD `FAQPage` schema via Helmet
+- Optionally renders the visible FAQ accordion UI
+
+---
+
+### Technical Summary
 
 | File | Change |
 |---|---|
-| `supabase/functions/update-customer-email/index.ts` | Replace single `listUsers()` call with paginated fetch to cover all 904+ users |
+| `src/components/FAQSchema.tsx` | New reusable component for FAQ structured data |
+| `src/pages/YourVisit.tsx` | Add FAQPage JSON-LD schema for existing 6 FAQs |
+| `src/pages/Booking.tsx` | Add FAQ section + schema (4-5 questions) |
+| `src/pages/Memberships.tsx` | Add FAQ section + schema (4-5 questions) |
+| `src/pages/GiftCards.tsx` | Add FAQ section + schema (3-4 questions) |
+
+### Impact
+
+- FAQ rich results can increase click-through rate by 20-30%
+- Additional content depth on service pages improves topical relevance
+- No visual or functional changes to existing features -- FAQs are added below existing content
+- Structured data validates instantly with Google's Rich Results Test
+
