@@ -11,7 +11,7 @@ export const PhotoGallery = () => {
     },
     {
       src: "/images/13ce1fd0-0ae1-4b68-bc23-115c4cad4df5.png",
-      alt: "Infrared sauna session"
+      alt: "Traditional sauna session"
     },
     {
       src: "/images/2286fefd-48ef-446c-a1e3-9ee8968bacbd.png",

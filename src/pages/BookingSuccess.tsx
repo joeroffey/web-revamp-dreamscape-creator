@@ -80,7 +80,7 @@ const BookingSuccess = () => {
   const getServiceName = (type: string) => {
     const names: Record<string, string> = {
       "combined": "Contrast Therapy (Sauna + Ice Bath)",
-      "sauna": "Infrared Sauna",
+      "sauna": "Traditional Sauna",
       "ice_bath": "Ice Bath"
     };
     return names[type] || type;
