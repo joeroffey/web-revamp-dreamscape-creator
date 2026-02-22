@@ -21,7 +21,7 @@ export const HomeCTASection = () => {
           <div className="space-y-4">
             <h3 className="text-xl font-semibold text-foreground">Explore Our Hub</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Purpose-built for recovery and wellness, our Lymington facility features ice baths, infrared saunas and everything you need for a restorative session.{" "}
+              Purpose-built for recovery and wellness, our Lymington facility features ice baths, traditional saunas and everything you need for a restorative session.{" "}
               <a href="/our-hub" onClick={(e) => { e.preventDefault(); navigate("/our-hub"); }} className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors">
                 Take a look around our hub
               </a>.
