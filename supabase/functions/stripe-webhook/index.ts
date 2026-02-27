@@ -576,6 +576,9 @@ serve(async (req) => {
 
         if (membershipInsertError) {
           console.error('Error inserting membership:', membershipInsertError);
+        } else {
+          // Sync membership customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
         }
 
         if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
