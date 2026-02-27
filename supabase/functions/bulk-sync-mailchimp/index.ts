@@ -132,9 +132,8 @@ serve(async (req) => {
         try {
           const encoder = new TextEncoder();
           const data = encoder.encode(contact.email);
-          const hashBuffer = await crypto.subtle.digest("MD5", data);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const subscriberHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+          const hashBuffer = await stdCrypto.subtle.digest("MD5", data);
+          const subscriberHash = encodeHex(new Uint8Array(hashBuffer));
 
           const url = `https://${serverPrefix}.api.mailchimp.com/3.0/lists/${listId}/members/${subscriberHash}`;
 
