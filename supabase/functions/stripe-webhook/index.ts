@@ -662,6 +662,9 @@ serve(async (req) => {
 
         if (membershipInsertError) {
           console.error('Error inserting one-time membership:', membershipInsertError);
+        } else {
+          // Sync one-time membership customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
         }
 
         if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
