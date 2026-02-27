@@ -726,6 +726,8 @@ serve(async (req) => {
             console.error('Error inserting intro offer tokens:', tokenError);
           } else {
             console.log('Intro offer tokens created for:', customerEmail);
+            // Sync intro offer customer to Mailchimp
+            syncToMailchimp(customerEmail, customerName);
           }
 
           // Also add/update customer record if not exists
