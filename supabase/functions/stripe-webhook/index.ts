@@ -167,6 +167,9 @@ serve(async (req) => {
           
           console.log("Booking created successfully:", booking?.id);
 
+          // Sync customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+
           // Send booking confirmation email
           if (booking?.id) {
             try {
