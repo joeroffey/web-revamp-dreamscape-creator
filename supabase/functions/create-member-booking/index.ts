@@ -20,6 +20,8 @@ async function syncToMailchimp(email: string, name: string) {
     if (!res.ok) console.error("Mailchimp sync failed:", await res.text());
   } catch (err) { console.error("Mailchimp sync error:", err); }
 }
+
+interface MemberBookingRequest {
   userId: string;
   customerName: string;
   customerEmail: string;
