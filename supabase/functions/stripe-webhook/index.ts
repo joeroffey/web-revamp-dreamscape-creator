@@ -478,8 +478,13 @@ serve(async (req) => {
           .from('gift_cards')
           .update({ payment_status: 'paid' })
           .eq('stripe_session_id', session.id)
-          .select('id')
+          .select('id, purchaser_name, purchaser_email')
           .maybeSingle();
+
+        // Sync gift card purchaser to Mailchimp
+        if (gcRow) {
+          syncToMailchimp(gcRow.purchaser_email, gcRow.purchaser_name);
+        }
 
         // Send gift card email to recipient
         if (gcRow?.id) {
