@@ -7,6 +7,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Fire-and-forget Mailchimp sync helper
+async function syncToMailchimp(email: string, name: string) {
+  try {
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-to-mailchimp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ email, firstName, lastName }),
+      }
+    );
+    if (!res.ok) console.error("Mailchimp sync failed:", await res.text());
+    else console.log("Mailchimp sync triggered for:", email);
+  } catch (err) {
+    console.error("Mailchimp sync error (non-blocking):", err);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
