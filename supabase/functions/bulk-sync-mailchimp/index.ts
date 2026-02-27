@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { crypto as stdCrypto } from "https://deno.land/std@0.190.0/crypto/mod.ts";
 
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -14,7 +13,6 @@ serve(async (req) => {
   }
 
   try {
-    // Verify admin auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
@@ -34,10 +32,9 @@ serve(async (req) => {
       throw new Error("Mailchimp not configured");
     }
 
-    // Collect all unique customers from multiple sources
+    // Collect all unique customers
     const customerMap = new Map<string, { email: string; firstName: string; lastName: string }>();
 
-    // 1. From customers table
     const { data: customers } = await supabase
       .from("customers")
       .select("email, full_name")
@@ -47,14 +44,9 @@ serve(async (req) => {
       const email = c.email?.toLowerCase().trim();
       if (!email) continue;
       const parts = (c.full_name || "").trim().split(/\s+/);
-      customerMap.set(email, {
-        email,
-        firstName: parts[0] || "",
-        lastName: parts.slice(1).join(" ") || "",
-      });
+      customerMap.set(email, { email, firstName: parts[0] || "", lastName: parts.slice(1).join(" ") || "" });
     }
 
-    // 2. From bookings table (catches customers without profiles)
     let bookingOffset = 0;
     const batchSize = 1000;
     while (true) {
@@ -63,25 +55,17 @@ serve(async (req) => {
         .select("customer_email, customer_name")
         .eq("payment_status", "paid")
         .range(bookingOffset, bookingOffset + batchSize - 1);
-
       if (!bookings || bookings.length === 0) break;
-
       for (const b of bookings) {
         const email = b.customer_email?.toLowerCase().trim();
         if (!email || customerMap.has(email)) continue;
         const parts = (b.customer_name || "").trim().split(/\s+/);
-        customerMap.set(email, {
-          email,
-          firstName: parts[0] || "",
-          lastName: parts.slice(1).join(" ") || "",
-        });
+        customerMap.set(email, { email, firstName: parts[0] || "", lastName: parts.slice(1).join(" ") || "" });
       }
-
       if (bookings.length < batchSize) break;
       bookingOffset += batchSize;
     }
 
-    // 3. From gift_cards table (purchasers)
     const { data: giftCards } = await supabase
       .from("gift_cards")
       .select("purchaser_email, purchaser_name")
@@ -91,14 +75,9 @@ serve(async (req) => {
       const email = gc.purchaser_email?.toLowerCase().trim();
       if (!email || customerMap.has(email)) continue;
       const parts = (gc.purchaser_name || "").trim().split(/\s+/);
-      customerMap.set(email, {
-        email,
-        firstName: parts[0] || "",
-        lastName: parts.slice(1).join(" ") || "",
-      });
+      customerMap.set(email, { email, firstName: parts[0] || "", lastName: parts.slice(1).join(" ") || "" });
     }
 
-    // 4. From memberships table
     const { data: memberships } = await supabase
       .from("memberships")
       .select("customer_email, customer_name")
@@ -108,81 +87,74 @@ serve(async (req) => {
       const email = m.customer_email?.toLowerCase().trim();
       if (!email || customerMap.has(email)) continue;
       const parts = (m.customer_name || "").trim().split(/\s+/);
-      customerMap.set(email, {
-        email,
-        firstName: parts[0] || "",
-        lastName: parts.slice(1).join(" ") || "",
-      });
+      customerMap.set(email, { email, firstName: parts[0] || "", lastName: parts.slice(1).join(" ") || "" });
     }
 
     const allContacts = Array.from(customerMap.values());
     console.log(`Found ${allContacts.length} unique contacts to sync`);
 
-    // Batch sync using Mailchimp batch operations API
-    let synced = 0;
-    let failed = 0;
+    // Use Mailchimp batch subscribe endpoint (up to 500 at a time)
+    const CHUNK_SIZE = 500;
+    let totalAdded = 0;
+    let totalUpdated = 0;
+    let totalErrors = 0;
     const errors: string[] = [];
 
-    // Process in batches of 20 with a small delay to respect rate limits
-    const BATCH_SIZE = 20;
-    for (let i = 0; i < allContacts.length; i += BATCH_SIZE) {
-      const batch = allContacts.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < allContacts.length; i += CHUNK_SIZE) {
+      const chunk = allContacts.slice(i, i + CHUNK_SIZE);
+      
+      const members = chunk.map(contact => ({
+        email_address: contact.email,
+        status_if_new: "subscribed",
+        merge_fields: {
+          FNAME: contact.firstName,
+          LNAME: contact.lastName,
+        },
+      }));
 
-      const promises = batch.map(async (contact) => {
-        try {
-          const encoder = new TextEncoder();
-          const data = encoder.encode(contact.email);
-          const hashBuffer = await stdCrypto.subtle.digest("MD5", data);
-          const subscriberHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      const url = `https://${serverPrefix}.api.mailchimp.com/3.0/lists/${listId}`;
 
-          const url = `https://${serverPrefix}.api.mailchimp.com/3.0/lists/${listId}/members/${subscriberHash}`;
-
-          const res = await fetch(url, {
-            method: "PUT",
-            headers: {
-              Authorization: `apikey ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email_address: contact.email,
-              status_if_new: "subscribed",
-              merge_fields: {
-                FNAME: contact.firstName,
-                LNAME: contact.lastName,
-              },
-            }),
-          });
-
-          if (res.ok) {
-            synced++;
-          } else {
-            const errText = await res.text();
-            failed++;
-            if (errors.length < 10) errors.push(`${contact.email}: ${errText.substring(0, 100)}`);
-          }
-        } catch (err) {
-          failed++;
-          if (errors.length < 10) errors.push(`${contact.email}: ${err.message}`);
-        }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `apikey ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          members,
+          update_existing: true,
+        }),
       });
 
-      await Promise.all(promises);
-
-      // Small delay between batches
-      if (i + BATCH_SIZE < allContacts.length) {
-        await new Promise((r) => setTimeout(r, 300));
+      if (res.ok) {
+        const result = await res.json();
+        totalAdded += result.total_created || 0;
+        totalUpdated += result.total_updated || 0;
+        totalErrors += result.error_count || 0;
+        if (result.errors?.length > 0 && errors.length < 10) {
+          for (const e of result.errors.slice(0, 10 - errors.length)) {
+            errors.push(`${e.email_address}: ${e.error}`);
+          }
+        }
+        console.log(`Chunk ${Math.floor(i / CHUNK_SIZE) + 1}: created=${result.total_created}, updated=${result.total_updated}, errors=${result.error_count}`);
+      } else {
+        const errText = await res.text();
+        console.error(`Mailchimp batch error: ${res.status} ${errText}`);
+        totalErrors += chunk.length;
+        if (errors.length < 10) errors.push(`Batch error: ${errText.substring(0, 200)}`);
       }
     }
 
-    console.log(`Bulk sync complete: ${synced} synced, ${failed} failed out of ${allContacts.length}`);
+    console.log(`Bulk sync complete: ${totalAdded} added, ${totalUpdated} updated, ${totalErrors} errors`);
 
     return new Response(
       JSON.stringify({
         success: true,
         totalContacts: allContacts.length,
-        synced,
-        failed,
+        added: totalAdded,
+        updated: totalUpdated,
         errors: errors.length > 0 ? errors : undefined,
+        errorCount: totalErrors,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
