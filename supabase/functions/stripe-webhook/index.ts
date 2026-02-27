@@ -446,6 +446,9 @@ serve(async (req) => {
 
           console.log("Member booking with guests created:", booking?.id);
 
+          // Sync customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+
           // Send booking confirmation email
           if (booking?.id) {
             try {
