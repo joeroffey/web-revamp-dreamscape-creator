@@ -1,72 +1,62 @@
 
 
-## SEO Enhancement Plan
+## Mailchimp Integration Plan
 
-Based on the audit recommendations, here is what can be done and what is already complete or not applicable.
+### What You'll Need
 
----
+You'll need two things from your Mailchimp account:
+1. **Mailchimp API Key** -- found in Account Settings > API Keys
+2. **Mailchimp Audience (List) ID** -- found in Audience > Settings > Audience name and defaults
 
-### Already Done (No Action Needed)
+You'll also need to know your **Mailchimp data center** (the suffix on your API key, e.g. `us21`).
 
-- **LocalBusinessSchema enhancements** (`@id`, `areaServed`, `hasMap`, multiple images, `priceRange`) -- all already present
-- **og:image default fallback** -- already configured in `SEOHead` component with a default image
+### Architecture
 
-### Not Feasible
+A single new edge function `sync-to-mailchimp` will accept a name + email and upsert the contact into your Mailchimp audience. It will be called from every checkout flow as a fire-and-forget call (failures won't block bookings).
 
-- **Pre-rendering (SSG)** -- requires migrating to Next.js or a similar framework, which is outside Lovable's capabilities. Google handles JavaScript-rendered content well for modern SPAs, so this is not critical.
+### Changes
 
----
+#### 1. New edge function: `supabase/functions/sync-to-mailchimp/index.ts`
+- Accepts `{ email, firstName, lastName }` via POST
+- Uses Mailchimp Marketing API (`PUT /lists/{listId}/members/{subscriberHash}`) to add or update the contact
+- Uses MD5 hash of lowercase email as subscriber hash (Mailchimp requirement)
+- Sets status to `subscribed` for new contacts, preserves existing status for updates (`status_if_new`)
+- Reads `MAILCHIMP_API_KEY`, `MAILCHIMP_LIST_ID`, `MAILCHIMP_SERVER_PREFIX` from secrets
 
-### Changes To Implement
+#### 2. Add to `supabase/config.toml`
+- `[functions.sync-to-mailchimp]` with `verify_jwt = false`
 
-#### 1. Add FAQ Schema (JSON-LD) to Your Visit Page
+#### 3. Update `supabase/functions/stripe-webhook/index.ts`
+- After each successful checkout (booking, partial credit booking, member booking with guests, gift card, membership subscription, membership one-time, intro offer), fire a call to `sync-to-mailchimp` with the customer's name and email
+- Single helper function at the top to avoid repetition
 
-The `/your-visit` page already has a rich FAQ section with 6 questions. Adding `FAQPage` structured data will make these eligible for rich results in Google Search, which significantly boosts click-through rates.
+#### 4. Update `supabase/functions/create-member-booking/index.ts`
+- Add the same `sync-to-mailchimp` call after successful free membership booking
 
-**File:** `src/pages/YourVisit.tsx`
-- Add a JSON-LD `FAQPage` schema block via `react-helmet-async` containing all 6 existing FAQ items
+#### 5. Check other free checkout flows
+- `create-credit-booking` and `create-token-booking` -- add the same call
 
-#### 2. Add FAQ Sections + Schema to Key Service Pages
+#### 6. Store 3 new secrets
+- `MAILCHIMP_API_KEY`
+- `MAILCHIMP_LIST_ID`
+- `MAILCHIMP_SERVER_PREFIX` (e.g. `us21`)
 
-Add short FAQ sections with structured data to pages that currently lack them, boosting content depth and enabling rich results:
+### Checkout Flows Covered
 
-**a. Booking page** (`src/pages/Booking.tsx`)
-- Add 4-5 FAQs below the booking form (e.g., "How long is a session?", "What's the difference between communal and private?", "Do I need to bring anything?", "Can I cancel or reschedule?")
-- Include `FAQPage` JSON-LD schema
-
-**b. Memberships page** (`src/pages/Memberships.tsx`)
-- Add 4-5 FAQs below membership cards (e.g., "Can I cancel anytime?", "What happens if I miss a session?", "Can I upgrade my membership?", "Is there a joining fee?")
-- Include `FAQPage` JSON-LD schema
-
-**c. Gift Cards page** (`src/pages/GiftCards.tsx`)
-- Add 3-4 FAQs below the purchase form (e.g., "How long are gift cards valid?", "Can I use a gift card for memberships?", "How does the recipient redeem it?")
-- Include `FAQPage` JSON-LD schema
-
-#### 3. Create Reusable FAQ Schema Component
-
-To keep things clean, create a small reusable component that takes an array of Q&A pairs and renders both the visible accordion and the JSON-LD schema.
-
-**New file:** `src/components/FAQSchema.tsx`
-- Accepts `faqs: { question: string; answer: string }[]` prop
-- Renders JSON-LD `FAQPage` schema via Helmet
-- Optionally renders the visible FAQ accordion UI
-
----
-
-### Technical Summary
-
-| File | Change |
+| Flow | Where triggered |
 |---|---|
-| `src/components/FAQSchema.tsx` | New reusable component for FAQ structured data |
-| `src/pages/YourVisit.tsx` | Add FAQPage JSON-LD schema for existing 6 FAQs |
-| `src/pages/Booking.tsx` | Add FAQ section + schema (4-5 questions) |
-| `src/pages/Memberships.tsx` | Add FAQ section + schema (4-5 questions) |
-| `src/pages/GiftCards.tsx` | Add FAQ section + schema (3-4 questions) |
+| Standard booking (card) | stripe-webhook (type: booking) |
+| Partial credit booking | stripe-webhook (type: partial_credit_booking) |
+| Member + paying guests | stripe-webhook (type: member_booking_with_guests) |
+| Gift card purchase | stripe-webhook (type: gift_card) |
+| Membership (subscription) | stripe-webhook (subscription mode) |
+| Membership (one-time) | stripe-webhook (type: membership_onetime) |
+| Intro offer | stripe-webhook (type: intro_offer) |
+| Free member booking | create-member-booking |
+| Full credit booking | create-credit-booking |
+| Token booking | create-token-booking |
 
-### Impact
+### What Customers Experience
 
-- FAQ rich results can increase click-through rate by 20-30%
-- Additional content depth on service pages improves topical relevance
-- No visual or functional changes to existing features -- FAQs are added below existing content
-- Structured data validates instantly with Google's Rich Results Test
+Nothing changes. The Mailchimp sync happens silently in the background after checkout. If Mailchimp is down or misconfigured, bookings still work normally.
 
