@@ -7,6 +7,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Fire-and-forget Mailchimp sync helper
+async function syncToMailchimp(email: string, name: string) {
+  try {
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-to-mailchimp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ email, firstName, lastName }),
+      }
+    );
+    if (!res.ok) console.error("Mailchimp sync failed:", await res.text());
+    else console.log("Mailchimp sync triggered for:", email);
+  } catch (err) {
+    console.error("Mailchimp sync error (non-blocking):", err);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -141,6 +166,9 @@ serve(async (req) => {
           }
           
           console.log("Booking created successfully:", booking?.id);
+
+          // Sync customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
 
           // Send booking confirmation email
           if (booking?.id) {
@@ -302,6 +330,9 @@ serve(async (req) => {
         }
 
         console.log("Partial credit booking confirmed:", booking?.id);
+
+        // Sync customer to Mailchimp
+        syncToMailchimp(customerEmail, customerName);
       }
 
       // Handle member booking with paying guests
@@ -415,6 +446,9 @@ serve(async (req) => {
 
           console.log("Member booking with guests created:", booking?.id);
 
+          // Sync customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+
           // Send booking confirmation email
           if (booking?.id) {
             try {
@@ -444,8 +478,13 @@ serve(async (req) => {
           .from('gift_cards')
           .update({ payment_status: 'paid' })
           .eq('stripe_session_id', session.id)
-          .select('id')
+          .select('id, purchaser_name, purchaser_email')
           .maybeSingle();
+
+        // Sync gift card purchaser to Mailchimp
+        if (gcRow) {
+          syncToMailchimp(gcRow.purchaser_email, gcRow.purchaser_name);
+        }
 
         // Send gift card email to recipient
         if (gcRow?.id) {
@@ -537,6 +576,9 @@ serve(async (req) => {
 
         if (membershipInsertError) {
           console.error('Error inserting membership:', membershipInsertError);
+        } else {
+          // Sync membership customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
         }
 
         if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
@@ -620,6 +662,9 @@ serve(async (req) => {
 
         if (membershipInsertError) {
           console.error('Error inserting one-time membership:', membershipInsertError);
+        } else {
+          // Sync one-time membership customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
         }
 
         if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
@@ -681,6 +726,8 @@ serve(async (req) => {
             console.error('Error inserting intro offer tokens:', tokenError);
           } else {
             console.log('Intro offer tokens created for:', customerEmail);
+            // Sync intro offer customer to Mailchimp
+            syncToMailchimp(customerEmail, customerName);
           }
 
           // Also add/update customer record if not exists

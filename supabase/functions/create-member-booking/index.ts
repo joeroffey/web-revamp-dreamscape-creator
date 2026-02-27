@@ -6,6 +6,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function syncToMailchimp(email: string, name: string) {
+  try {
+    const nameParts = name.trim().split(/\s+/);
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-to-mailchimp`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+        body: JSON.stringify({ email, firstName: nameParts[0] || "", lastName: nameParts.slice(1).join(" ") || "" }),
+      }
+    );
+    if (!res.ok) console.error("Mailchimp sync failed:", await res.text());
+  } catch (err) { console.error("Mailchimp sync error:", err); }
+}
+
 interface MemberBookingRequest {
   userId: string;
   customerName: string;
@@ -180,6 +195,9 @@ serve(async (req) => {
         console.error("Error sending booking confirmation email:", emailErr);
       }
     }
+
+    // Sync to Mailchimp
+    syncToMailchimp(customerEmail, customerName);
 
     return new Response(
       JSON.stringify({ 
