@@ -330,6 +330,9 @@ serve(async (req) => {
         }
 
         console.log("Partial credit booking confirmed:", booking?.id);
+
+        // Sync customer to Mailchimp
+        syncToMailchimp(customerEmail, customerName);
       }
 
       // Handle member booking with paying guests
