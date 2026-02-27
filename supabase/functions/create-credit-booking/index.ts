@@ -235,6 +235,9 @@ serve(async (req) => {
 
     const totalRemainingCredits = (remainingCredits || []).reduce((sum, c) => sum + c.credit_balance, 0);
 
+    // Sync to Mailchimp
+    syncToMailchimp(customerEmail, customerName);
+
     return new Response(
       JSON.stringify({
         success: true,

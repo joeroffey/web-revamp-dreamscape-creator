@@ -180,6 +180,9 @@ serve(async (req) => {
     // Calculate total remaining tokens across all batches
     const totalRemainingTokens = tokens.reduce((sum, t) => sum + t.tokens_remaining, 0) - 1;
 
+    // Sync to Mailchimp
+    syncToMailchimp(normalizedEmail, customerName);
+
     return new Response(
       JSON.stringify({ 
         success: true, 

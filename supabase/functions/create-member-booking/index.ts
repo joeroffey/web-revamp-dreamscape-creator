@@ -194,6 +194,9 @@ serve(async (req) => {
       }
     }
 
+    // Sync to Mailchimp
+    syncToMailchimp(customerEmail, customerName);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
