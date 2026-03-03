@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Loader2, TrendingUp, Users, CalendarDays, PoundSterling, Tag } from "lucide-react";
+import { Download, Loader2, TrendingUp, Users, CalendarDays, PoundSterling, Tag, Globe, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatGBP } from "@/lib/format";
 import { AdminDateRangeKey, getDateRange } from "@/lib/dateRange";
+import { toast } from "sonner";
 
 type ReportRow = {
   source: "booking" | "gift_card" | "membership";
