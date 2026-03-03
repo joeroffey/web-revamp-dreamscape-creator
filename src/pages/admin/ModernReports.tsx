@@ -41,8 +41,26 @@ export default function ModernReports() {
 
   useEffect(() => {
     void fetchReport();
+    void fetchPageRank();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeKey]);
+
+  const fetchPageRank = async () => {
+    setPageRankLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-pagerank', {
+        body: { domains: ['revitalisehub.com'] },
+      });
+      if (error) throw error;
+      if (data?.success && data.data?.[0]) {
+        setPageRankData(data.data[0]);
+      }
+    } catch (err) {
+      console.error('PageRank fetch error:', err);
+    } finally {
+      setPageRankLoading(false);
+    }
+  };
 
   const fetchReport = async () => {
     setLoading(true);
