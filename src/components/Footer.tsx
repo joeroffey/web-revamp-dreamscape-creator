@@ -37,6 +37,10 @@ export const Footer = () => {
                     src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
                     alt="Revitalise Hub Logo" 
                     className="h-32 w-auto"
+                    loading="lazy"
+                    decoding="async"
+                    width={128}
+                    height={128}
                   />
                 </Link>
                 <div className="flex gap-3">
@@ -152,7 +156,7 @@ export const Footer = () => {
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-foreground/70 text-sm">
-              © 2024 Revitalise Hub. All rights reserved.
+              © 2025 Revitalise Hub. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <Link 
