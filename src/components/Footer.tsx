@@ -37,6 +37,10 @@ export const Footer = () => {
                     src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
                     alt="Revitalise Hub Logo" 
                     className="h-32 w-auto"
+                    loading="lazy"
+                    decoding="async"
+                    width={128}
+                    height={128}
                   />
                 </Link>
                 <div className="flex gap-3">
