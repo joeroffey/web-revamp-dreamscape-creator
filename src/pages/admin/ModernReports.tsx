@@ -23,11 +23,21 @@ type ReportRow = {
   final_amount: number;
 };
 
+type PageRankData = {
+  domain: string;
+  page_rank_integer: number;
+  page_rank_decimal: number;
+  rank: string;
+  status_code: number;
+};
+
 export default function ModernReports() {
   const [rangeKey, setRangeKey] = useState<AdminDateRangeKey>("30days");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [serviceBreakdown, setServiceBreakdown] = useState<Record<string, { count: number; revenue: number }>>({});
+  const [pageRankData, setPageRankData] = useState<PageRankData | null>(null);
+  const [pageRankLoading, setPageRankLoading] = useState(false);
 
   useEffect(() => {
     void fetchReport();
