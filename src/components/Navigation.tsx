@@ -74,6 +74,8 @@ export const Navigation = () => {
               src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
               className="h-20 sm:h-24 md:h-28 lg:h-36 xl:h-40 w-auto transition-all duration-300 hover:scale-105"
+              width={160}
+              height={160}
             />
           </Link>
 

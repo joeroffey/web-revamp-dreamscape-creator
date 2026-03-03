@@ -156,7 +156,7 @@ export const Footer = () => {
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-foreground/70 text-sm">
-              © 2024 Revitalise Hub. All rights reserved.
+              © 2025 Revitalise Hub. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <Link 
