@@ -304,6 +304,54 @@ export default function ModernReports() {
               </Card>
             </div>
 
+            {/* PageRank SEO Widget */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-sm">
+                    <Globe className="h-4 w-4" /> Domain Authority (Open PageRank)
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchPageRank()}
+                    disabled={pageRankLoading}
+                  >
+                    <RefreshCw className={`h-3 w-3 ${pageRankLoading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pageRankLoading && !pageRankData ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Fetching PageRank…
+                  </div>
+                ) : pageRankData ? (
+                  <div className="flex items-center gap-6">
+                    <div>
+                      <div className="text-3xl font-bold">{pageRankData.page_rank_integer}<span className="text-lg text-muted-foreground">/10</span></div>
+                      <div className="text-xs text-muted-foreground">PageRank Score</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold">{pageRankData.page_rank_decimal}</div>
+                      <div className="text-xs text-muted-foreground">Decimal Score</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold">{pageRankData.rank ? `#${Number(pageRankData.rank).toLocaleString()}` : 'N/A'}</div>
+                      <div className="text-xs text-muted-foreground">Global Rank</div>
+                    </div>
+                    <div className="ml-auto">
+                      <Badge variant="outline">{pageRankData.domain}</Badge>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Unable to fetch PageRank data. Check your API key configuration.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <Card className="lg:col-span-1">
                 <CardHeader>
