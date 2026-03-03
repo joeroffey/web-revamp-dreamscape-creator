@@ -49,7 +49,7 @@ export default function ModernReports() {
     setPageRankLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('check-pagerank', {
-        body: { domains: ['revitalisehub.com'] },
+        body: { domains: ['revitalisehub.co.uk'] },
       });
       if (error) throw error;
       if (data?.success && data.data?.[0]) {
