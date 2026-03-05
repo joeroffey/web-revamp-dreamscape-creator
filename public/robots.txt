@@ -9,6 +9,5 @@ Disallow: /booking-success
 Disallow: /membership-success
 Disallow: /gift-card-success
 Disallow: /intro-offer-success
-Disallow: /redeem-gift-card
 
 Sitemap: https://www.revitalisehub.co.uk/sitemap.xml
