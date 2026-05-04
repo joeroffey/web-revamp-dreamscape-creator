@@ -91,9 +91,23 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     return dayHours && !dayHours.closed;
   };
 
+  // Format a Date as YYYY-MM-DD using LOCAL components (avoids UTC day-shift in BST)
+  const toLocalDateStr = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  // Parse a YYYY-MM-DD string as a LOCAL date (not UTC midnight)
+  const parseLocalDate = (dateString: string): Date => {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+
   // Get business hours for a specific date
   const getHoursForDate = (dateString: string): { open: string; close: string } | null => {
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     const dayName = getDayName(date.getDay());
     const dayHours = businessHours[dayName];
     
@@ -115,14 +129,14 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
       
       // Only include days that are open according to business hours
       if (isDayOpen(date)) {
-        dates.push(date.toISOString().split('T')[0]);
+        dates.push(toLocalDateStr(date));
       }
     }
     return dates;
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     return date.toLocaleDateString('en-GB', { 
       weekday: 'short', 
       month: 'short', 
