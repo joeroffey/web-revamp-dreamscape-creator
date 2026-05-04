@@ -1386,12 +1386,15 @@ const Booking = () => {
                         <div className="flex justify-between">
                           <span>Date:</span>
                           <span className="font-medium">
-                            {new Date(selectedTimeSlot.date).toLocaleDateString('en-GB', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
+                            {(() => {
+                              const [y, m, d] = selectedTimeSlot.date.split('-').map(Number);
+                              return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('en-GB', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              });
+                            })()}
                           </span>
                         </div>
                         <div className="flex justify-between">
