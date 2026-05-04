@@ -149,7 +149,7 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
   };
 
   const isSlotInPast = (slotDate: string, slotTime: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateStr(new Date());
     
     // Only check for past times if the slot is today
     if (slotDate !== today) {
