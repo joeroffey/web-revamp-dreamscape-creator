@@ -108,7 +108,7 @@ export const EditBookingDialog = ({
       customer_phone: booking.customer_phone || '',
       guest_count: booking.guest_count || 1,
       session_date: parse(booking.session_date, 'yyyy-MM-dd', new Date()),
-      session_time: booking.session_time?.substring(0, 5) || '09:00',
+      session_time: booking.session_time?.substring(0, 5) || '08:30',
       payment_status: booking.payment_status as any,
       special_requests: booking.special_requests || '',
     },
@@ -121,7 +121,7 @@ export const EditBookingDialog = ({
       customer_phone: booking.customer_phone || '',
       guest_count: booking.guest_count || 1,
       session_date: parse(booking.session_date, 'yyyy-MM-dd', new Date()),
-      session_time: booking.session_time?.substring(0, 5) || '09:00',
+      session_time: booking.session_time?.substring(0, 5) || '08:30',
       payment_status: booking.payment_status as any,
       special_requests: booking.special_requests || '',
     });
