@@ -321,7 +321,7 @@ export const TimeSlotPicker = ({ serviceType, onSlotSelect, selectedSlotId }: Ti
     
     // Set default date to today if available, otherwise first available date
     const availableDates = getAvailableDates();
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateStr(new Date());
     
     if (availableDates.includes(today)) {
       setSelectedDate(today);
