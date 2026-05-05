@@ -15,7 +15,8 @@ export const PhotoGallery = () => {
     },
     {
       src: "/images/red-light/panel.jpg",
-      alt: "Red light therapy panel at Revitalise Hub"
+      alt: "Red light therapy panel at Revitalise Hub",
+      position: "object-top"
     },
     {
       src: "/images/0c4c3a2b-152f-4e1e-892e-82c619d37291.png",
@@ -48,7 +49,7 @@ export const PhotoGallery = () => {
               <img 
                 src={image.src}
                 alt={image.alt}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className={`w-full h-full object-cover ${(image as any).position ?? ""} transition-transform duration-500 group-hover:scale-110`}
               />
             </div>
           ))}
