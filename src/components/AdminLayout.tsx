@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/components/AuthContext';
@@ -12,6 +12,14 @@ import { AdminBreadcrumbs } from './admin/AdminBreadcrumbs';
 interface AdminLayoutProps {
   children: ReactNode;
 }
+
+const SIDEBAR_STORAGE_KEY = 'admin-sidebar-open';
+
+const getInitialSidebarOpen = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
+  return stored === null ? true : stored === 'true';
+};
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { session, signOut } = useAuth();
