@@ -56,6 +56,10 @@ const Dashboard = () => {
   const [firstName, setFirstName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Booking | null>(null);
 
   console.log('Dashboard - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
 
