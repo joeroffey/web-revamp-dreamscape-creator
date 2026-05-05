@@ -353,6 +353,31 @@ export default function AdminMemberships() {
                               Resume
                             </Button>
                           )}
+                          {membership.membership_type !== 'unlimited' && membership.sessions_per_week !== 999 && membership.status !== 'cancelled' && membership.status !== 'expired' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => adjustSessions(membership, -1)}
+                                disabled={(membership.sessions_remaining || 0) <= 0}
+                                className="min-h-[40px]"
+                                title="Remove a session"
+                              >
+                                <Minus className="h-4 w-4 mr-2" />
+                                Session
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => adjustSessions(membership, 1)}
+                                className="min-h-[40px]"
+                                title="Add a session"
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Session
+                              </Button>
+                            </>
+                          )}
                           {membership.status !== 'cancelled' && membership.status !== 'expired' && (
                             <Button
                               variant="destructive"
