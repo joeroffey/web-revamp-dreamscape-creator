@@ -43,6 +43,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon, Loader2, Ban, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AdminTimeSlotPicker } from '@/components/admin/AdminTimeSlotPicker';
 
 const formSchema = z.object({
   customer_name: z.string().min(1, 'Customer name is required'),
@@ -371,7 +372,7 @@ export const EditBookingDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Booking</DialogTitle>
           </DialogHeader>
@@ -430,69 +431,29 @@ export const EditBookingDialog = ({
               {/* Session Details */}
               <div className="space-y-4">
                 <h3 className="font-medium text-sm text-muted-foreground">Session Details</h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="session_date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto")}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="session_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Time</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select time" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TIME_SLOTS.map((time) => (
-                              <SelectItem key={time} value={time}>
-                                {time}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="session_date"
+                  render={({ field: dateField }) => (
+                    <FormField
+                      control={form.control}
+                      name="session_time"
+                      render={({ field: timeField }) => (
+                        <FormItem>
+                          <AdminTimeSlotPicker
+                            serviceType={booking.booking_type === 'private' ? 'private' : 'combined'}
+                            selectedDate={dateField.value ? format(dateField.value, 'yyyy-MM-dd') : ''}
+                            selectedTime={timeField.value ? `${timeField.value}:00` : ''}
+                            onDateChange={(date) => dateField.onChange(parse(date, 'yyyy-MM-dd', new Date()))}
+                            onTimeChange={(time) => timeField.onChange(time.slice(0, 5))}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                />
 
                 <FormField
                   control={form.control}
