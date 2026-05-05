@@ -67,8 +67,8 @@ export const HomeCTASection = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cards.map((card) => (
+        {(() => {
+          const renderCard = (card: typeof cards[number]) => (
             <div
               key={card.title}
               className="group relative backdrop-blur-md bg-foreground/5 border border-foreground/15 p-8 transition-all duration-500 hover:bg-foreground/10 hover:border-foreground/25"
@@ -98,8 +98,19 @@ export const HomeCTASection = () => {
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          );
+
+          return (
+            <>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cards.slice(0, 3).map(renderCard)}
+              </div>
+              <div className="grid sm:grid-cols-2 gap-6 mt-6 max-w-3xl mx-auto">
+                {cards.slice(3, 5).map(renderCard)}
+              </div>
+            </>
+          );
+        })()}
       </div>
     </section>
   );
