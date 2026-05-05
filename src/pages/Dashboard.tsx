@@ -193,7 +193,51 @@ const Dashboard = () => {
     }
   };
 
-  const formatServiceType = (serviceType: string) => {
+  const getRefundDescription = (b: Booking): string => {
+    const sr = b.special_requests || "";
+    if (sr.includes("[Membership booking]")) return "1 membership session will be returned to your account.";
+    if (sr.includes("[Credit booking]") || sr.includes("[Partial credit]")) {
+      return `£${(b.price_amount / 100).toFixed(2)} will be returned to your account credit (valid 1 year).`;
+    }
+    if ((b.discount_amount || 0) > 0 && (!b.final_amount || b.final_amount === 0)) {
+      return "1 session token will be returned to your account.";
+    }
+    if ((b.final_amount || 0) > 0) {
+      return `£${((b.final_amount || 0) / 100).toFixed(2)} will be returned as account credit (valid 1 year). Card refunds are not issued.`;
+    }
+    return "Your booking will be cancelled.";
+  };
+
+  const isUpcoming = (b: Booking): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [y, m, d] = b.session_date.split("-").map(Number);
+    const slotDate = new Date(y, m - 1, d);
+    return slotDate >= today && b.payment_status === "paid";
+  };
+
+  const handleCancelBooking = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("user-cancel-booking", {
+        body: { bookingId: cancelTarget.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: "Booking cancelled",
+        description: (data as any)?.refundDetail || "Your booking has been cancelled.",
+      });
+      setCancelTarget(null);
+      fetchUserData();
+    } catch (e: any) {
+      toast({ title: "Could not cancel", description: e.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
     switch (serviceType) {
       case 'ice_bath': return 'Ice Bath';
       case 'sauna': return 'Sauna';
