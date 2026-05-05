@@ -154,17 +154,23 @@ export default function ModernScheduleManagement() {
                       "hover:border-primary/50 hover:bg-primary/5",
                       selected
                         ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]"
+                        : today
+                        ? "bg-accent/40 border-accent text-accent-foreground ring-2 ring-accent/60"
                         : "bg-background border-border/60",
-                      weekend && !selected && "opacity-90"
+                      weekend && !selected && !today && "opacity-90"
                     )}
                   >
                     <span
                       className={cn(
                         "text-[10px] uppercase tracking-wider font-medium",
-                        selected ? "text-primary-foreground/80" : "text-muted-foreground"
+                        selected
+                          ? "text-primary-foreground/80"
+                          : today
+                          ? "text-accent-foreground font-semibold"
+                          : "text-muted-foreground"
                       )}
                     >
-                      {format(day, "EEE")}
+                      {today ? "Today" : format(day, "EEE")}
                     </span>
                     <span className="text-lg font-semibold leading-tight mt-0.5">
                       {format(day, "d")}
