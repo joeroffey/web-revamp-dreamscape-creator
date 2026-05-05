@@ -14,8 +14,8 @@ export const PhotoGallery = () => {
       alt: "Traditional sauna session"
     },
     {
-      src: "/images/2286fefd-48ef-446c-a1e3-9ee8968bacbd.png",
-      alt: "Ice bath facility with Revitalise Hub branding"
+      src: "/images/red-light/panel.jpg",
+      alt: "Red light therapy panel at Revitalise Hub"
     },
     {
       src: "/images/0c4c3a2b-152f-4e1e-892e-82c619d37291.png",
