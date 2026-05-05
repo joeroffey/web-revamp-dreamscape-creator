@@ -49,19 +49,50 @@ export const HomeCTASection = () => {
 
   return (
     <section
-      className="relative py-24 overflow-hidden"
+      className="relative py-24 bg-background"
       aria-labelledby="why-choose-heading"
     >
-      {/* Background Image with Overlay */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url('/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/75" />
-
       <div className="relative max-w-6xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2
+            id="why-choose-heading"
+            className="text-4xl md:text-6xl font-bold text-foreground tracking-wider mb-4"
+          >
+            WHY CHOOSE REVITALISE HUB?
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
+            Whether you're recovering from training, managing stress or simply
+            looking for a boost, our contrast therapy sessions in Lymington
+            leave you feeling recharged.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cards.map((card) => (
+            <div
+              key={card.title}
+              className="group relative backdrop-blur-md bg-foreground/5 border border-foreground/15 p-8 transition-all duration-500 hover:bg-foreground/10 hover:border-foreground/25"
+            >
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-foreground/30" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-foreground/30" />
+
+              <div className="flex flex-col h-full justify-between min-h-[220px]">
+                <div>
+                  <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase mb-3 block">
+                    {card.eyebrow}
+                  </span>
+                  <h3 className="text-2xl md:text-3xl font-light text-foreground mb-4 tracking-wide">
+                    {card.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {card.description}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => navigate(card.href)}
+                  className="mt-6 inline-flex items-center gap-3 text-foreground border-b border-foreground/40 pb-1 w-fit group-hover:border-foreground transition-colors duration-300"
+                >
         <div className="text-center mb-16">
           <h2
             id="why-choose-heading"
