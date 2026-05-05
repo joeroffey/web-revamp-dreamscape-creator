@@ -137,7 +137,7 @@ export default function ModernScheduleManagement() {
 
             <div
               ref={stripRef}
-              className="flex-1 grid grid-cols-7 sm:grid-cols-14 gap-2 overflow-x-auto scrollbar-hide"
+              className="flex-1 grid grid-cols-7 gap-2 overflow-x-auto scrollbar-hide"
             >
               {weekDays.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
