@@ -592,7 +592,7 @@ const AdminEvents = () => {
           </DialogContent>
         </Dialog>
       </main>
-    </div>
+    </AdminLayout>
   );
 };
 
