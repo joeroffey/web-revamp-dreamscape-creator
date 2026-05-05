@@ -495,6 +495,35 @@ const Dashboard = () => {
           </div>
         </section>
       </main>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {cancelTarget && getRefundDescription(cancelTarget)}
+              <br /><br />
+              Please note: cash refunds are not issued. The slot will be released for other guests.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep booking</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelBooking} disabled={cancelling}>
+              {cancelling ? "Cancelling..." : "Confirm cancel"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {rescheduleTarget && (
+        <RescheduleBookingDialog
+          open={!!rescheduleTarget}
+          onOpenChange={(o) => !o && setRescheduleTarget(null)}
+          bookingId={rescheduleTarget.id}
+          bookingType={rescheduleTarget.booking_type}
+          onSuccess={fetchUserData}
+        />
+      )}
     </div>
   );
 };
