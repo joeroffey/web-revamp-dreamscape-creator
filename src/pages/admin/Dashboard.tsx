@@ -274,7 +274,9 @@ export default function AdminDashboard() {
                 <CardContent>
                   <div className="text-xl md:text-2xl font-bold">{stat.value}</div>
                   {stat.action && (
-                    <p className="text-xs text-muted-foreground mt-1">Tap to manage</p>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      View <ArrowRight className="h-3 w-3" />
+                    </p>
                   )}
                 </CardContent>
               </Card>
