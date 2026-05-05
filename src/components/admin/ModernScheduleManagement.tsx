@@ -57,7 +57,7 @@ export default function ModernScheduleManagement() {
 
   const fetchWeekCounts = async () => {
     const start = format(weekAnchor, "yyyy-MM-dd");
-    const end = format(addDays(weekAnchor, 13), "yyyy-MM-dd");
+    const end = format(addDays(weekAnchor, 6), "yyyy-MM-dd");
     const { data } = await supabase
       .from("bookings")
       .select("session_date")
