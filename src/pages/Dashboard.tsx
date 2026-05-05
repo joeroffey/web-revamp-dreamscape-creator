@@ -133,6 +133,16 @@ const Dashboard = () => {
       }
       setMembership(membershipData);
 
+      // Fetch credit balance
+      const { data: creditsData } = await supabase
+        .from("customer_credits")
+        .select("credit_balance, expires_at")
+        .eq("user_id", user?.id);
+      const total = (creditsData || [])
+        .filter((c: any) => !c.expires_at || new Date(c.expires_at) > new Date())
+        .reduce((sum: number, c: any) => sum + (c.credit_balance || 0), 0);
+      setCreditBalance(total);
+
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast({
