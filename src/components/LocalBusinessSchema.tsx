@@ -85,6 +85,14 @@ export const LocalBusinessSchema = () => {
             "name": "Gift Cards",
             "description": "Gift vouchers for contrast therapy sessions"
           }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Red Light Therapy",
+            "description": "Complimentary red light therapy included with every session"
+          }
         }
       ]
     }

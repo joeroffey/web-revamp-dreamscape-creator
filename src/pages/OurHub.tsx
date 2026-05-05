@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Thermometer, Snowflake, Waves, Users } from "lucide-react";
+import { MapPin, Clock, Thermometer, Snowflake, Waves, Users, Sun } from "lucide-react";
 
 const OurHub = () => {
   const facilities = [
@@ -30,6 +30,12 @@ const OurHub = () => {
       description: "Professional-grade therapy equipment including our signature ice baths for optimal recovery.",
       icon: Waves,
       image: "/images/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
+    },
+    {
+      title: "Red Light Therapy Room",
+      description: "Our new red light therapy space — included with every session at no extra cost. Wind down and recover at a cellular level.",
+      icon: Sun,
+      image: "/images/red-light/room.jpg"
     }
   ];
 

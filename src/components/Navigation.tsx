@@ -45,6 +45,7 @@ export const Navigation = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Our Hub", href: "/our-hub" },
+    { name: "Red Light Therapy", href: "/red-light-therapy" },
     { name: "Your Visit", href: "/your-visit" },
     { name: "Memberships", href: "/memberships" },
     { name: "Fitness & Recovery", href: "/fitness-recovery" },

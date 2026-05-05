@@ -57,6 +57,16 @@ export const HomeCTASection = () => {
               </a>.
             </p>
           </div>
+
+          <div className="space-y-4 md:col-span-2">
+            <h3 className="text-xl font-semibold text-foreground">Now Included: Red Light Therapy</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Every session now includes complimentary access to our new red light therapy room — no booking, no extra charge. The perfect way to wind down your sauna and ice bath routine.{" "}
+              <a href="/red-light-therapy" onClick={(e) => { e.preventDefault(); navigate("/red-light-therapy"); }} className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors">
+                Discover red light therapy
+              </a>.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
