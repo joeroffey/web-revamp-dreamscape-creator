@@ -15,7 +15,9 @@ import {
   Settings
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { BookingDetailsDialog } from '@/components/admin/BookingDetailsDialog';
 import { formatGBP, formatDateTime } from '@/lib/format';
+import { ChevronRight, ArrowRight } from 'lucide-react';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
     recentBookings: []
   });
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -271,7 +274,9 @@ export default function AdminDashboard() {
                 <CardContent>
                   <div className="text-xl md:text-2xl font-bold">{stat.value}</div>
                   {stat.action && (
-                    <p className="text-xs text-muted-foreground mt-1">Tap to manage</p>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      View <ArrowRight className="h-3 w-3" />
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -281,37 +286,55 @@ export default function AdminDashboard() {
 
         {/* Recent Bookings */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>Recent Bookings</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/admin/bookings')}>
+              View all <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
           </CardHeader>
           <CardContent>
             {stats.recentBookings.length === 0 ? (
               <p className="text-muted-foreground">No recent bookings found.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {stats.recentBookings.map((booking) => (
-                  <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-3">
-                    <div className="flex-1">
-                      <p className="font-medium">{booking.customer_name}</p>
-                      <p className="text-sm text-muted-foreground break-all">{booking.customer_email}</p>
+                  <button
+                    key={booking.id}
+                    onClick={() => setSelectedBooking(booking)}
+                    className="w-full text-left flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-3 hover:bg-accent/50 hover:border-primary/30 transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{booking.customer_name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{booking.customer_email}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
                       </p>
                     </div>
-                    <div className="text-left sm:text-right">
-                      <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
-                      <p className={`text-sm ${
-                        booking.payment_status === 'paid' ? 'text-green-600' : 'text-orange-600'
-                      }`}>
-                        {booking.payment_status}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-left sm:text-right">
+                        <p className="font-medium">{formatCurrency(booking.price_amount)}</p>
+                        <p className={`text-sm ${
+                          booking.payment_status === 'paid' ? 'text-green-600' : 'text-orange-600'
+                        }`}>
+                          {booking.payment_status}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {selectedBooking && (
+          <BookingDetailsDialog
+            booking={selectedBooking}
+            open={!!selectedBooking}
+            onOpenChange={(open) => !open && setSelectedBooking(null)}
+          />
+        )}
       </div>
     </AdminLayout>
   );
