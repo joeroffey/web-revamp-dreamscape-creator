@@ -1,47 +1,120 @@
 ## Goal
 
-Introduce **Red Light Therapy** as a complimentary, included-in-every-session amenity. Add a dedicated info page, surface it across the site, and make clear there is no extra cost and no separate booking required.
+Replace the current single-textarea, single-image blog system with a **block-based editor** so admins can mix paragraphs and images in any order, upload images directly (no URLs), and pick a simple preset size — without touching pixel dimensions. Then redesign the public `/blog` page so each post looks like an editorial article rather than a repeating background.
 
-No booking flow, pricing, Stripe product, admin schedule, membership credit, or gift card change is needed.
+---
 
-## Changes
+## 1. Storage & Data Model
 
-### 1. New page: `src/pages/RedLightTherapy.tsx` (route `/red-light-therapy`)
+**New Supabase storage bucket: `blog-images`** (public, with admin-only write RLS on `storage.objects`).
 
-Sections:
-- **Hero** — headline "Red Light Therapy", subhead "Included with every session at no extra cost"; full-bleed `panel.jpg`.
-- **Intro** — "Red light therapy uses specific wavelengths…" copy from the doc.
-- **Benefits grid** — 4 cards: Recovery & Performance, Energy & Cellular Function, Wellbeing, Skin & Health (lucide icons: Activity, Zap, Heart, Sparkles), brand colours.
-- **How it works** — short photobiomodulation/ATP/circulation explainer paired with `session.jpg`.
-- **Recovery protocol strip** — Sauna → Ice Bath → Red Light, 3 visual steps.
-- **Guidelines** — Before / During / Safety / After cards, content lifted from the doc.
-- **"Included with your visit" callout** — explicit "No booking, no extra charge — available to all guests during their session." CTA buttons → `/booking` (book a session) and `/our-hub`.
-- Uses `SEOHead` + `ScrollToTop`.
+**`blog_posts` table — add column:**
+- `content_blocks jsonb` — array of blocks. Existing `content` (text) is kept for backward compatibility; on first edit of a legacy post we auto-convert it into paragraph blocks.
 
-### 2. Image assets (`public/images/red-light/`)
-- `user-uploads://IMG_3591.jpg` → `room.jpg`
-- `user-uploads://IMG_3592.jpg` → `panel.jpg`
-- `user-uploads://IMG_3598.JPG` → `session.jpg`
+**Block shape:**
+```
+{ id, type: "paragraph", text: string }
+{ id, type: "image", url: string, alt: string, size: "small" | "medium" | "full", align: "left" | "center" }
+{ id, type: "heading", text: string, level: 2 | 3 }
+{ id, type: "quote", text: string }
+```
 
-### 3. Navigation (`src/components/Navigation.tsx`)
-Add "Red Light Therapy" as a top-level link (desktop + mobile) between "Our Hub" and "Your Visit".
+Image `size` maps to fixed Tailwind widths so admin never types pixels:
+- `small` → `max-w-sm` (inline, ~384px)
+- `medium` → `max-w-2xl` (~672px)
+- `full` → `w-full` (full article width, default)
 
-### 4. Our Hub page (`src/pages/OurHub.tsx`)
-- Add a 5th facility card "Red Light Therapy Room" using `room.jpg` with a "Learn more →" link to `/red-light-therapy`, including the "included with every session" line.
-- Add Red Light Therapy tile to the "Explore More" grid.
+---
 
-### 5. Your Visit page
-Add a brief "Red Light Therapy is now included" mention with a link to the new page, so guests know it's part of the experience.
+## 2. Admin Editor (`ModernBlogManagement.tsx`)
 
-### 6. Home page
-`src/components/HomeCTASection.tsx`: add a Red Light Therapy entry/link (per homepage SEO architecture rule).
+Replace the single content `Textarea` with a **stacked block editor**:
 
-### 7. SEO
-- `src/components/LocalBusinessSchema.tsx`: add Red Light Therapy as a service in `hasOfferCatalog`.
-- `public/sitemap.xml`: add `/red-light-therapy`.
+```text
+┌─ Title ──────────────────────────────┐
+├─ Excerpt ────────────────────────────┤
+├─ Cover image (upload) ───────────────┤
+│                                      │
+│  [Block 1: Paragraph]      ↑ ↓ ✕    │
+│  [Block 2: Image — medium] ↑ ↓ ✕    │
+│  [Block 3: Paragraph]      ↑ ↓ ✕    │
+│                                      │
+│  + Paragraph  + Heading  + Image  + Quote
+└──────────────────────────────────────┘
+```
 
-### 8. Routing
-- `src/App.tsx`: register `/red-light-therapy` route.
+Behaviour:
+- **Add block**: buttons at the bottom insert the chosen block type.
+- **Reorder**: up/down arrows on each block (no drag-and-drop dependency needed).
+- **Delete**: ✕ button with confirm.
+- **Paragraph block**: a `Textarea` — when admin presses Enter twice, we auto-split into two paragraph blocks (handles "paragraph space detection"). On render, single newlines become `<br/>`.
+- **Image block**: drag-and-drop or click-to-upload → uploads to `blog-images` bucket via Supabase Storage → stores public URL. Inline preview. Size selector = three buttons (Small / Medium / Full). Optional alt text field (required for accessibility, prefilled with post title).
+- **Heading / Quote blocks**: simple `Input` / `Textarea`.
 
-### 9. Memory
-Save a feature memory noting Red Light Therapy is a complimentary, no-booking amenity included with every session — so future changes don't accidentally add pricing or booking flows.
+Validation: title + at least one non-empty block required.
+
+Existing posts: when opened in the editor, if `content_blocks` is null we split `content` on `\n\n` into paragraph blocks so the admin sees their old text as editable blocks immediately.
+
+---
+
+## 3. Public Blog Page (`src/pages/Blog.tsx`)
+
+Redesign to feel like a real journal:
+
+**Hero / list page**
+- Keep the cream-toned hero header.
+- Below it, render posts as an **editorial list**: each post is a large card with cover image on one side and Title + Date + Excerpt + "Read article →" on the other. Alternate sides on desktop, stack on mobile. Use the link-tile pattern (corner accents, sliding arrow) per `mem://style/link-tile-pattern`.
+- Clicking a card navigates to `/blog/:id` (new route).
+
+**Article page (`/blog/:id`)**
+- Centered max-w-3xl column.
+- Eyebrow (date) → Title → optional cover image (full-bleed within column, rounded) → rendered blocks.
+- Block rendering:
+  - `paragraph`: `<p>` with generous leading + spacing, single `\n` → `<br/>`.
+  - `heading`: `<h2>` / `<h3>` with brand serif weight.
+  - `image`: respects `size` preset, centered, rounded, with optional caption from alt.
+  - `quote`: left brown border, italic, larger text.
+- Bottom: "Back to journal" link + the existing "Ready to experience contrast therapy?" CTA tile.
+
+This kills the "same background image throughout" problem because each post controls its own imagery and layout, and the public list shows distinct covers per post.
+
+---
+
+## 4. Routing & SEO
+
+- Add `<Route path="/blog/:id" element={<BlogPost />} />` in `src/App.tsx`.
+- New page `src/pages/BlogPost.tsx` with `SEOHead` using post title + excerpt and `ScrollToTop`.
+- Update sitemap generation if dynamic, otherwise leave (posts are not in static sitemap today).
+
+---
+
+## Technical details
+
+**Files to add**
+- `src/pages/BlogPost.tsx` — single article view.
+- `src/components/admin/BlogBlockEditor.tsx` — the block editor (paragraph / heading / image / quote blocks, reordering, upload).
+- `src/components/blog/BlogBlocks.tsx` — renderer used by `BlogPost.tsx`.
+
+**Files to edit**
+- `src/components/admin/ModernBlogManagement.tsx` — swap `Textarea` for `BlogBlockEditor`; cover image upload (replace URL `Input` with file upload to `blog-images`); save `content_blocks` on insert/update; keep `content` synced (concatenated paragraph text) for legacy/search.
+- `src/pages/Blog.tsx` — new editorial list, link to `/blog/:id`, drop inline full-content rendering.
+- `src/App.tsx` — add `/blog/:id` route.
+
+**Migrations**
+1. `alter table blog_posts add column content_blocks jsonb;`
+2. Create `blog-images` storage bucket (public) + RLS policies on `storage.objects`:
+   - Public SELECT on bucket `blog-images`.
+   - Admin-only INSERT/UPDATE/DELETE using `is_admin(auth.uid())`.
+
+**Image upload flow**
+- Client uses `supabase.storage.from('blog-images').upload(...)` with a `crypto.randomUUID()` filename.
+- Get public URL via `getPublicUrl`.
+- Store URL in the block.
+
+---
+
+## Out of scope
+
+- Drag-and-drop block reordering (using up/down arrows is simpler and sufficient).
+- Rich text inside paragraphs (bold/italic/links) — can be a follow-up if needed.
+- Image cropping — admin uploads at desired aspect; size preset only controls displayed width.
