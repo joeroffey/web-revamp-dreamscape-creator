@@ -305,6 +305,22 @@ const YourVisit = () => {
           subtitle="Helpful guidance for beginners and regulars."
         />
 
+        <section className="py-10 bg-background">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="rounded-2xl border border-border bg-white p-6 md:p-8 text-center">
+              <h2 className="text-xl md:text-2xl font-semibold mb-2">
+                Now Included: Red Light Therapy
+              </h2>
+              <p className="text-muted-foreground font-light mb-4">
+                Every visit now includes complimentary access to our red light therapy room — no booking, no extra charge. Use it as the perfect finish to your sauna and ice bath routine.
+              </p>
+              <Link to="/red-light-therapy" className="text-primary font-medium hover:underline">
+                Learn about Red Light Therapy →
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section className="py-10 bg-white">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <p className="text-muted-foreground font-light mb-4">
