@@ -150,7 +150,7 @@ const OurHub = () => {
                     {top.map(renderFacility)}
                   </div>
                   {rest.length > 0 && (
-                    <div className="mt-8 max-w-2xl mx-auto">
+                    <div className="mt-8 md:w-[calc(50%-1rem)] md:mx-auto">
                       {rest.map((f, i) => renderFacility(f, i + top.length))}
                     </div>
                   )}
