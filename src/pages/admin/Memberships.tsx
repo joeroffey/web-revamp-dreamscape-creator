@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag, Plus } from 'lucide-react';
+import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { CreateMembershipDialog } from '@/components/admin/CreateMembershipDialog';
 
