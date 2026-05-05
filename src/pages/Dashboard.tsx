@@ -238,6 +238,7 @@ const Dashboard = () => {
     }
   };
 
+  const formatServiceType = (serviceType: string) => {
     switch (serviceType) {
       case 'ice_bath': return 'Ice Bath';
       case 'sauna': return 'Sauna';
