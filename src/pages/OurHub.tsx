@@ -123,12 +123,12 @@ const OurHub = () => {
               Our Premium Facilities
             </h2>
             
-            <div className="grid md:grid-cols-2 gap-8">
-              {facilities.map((facility, index) => (
+            {(() => {
+              const renderFacility = (facility: typeof facilities[number], index: number) => (
                 <Card key={index} className="wellness-card overflow-hidden">
                   <div className="aspect-video bg-muted overflow-hidden">
-                    <img 
-                      src={facility.image} 
+                    <img
+                      src={facility.image}
                       alt={facility.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -141,8 +141,22 @@ const OurHub = () => {
                     <p className="text-muted-foreground">{facility.description}</p>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+              );
+              const top = facilities.slice(0, 4);
+              const rest = facilities.slice(4);
+              return (
+                <>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {top.map(renderFacility)}
+                  </div>
+                  {rest.length > 0 && (
+                    <div className="mt-8 max-w-2xl mx-auto">
+                      {rest.map((f, i) => renderFacility(f, i + top.length))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </section>
 
