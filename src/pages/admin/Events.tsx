@@ -250,10 +250,8 @@ const AdminEvents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNavigation />
-      
-      <main className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <main className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-light tracking-wide">Events Management</h1>
