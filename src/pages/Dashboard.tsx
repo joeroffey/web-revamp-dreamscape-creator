@@ -446,8 +446,29 @@ const Dashboard = () => {
                             {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right space-y-2">
                           <p className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</p>
+                          {isUpcoming(booking) && (
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRescheduleTarget(booking)}
+                              >
+                                <CalendarClock className="h-4 w-4 mr-1" />
+                                Reschedule
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setCancelTarget(booking)}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
