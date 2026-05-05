@@ -167,29 +167,62 @@ const OurHub = () => {
             <h2 className="text-2xl md:text-3xl font-light text-center mb-10">
               Explore More
             </h2>
-            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <Card className="wellness-card text-center">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Your First Visit</h3>
-                  <p className="text-muted-foreground text-sm mb-4">What to expect, what to bring, and how your session works.</p>
-                  <a href="/your-visit" className="text-primary font-medium text-sm hover:underline">Read the guide →</a>
-                </CardContent>
-              </Card>
-              <Card className="wellness-card text-center">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Membership Plans</h3>
-                  <p className="text-muted-foreground text-sm mb-4">Regular visitor? Save with our weekly membership options.</p>
-                  <a href="/memberships" className="text-primary font-medium text-sm hover:underline">View memberships →</a>
-                </CardContent>
-              </Card>
-              <Card className="wellness-card text-center">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">Upcoming Events</h3>
-                  <p className="text-muted-foreground text-sm mb-4">Breathwork, yoga, and guided contrast therapy experiences.</p>
-                  <a href="/events" className="text-primary font-medium text-sm hover:underline">See events →</a>
-                </CardContent>
-              </Card>
-            </div>
+            {(() => {
+              const exploreCards = [
+                {
+                  eyebrow: "First Visit",
+                  title: "YOUR FIRST VISIT",
+                  description: "What to expect, what to bring, and how your session works.",
+                  cta: "READ THE GUIDE",
+                  href: "/your-visit",
+                },
+                {
+                  eyebrow: "Save",
+                  title: "MEMBERSHIP PLANS",
+                  description: "Regular visitor? Save with our flexible monthly membership options.",
+                  cta: "VIEW MEMBERSHIPS",
+                  href: "/memberships",
+                },
+                {
+                  eyebrow: "What's On",
+                  title: "UPCOMING EVENTS",
+                  description: "Breathwork, yoga, and guided contrast therapy experiences.",
+                  cta: "SEE EVENTS",
+                  href: "/events",
+                },
+              ];
+              return (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {exploreCards.map((card) => (
+                    <a
+                      key={card.title}
+                      href={card.href}
+                      className="group relative block bg-foreground/5 border border-foreground/15 p-8 transition-all duration-500 hover:bg-foreground/10 hover:border-foreground/25"
+                    >
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-foreground/30" />
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-foreground/30" />
+                      <div className="flex flex-col h-full justify-between min-h-[220px]">
+                        <div>
+                          <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase mb-3 block">
+                            {card.eyebrow}
+                          </span>
+                          <h3 className="text-2xl md:text-3xl font-light text-foreground mb-4 tracking-wide">
+                            {card.title}
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {card.description}
+                          </p>
+                        </div>
+                        <span className="mt-6 inline-flex items-center gap-3 text-foreground border-b border-foreground/40 pb-1 w-fit group-hover:border-foreground transition-colors duration-300">
+                          <span className="text-sm tracking-wider">{card.cta}</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                        </span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </section>
 
