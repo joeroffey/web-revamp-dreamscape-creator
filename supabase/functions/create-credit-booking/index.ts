@@ -191,7 +191,7 @@ serve(async (req) => {
         final_amount: 0, // Paid with credits
         guest_count: guestCount,
         booking_type: bookingType,
-        special_requests: specialRequests || null,
+        special_requests: specialRequests ? `${specialRequests} [Credit booking]` : '[Credit booking]',
         payment_status: 'paid',
         booking_status: 'confirmed'
       })
