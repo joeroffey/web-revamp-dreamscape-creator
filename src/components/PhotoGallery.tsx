@@ -16,7 +16,7 @@ export const PhotoGallery = () => {
     {
       src: "/images/red-light/panel.jpg",
       alt: "Red light therapy panel at Revitalise Hub",
-      position: "object-bottom"
+      position: "object-top"
     },
     {
       src: "/images/0c4c3a2b-152f-4e1e-892e-82c619d37291.png",
