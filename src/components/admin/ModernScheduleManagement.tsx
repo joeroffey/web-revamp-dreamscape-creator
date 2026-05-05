@@ -23,7 +23,7 @@ export default function ModernScheduleManagement() {
   const stripRef = useRef<HTMLDivElement>(null);
 
   const weekDays = useMemo(
-    () => Array.from({ length: 14 }).map((_, i) => addDays(weekAnchor, i)),
+    () => Array.from({ length: 7 }).map((_, i) => addDays(weekAnchor, i)),
     [weekAnchor]
   );
 
