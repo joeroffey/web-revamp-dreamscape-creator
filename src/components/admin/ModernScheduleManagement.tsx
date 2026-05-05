@@ -205,9 +205,6 @@ export default function ModernScheduleManagement() {
                         <span className="h-1.5 w-1.5" />
                       )}
                     </div>
-                    {today && !selected && (
-                      <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
                   </button>
                 );
               })}
