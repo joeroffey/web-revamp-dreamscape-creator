@@ -39,6 +39,7 @@ export default function AdminDashboard() {
     recentBookings: []
   });
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
