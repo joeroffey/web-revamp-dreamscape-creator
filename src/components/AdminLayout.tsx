@@ -24,6 +24,11 @@ const getInitialSidebarOpen = (): boolean => {
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { session, signOut } = useAuth();
   const { isAdmin, loading } = useAdmin();
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(getInitialSidebarOpen);
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarOpen));
+  }, [sidebarOpen]);
 
   if (!session) {
     return <Navigate to="/auth" />;
