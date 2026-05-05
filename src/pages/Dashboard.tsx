@@ -8,9 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, CreditCard, Settings, RefreshCw, XCircle } from "lucide-react";
+import { Calendar, Clock, User, CreditCard, Settings, RefreshCw, XCircle, CalendarClock, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RescheduleBookingDialog } from "@/components/RescheduleBookingDialog";
 
 interface Booking {
   id: string;
@@ -20,7 +25,14 @@ interface Booking {
   booking_status: string;
   payment_status: string;
   price_amount: number;
+  final_amount: number | null;
+  discount_amount: number;
+  booking_type: string;
+  guest_count: number;
+  special_requests: string | null;
+  time_slot_id: string | null;
 }
+
 
 interface Membership {
   id: string;
