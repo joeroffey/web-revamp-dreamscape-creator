@@ -94,6 +94,30 @@ export default function AdminMemberships() {
     }
   };
 
+  const adjustSessions = async (membership: Membership, delta: number) => {
+    const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
+    if (isUnlimited) {
+      toast({ title: "Not applicable", description: "Unlimited memberships have no session count.", variant: "destructive" });
+      return;
+    }
+    const newRemaining = Math.max(0, (membership.sessions_remaining || 0) + delta);
+    try {
+      const { error } = await supabase
+        .from('memberships')
+        .update({ sessions_remaining: newRemaining, updated_at: new Date().toISOString() })
+        .eq('id', membership.id);
+      if (error) throw error;
+      setMemberships(prev => prev.map(m => m.id === membership.id ? { ...m, sessions_remaining: newRemaining } : m));
+      toast({
+        title: delta > 0 ? "Session added" : "Session removed",
+        description: `${membership.customer_name || membership.customer_email} now has ${newRemaining} sessions remaining.`,
+      });
+    } catch (error) {
+      console.error('Error adjusting sessions:', error);
+      toast({ title: "Error", description: "Failed to update sessions", variant: "destructive" });
+    }
+  };
+
   const filteredMemberships = memberships.filter(membership => {
     const matchesSearch = 
       membership.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
