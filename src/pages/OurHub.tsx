@@ -34,8 +34,7 @@ const OurHub = () => {
     {
       title: "Red Light Therapy Room",
       description: "Our new red light therapy space — included with every session at no extra cost. Wind down and recover at a cellular level.",
-      icon: Snowflake,
-      image: "/images/red-light/room.jpg"
+      icon: Sun,
     }
   ];
 
