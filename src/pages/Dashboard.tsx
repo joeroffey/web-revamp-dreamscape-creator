@@ -8,9 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, CreditCard, Settings, RefreshCw, XCircle } from "lucide-react";
+import { Calendar, Clock, User, CreditCard, Settings, RefreshCw, XCircle, CalendarClock, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RescheduleBookingDialog } from "@/components/RescheduleBookingDialog";
 
 interface Booking {
   id: string;
@@ -20,7 +25,14 @@ interface Booking {
   booking_status: string;
   payment_status: string;
   price_amount: number;
+  final_amount: number | null;
+  discount_amount: number;
+  booking_type: string;
+  guest_count: number;
+  special_requests: string | null;
+  time_slot_id: string | null;
 }
+
 
 interface Membership {
   id: string;
@@ -44,6 +56,10 @@ const Dashboard = () => {
   const [firstName, setFirstName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Booking | null>(null);
 
   console.log('Dashboard - user:', user?.email, 'isAdmin:', isAdmin, 'adminLoading:', adminLoading);
 
@@ -117,6 +133,16 @@ const Dashboard = () => {
       }
       setMembership(membershipData);
 
+      // Fetch credit balance
+      const { data: creditsData } = await supabase
+        .from("customer_credits")
+        .select("credit_balance, expires_at")
+        .eq("user_id", user?.id);
+      const total = (creditsData || [])
+        .filter((c: any) => !c.expires_at || new Date(c.expires_at) > new Date())
+        .reduce((sum: number, c: any) => sum + (c.credit_balance || 0), 0);
+      setCreditBalance(total);
+
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast({
@@ -164,6 +190,51 @@ const Dashboard = () => {
       });
     } finally {
       setCancellingSubscription(false);
+    }
+  };
+
+  const getRefundDescription = (b: Booking): string => {
+    const sr = b.special_requests || "";
+    if (sr.includes("[Membership booking]")) return "1 membership session will be returned to your account.";
+    if (sr.includes("[Credit booking]") || sr.includes("[Partial credit]")) {
+      return `£${(b.price_amount / 100).toFixed(2)} will be returned to your account credit (valid 1 year).`;
+    }
+    if ((b.discount_amount || 0) > 0 && (!b.final_amount || b.final_amount === 0)) {
+      return "1 session token will be returned to your account.";
+    }
+    if ((b.final_amount || 0) > 0) {
+      return `£${((b.final_amount || 0) / 100).toFixed(2)} will be returned as account credit (valid 1 year). Card refunds are not issued.`;
+    }
+    return "Your booking will be cancelled.";
+  };
+
+  const isUpcoming = (b: Booking): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [y, m, d] = b.session_date.split("-").map(Number);
+    const slotDate = new Date(y, m - 1, d);
+    return slotDate >= today && b.payment_status === "paid";
+  };
+
+  const handleCancelBooking = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("user-cancel-booking", {
+        body: { bookingId: cancelTarget.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: "Booking cancelled",
+        description: (data as any)?.refundDetail || "Your booking has been cancelled.",
+      });
+      setCancelTarget(null);
+      fetchUserData();
+    } catch (e: any) {
+      toast({ title: "Could not cancel", description: e.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -264,9 +335,18 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{user?.email}</p>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{user?.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Account Credit</p>
+                        <p className="font-medium">£{(creditBalance / 100).toFixed(2)}</p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -375,8 +455,29 @@ const Dashboard = () => {
                             {new Date(booking.session_date).toLocaleDateString()} at {booking.session_time}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right space-y-2">
                           <p className="font-medium">£{(booking.price_amount / 100).toFixed(2)}</p>
+                          {isUpcoming(booking) && (
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRescheduleTarget(booking)}
+                              >
+                                <CalendarClock className="h-4 w-4 mr-1" />
+                                Reschedule
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setCancelTarget(booking)}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -394,6 +495,35 @@ const Dashboard = () => {
           </div>
         </section>
       </main>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {cancelTarget && getRefundDescription(cancelTarget)}
+              <br /><br />
+              Please note: cash refunds are not issued. The slot will be released for other guests.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep booking</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelBooking} disabled={cancelling}>
+              {cancelling ? "Cancelling..." : "Confirm cancel"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {rescheduleTarget && (
+        <RescheduleBookingDialog
+          open={!!rescheduleTarget}
+          onOpenChange={(o) => !o && setRescheduleTarget(null)}
+          bookingId={rescheduleTarget.id}
+          bookingType={rescheduleTarget.booking_type}
+          onSuccess={fetchUserData}
+        />
+      )}
     </div>
   );
 };

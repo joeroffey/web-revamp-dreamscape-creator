@@ -1,72 +1,82 @@
 
+# Self-Service Booking Management
 
-## SEO Enhancement Plan
+Allow signed-in users to cancel or reschedule their own upcoming bookings from the Dashboard. Cancellations free the slot for the public; refunds are issued as credit, a session, or a token — never as cash.
 
-Based on the audit recommendations, here is what can be done and what is already complete or not applicable.
-
----
-
-### Already Done (No Action Needed)
-
-- **LocalBusinessSchema enhancements** (`@id`, `areaServed`, `hasMap`, multiple images, `priceRange`) -- all already present
-- **og:image default fallback** -- already configured in `SEOHead` component with a default image
-
-### Not Feasible
-
-- **Pre-rendering (SSG)** -- requires migrating to Next.js or a similar framework, which is outside Lovable's capabilities. Google handles JavaScript-rendered content well for modern SPAs, so this is not critical.
+Because the site is live, all changes are additive (new edge functions + new UI on the dashboard). No existing booking, payment, or webhook code is altered.
 
 ---
 
-### Changes To Implement
+## 1. New edge function: `user-cancel-booking`
 
-#### 1. Add FAQ Schema (JSON-LD) to Your Visit Page
+Auth required (validate JWT via `getUser`). Verifies the booking belongs to the caller, is in the future, and is not already cancelled.
 
-The `/your-visit` page already has a rich FAQ section with 6 questions. Adding `FAQPage` structured data will make these eligible for rich results in Google Search, which significantly boosts click-through rates.
+Determines refund type by inspecting the booking row:
 
-**File:** `src/pages/YourVisit.tsx`
-- Add a JSON-LD `FAQPage` schema block via `react-helmet-async` containing all 6 existing FAQ items
+| Source | Detector | Refund action |
+|---|---|---|
+| Membership | `special_requests` contains `[Membership booking]` | `memberships.sessions_remaining += 1` (skip if unlimited or membership ended) |
+| Token (manual or intro) | `discount_amount > 0`, `final_amount = 0`, no membership tag | `customer_tokens.tokens_remaining += 1` (mirrors existing `cancel-booking` logic) |
+| Credit booking (full or partial) | `special_requests` contains `[Credit booking]` / `[Partial credit]` | Add credited amount to `customer_credits.credit_balance` |
+| Paid (Stripe card / cash) | `final_amount > 0` and not credit/token | Add `final_amount` to `customer_credits.credit_balance` (1-year expiry, matching gift-card credit policy) |
 
-#### 2. Add FAQ Sections + Schema to Key Service Pages
+Then:
+- Set `payment_status = 'cancelled'`, update `updated_at`.
+- Decrement `time_slots.booked_count` by `guest_count` (clamped ≥ 0); set `is_available = true` if below capacity. Private booking → fully reset (`booked_count = 0`, `is_available = true`).
+- Send a cancellation email via Resend (reuse existing email infra) summarising the refund type.
 
-Add short FAQ sections with structured data to pages that currently lack them, boosting content depth and enabling rich results:
+Credit-source bookings will be tagged going forward by appending `[Credit booking]` / `[Partial credit]` in `create-credit-booking` and `create-partial-credit-booking` (mirrors the existing `[Membership booking]` pattern — small, safe addition).
 
-**a. Booking page** (`src/pages/Booking.tsx`)
-- Add 4-5 FAQs below the booking form (e.g., "How long is a session?", "What's the difference between communal and private?", "Do I need to bring anything?", "Can I cancel or reschedule?")
-- Include `FAQPage` JSON-LD schema
+## 2. New edge function: `user-reschedule-booking`
 
-**b. Memberships page** (`src/pages/Memberships.tsx`)
-- Add 4-5 FAQs below membership cards (e.g., "Can I cancel anytime?", "What happens if I miss a session?", "Can I upgrade my membership?", "Is there a joining fee?")
-- Include `FAQPage` JSON-LD schema
+Auth required. Inputs: `bookingId`, `newTimeSlotId`.
 
-**c. Gift Cards page** (`src/pages/GiftCards.tsx`)
-- Add 3-4 FAQs below the purchase form (e.g., "How long are gift cards valid?", "Can I use a gift card for memberships?", "How does the recipient redeem it?")
-- Include `FAQPage` JSON-LD schema
+Steps:
+1. Load booking; verify ownership, not cancelled, not in the past.
+2. Load new time slot live and apply the same capacity rules as `confirm_booking`:
+   - Communal: no private booking on slot AND `current_communal + guest_count <= 5`.
+   - Private: slot has zero existing bookings.
+3. In a single sequence:
+   - Free old slot (decrement `booked_count` by `guest_count`, clamp, recompute `is_available`).
+   - Increment new slot's `booked_count` by `guest_count`; recompute `is_available`.
+   - Update booking row: `time_slot_id`, `session_date`, `session_time`, `updated_at`.
+4. Send an "updated booking" email with the new date/time.
 
-#### 3. Create Reusable FAQ Schema Component
+If validation fails, return a clear error and make no changes.
 
-To keep things clean, create a small reusable component that takes an array of Q&A pairs and renders both the visible accordion and the JSON-LD schema.
+## 3. Dashboard UI changes (`src/pages/Dashboard.tsx`)
 
-**New file:** `src/components/FAQSchema.tsx`
-- Accepts `faqs: { question: string; answer: string }[]` prop
-- Renders JSON-LD `FAQPage` schema via Helmet
-- Optionally renders the visible FAQ accordion UI
+For each booking that is **upcoming** (`session_date >= today`) and `payment_status = 'paid'`:
 
----
+- Add **Reschedule** and **Cancel** buttons.
+- **Cancel**: opens an `AlertDialog` explaining the refund type (computed client-side from the same rules) and the no-cash policy. On confirm → calls `user-cancel-booking`, refreshes list, toasts result.
+- **Reschedule**: opens a `Dialog` containing the existing public `TimeSlotPicker` component (reused as-is, so timezone-safe date logic carries over). Picker is locked to the booking's `booking_type` and `guest_count`. On selection → calls `user-reschedule-booking`, refreshes list, toasts result.
 
-### Technical Summary
+Past bookings remain read-only.
 
-| File | Change |
-|---|---|
-| `src/components/FAQSchema.tsx` | New reusable component for FAQ structured data |
-| `src/pages/YourVisit.tsx` | Add FAQPage JSON-LD schema for existing 6 FAQs |
-| `src/pages/Booking.tsx` | Add FAQ section + schema (4-5 questions) |
-| `src/pages/Memberships.tsx` | Add FAQ section + schema (4-5 questions) |
-| `src/pages/GiftCards.tsx` | Add FAQ section + schema (3-4 questions) |
+Also display the user's current **credit balance** on the Dashboard so they can see refunds land.
 
-### Impact
+## 4. Cancellation cutoff
 
-- FAQ rich results can increase click-through rate by 20-30%
-- Additional content depth on service pages improves topical relevance
-- No visual or functional changes to existing features -- FAQs are added below existing content
-- Structured data validates instantly with Google's Rich Results Test
+**None.** Users can cancel or reschedule any future booking right up to (and including) the slot's start time. No time-based restriction in the edge functions or UI.
 
+## 5. Safety / non-regression
+
+- No changes to: Stripe webhook, `confirm_booking` SQL function, public booking flow, admin dialogs, gift-card / membership purchase flows.
+- Existing admin `cancel-booking` edge function is left in place; the new `user-cancel-booking` is a separate function with auth + ownership checks so the live admin flow keeps working unchanged.
+- Capacity updates use the same `booked_count` + `is_available` pattern already used elsewhere.
+- Timezone-safe date handling is preserved by reusing `TimeSlotPicker` and storing `session_date` from the slot row (not from `new Date(...).toISOString()`).
+
+## 6. Files affected
+
+New:
+- `supabase/functions/user-cancel-booking/index.ts`
+- `supabase/functions/user-reschedule-booking/index.ts`
+- `supabase/config.toml` — register both functions (JWT validated in code)
+
+Modified (small, additive):
+- `src/pages/Dashboard.tsx` — Reschedule/Cancel buttons, dialogs, credit balance display
+- `supabase/functions/create-credit-booking/index.ts` — append `[Credit booking]` tag in `special_requests`
+- `supabase/functions/create-partial-credit-booking/index.ts` — append `[Partial credit]` tag
+
+No database schema or migration changes are required.
