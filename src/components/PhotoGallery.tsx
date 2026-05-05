@@ -49,7 +49,7 @@ export const PhotoGallery = () => {
               <img 
                 src={image.src}
                 alt={image.alt}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className={`w-full h-full object-cover ${(image as any).position ?? ""} transition-transform duration-500 group-hover:scale-110`}
               />
             </div>
           ))}
