@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Thermometer, Snowflake, Waves, Users, Sun } from "lucide-react";
+import { MapPin, Clock, Thermometer, Snowflake, Waves, Users, Sun, ArrowRight } from "lucide-react";
 
 const OurHub = () => {
   const facilities = [
