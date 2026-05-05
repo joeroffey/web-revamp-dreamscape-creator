@@ -50,6 +50,7 @@ export type Database = {
       blog_posts: {
         Row: {
           content: string
+          content_blocks: Json | null
           created_at: string
           excerpt: string | null
           id: string
@@ -61,6 +62,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          content_blocks?: Json | null
           created_at?: string
           excerpt?: string | null
           id?: string
@@ -72,6 +74,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          content_blocks?: Json | null
           created_at?: string
           excerpt?: string | null
           id?: string
