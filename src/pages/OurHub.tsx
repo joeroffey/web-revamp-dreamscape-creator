@@ -150,7 +150,7 @@ const OurHub = () => {
                     {top.map(renderFacility)}
                   </div>
                   {rest.length > 0 && (
-                    <div className="grid md:grid-cols-2 gap-8 mt-8 max-w-3xl mx-auto">
+                    <div className="mt-8 max-w-2xl mx-auto">
                       {rest.map((f, i) => renderFacility(f, i + top.length))}
                     </div>
                   )}
