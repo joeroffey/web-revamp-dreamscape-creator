@@ -110,14 +110,25 @@ const Dashboard = () => {
         setFirstName(firstNameOnly);
       }
 
-      // Fetch user bookings
+      // Fetch user bookings — match by user_id OR customer_email so admin-created
+      // bookings (which may not have user_id set) still appear for the customer.
+      const userEmail = user?.email?.toLowerCase() || '';
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
-        .eq("user_id", user?.id)
+        .or(`user_id.eq.${user?.id},customer_email.ilike.${userEmail}`)
         .order("session_date", { ascending: false });
 
       if (bookingsError) throw bookingsError;
+
+      // Backfill user_id on any matching bookings missing it (best-effort)
+      const orphanIds = (bookingsData || [])
+        .filter((b: any) => !b.user_id && b.customer_email?.toLowerCase() === userEmail)
+        .map((b: any) => b.id);
+      if (orphanIds.length > 0 && user?.id) {
+        await supabase.from("bookings").update({ user_id: user.id }).in("id", orphanIds);
+      }
+
       setBookings(bookingsData || []);
 
       // Fetch user membership
