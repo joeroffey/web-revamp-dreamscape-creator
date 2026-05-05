@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag, Plus } from 'lucide-react';
+import { Search, CreditCard, User, Calendar, Pause, Play, X, Mail, Clock, AlertTriangle, RefreshCw, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { CreateMembershipDialog } from '@/components/admin/CreateMembershipDialog';
 
@@ -91,6 +91,30 @@ export default function AdminMemberships() {
         description: "Failed to update membership status",
         variant: "destructive",
       });
+    }
+  };
+
+  const adjustSessions = async (membership: Membership, delta: number) => {
+    const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
+    if (isUnlimited) {
+      toast({ title: "Not applicable", description: "Unlimited memberships have no session count.", variant: "destructive" });
+      return;
+    }
+    const newRemaining = Math.max(0, (membership.sessions_remaining || 0) + delta);
+    try {
+      const { error } = await supabase
+        .from('memberships')
+        .update({ sessions_remaining: newRemaining, updated_at: new Date().toISOString() })
+        .eq('id', membership.id);
+      if (error) throw error;
+      setMemberships(prev => prev.map(m => m.id === membership.id ? { ...m, sessions_remaining: newRemaining } : m));
+      toast({
+        title: delta > 0 ? "Session added" : "Session removed",
+        description: `${membership.customer_name || membership.customer_email} now has ${newRemaining} sessions remaining.`,
+      });
+    } catch (error) {
+      console.error('Error adjusting sessions:', error);
+      toast({ title: "Error", description: "Failed to update sessions", variant: "destructive" });
     }
   };
 
@@ -328,6 +352,31 @@ export default function AdminMemberships() {
                               <Play className="h-4 w-4 mr-2" />
                               Resume
                             </Button>
+                          )}
+                          {membership.membership_type !== 'unlimited' && membership.sessions_per_week !== 999 && membership.status !== 'cancelled' && membership.status !== 'expired' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => adjustSessions(membership, -1)}
+                                disabled={(membership.sessions_remaining || 0) <= 0}
+                                className="min-h-[40px]"
+                                title="Remove a session"
+                              >
+                                <Minus className="h-4 w-4 mr-2" />
+                                Session
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => adjustSessions(membership, 1)}
+                                className="min-h-[40px]"
+                                title="Add a session"
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Session
+                              </Button>
+                            </>
                           )}
                           {membership.status !== 'cancelled' && membership.status !== 'expired' && (
                             <Button
