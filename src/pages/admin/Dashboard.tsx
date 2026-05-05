@@ -15,7 +15,9 @@ import {
   Settings
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { BookingDetailsDialog } from '@/components/admin/BookingDetailsDialog';
 import { formatGBP, formatDateTime } from '@/lib/format';
+import { ChevronRight, ArrowRight } from 'lucide-react';
 
 interface DashboardStats {
   totalCustomers: number;
