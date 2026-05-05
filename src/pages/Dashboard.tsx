@@ -335,9 +335,18 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{user?.email}</p>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{user?.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Account Credit</p>
+                        <p className="font-medium">£{(creditBalance / 100).toFixed(2)}</p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
