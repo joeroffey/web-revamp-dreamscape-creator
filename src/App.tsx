@@ -15,6 +15,7 @@ import Booking from "./pages/Booking";
 import GiftCards from "./pages/GiftCards";
 import Memberships from "./pages/Memberships";
 import OurHub from "./pages/OurHub";
+import RedLightTherapy from "./pages/RedLightTherapy";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import BookingSuccess from "./pages/BookingSuccess";
