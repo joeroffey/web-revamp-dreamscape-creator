@@ -55,44 +55,7 @@ const App = () => (
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:id" element={<BlogPost />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/booking" element={<Booking />} />
-            <Route path="/gift-cards" element={<GiftCards />} />
-            <Route path="/memberships" element={<Memberships />} />
-            <Route path="/fitness-recovery" element={<FitnessRecovery />} />
-            <Route path="/your-visit" element={<YourVisit />} />
-            <Route path="/our-hub" element={<OurHub />} />
-            <Route path="/red-light-therapy" element={<RedLightTherapy />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/booking-success" element={<BookingSuccess />} />
-            <Route path="/membership-success" element={<MembershipSuccess />} />
-            <Route path="/gift-card-success" element={<GiftCardSuccess />} />
-            <Route path="/intro-offer-success" element={<IntroOfferSuccess />} />
-            <Route path="/redeem-gift-card" element={<RedeemGiftCard />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-conditions" element={<TermsConditions />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/schedule" element={<ModernScheduleManagement />} />
-            <Route path="/admin/bookings" element={<ModernBookingManagement />} />
-            <Route path="/admin/customers" element={<ModernCustomerManagement />} />
-            <Route path="/admin/gift-cards" element={<ModernGiftCardManagement />} />
-            <Route path="/admin/memberships" element={<AdminMemberships />} />
-            <Route path="/admin/reports" element={<ModernReports />} />
-            <Route path="/admin/blog" element={<AdminBlog />} />
-            <Route path="/admin/partner-codes" element={<PartnerCodes />} />
-            <Route path="/admin/events" element={<AdminEvents />} />
-            <Route path="/admin/messages" element={<ModernMessageManagement />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/* TEMPORARY: all routes return 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
