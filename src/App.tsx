@@ -55,7 +55,7 @@ const App = () => (
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
-            {/* TEMPORARY: all routes return 404 */}
+            <Route path="/" element={<Home />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
