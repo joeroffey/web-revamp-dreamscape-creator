@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/components/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,19 +22,16 @@ const getInitialSidebarOpen = (): boolean => {
 };
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { session, signOut } = useAuth();
+  const { session, signOut, loading: authLoading } = useAuth();
   const { isAdmin, loading } = useAdmin();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(getInitialSidebarOpen);
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarOpen));
   }, [sidebarOpen]);
 
-  if (!session) {
-    return <Navigate to="/auth" />;
-  }
-
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto py-8 px-4">
@@ -48,8 +45,13 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     );
   }
 
+  if (!session) {
+    const redirectTo = `${location.pathname}${location.search}`;
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(redirectTo)}`} replace />;
+  }
+
   if (!isAdmin && !loading) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
   const handleSignOut = async () => {

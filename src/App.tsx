@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./components/AuthContext";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -80,7 +80,7 @@ const App = () => (
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="/admin/schedule" element={<ModernScheduleManagement />} />
             <Route path="/admin/bookings" element={<ModernBookingManagement />} />
             <Route path="/admin/customers" element={<ModernCustomerManagement />} />
@@ -92,6 +92,7 @@ const App = () => (
             <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/messages" element={<ModernMessageManagement />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

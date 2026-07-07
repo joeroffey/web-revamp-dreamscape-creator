@@ -11,11 +11,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/Navigation";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+const getSafeRedirectPath = (redirect: string | null) => {
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+    return "/";
+  }
+
+  return redirect;
+};
+
 const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const redirectUrl = getSafeRedirectPath(searchParams.get("redirect"));
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
@@ -67,14 +75,14 @@ const Auth = () => {
         console.log('Auth page - checking session:', !!session);
         if (session?.user) {
           console.log('Auth page - user found, redirecting to:', redirectUrl);
-          navigate(redirectUrl);
+          navigate(redirectUrl, { replace: true });
         }
       } catch (error) {
         console.error('Auth page - error checking session:', error);
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, redirectUrl]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +114,7 @@ const Auth = () => {
         title: firstName ? `Welcome back, ${firstName}!` : "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      navigate(redirectUrl);
+      navigate(redirectUrl, { replace: true });
     } catch (error: any) {
       toast({
         title: "Login Failed",
