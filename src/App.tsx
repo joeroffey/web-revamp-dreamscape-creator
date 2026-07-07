@@ -56,6 +56,41 @@ const App = () => (
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/book-now" element={<Booking />} />
+            <Route path="/gift-cards" element={<GiftCards />} />
+            <Route path="/memberships" element={<Memberships />} />
+            <Route path="/our-hub" element={<OurHub />} />
+            <Route path="/red-light-therapy" element={<RedLightTherapy />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/booking-success" element={<BookingSuccess />} />
+            <Route path="/membership-success" element={<MembershipSuccess />} />
+            <Route path="/gift-card-success" element={<GiftCardSuccess />} />
+            <Route path="/intro-offer-success" element={<IntroOfferSuccess />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-and-conditions" element={<TermsConditions />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/fitness-recovery" element={<FitnessRecovery />} />
+            <Route path="/your-visit" element={<YourVisit />} />
+            <Route path="/redeem-gift-card" element={<RedeemGiftCard />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/bookings" element={<ModernBookingManagement />} />
+            <Route path="/admin/customers" element={<ModernCustomerManagement />} />
+            <Route path="/admin/gift-cards" element={<ModernGiftCardManagement />} />
+            <Route path="/admin/memberships" element={<AdminMemberships />} />
+            <Route path="/admin/reports" element={<ModernReports />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/schedule" element={<ModernScheduleManagement />} />
+            <Route path="/admin/blog" element={<AdminBlog />} />
+            <Route path="/admin/partner-codes" element={<PartnerCodes />} />
+            <Route path="/admin/events" element={<AdminEvents />} />
+            <Route path="/admin/messages" element={<ModernMessageManagement />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
