@@ -137,7 +137,7 @@ export const Navigation = () => {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} className="flex items-center">
+                    <Link to={isAdmin ? "/admin" : "/dashboard"} className="flex items-center">
                       <Settings className="h-4 w-4 mr-2" />
                       {isAdmin ? "Admin Dashboard" : "Dashboard"}
                     </Link>
@@ -214,7 +214,7 @@ export const Navigation = () => {
                 <div className="pt-4 pb-6 space-y-3">
                   {user ? (
                     <>
-                      <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
+                      <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)}>
                         <Button variant="outline" className="w-full rounded-full">
                           <Settings className="h-4 w-4 mr-2" />
                           {isAdmin ? "Admin Dashboard" : "Dashboard"}

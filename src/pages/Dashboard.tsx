@@ -68,7 +68,7 @@ const Dashboard = () => {
     console.log('Dashboard redirect useEffect - adminLoading:', adminLoading, 'isAdmin:', isAdmin);
     if (!adminLoading && isAdmin) {
       console.log('Redirecting admin user to admin dashboard');
-      navigate('/admin/dashboard');
+      navigate('/admin');
       return;
     }
   }, [isAdmin, adminLoading, navigate]);
