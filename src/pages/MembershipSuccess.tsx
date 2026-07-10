@@ -6,6 +6,7 @@ import { CheckCircle, Crown, Calendar, Mail, Home, Sparkles } from "lucide-react
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fireGoogleAdsConversion } from "@/lib/gtagConversion";
 
 interface MembershipDetails {
   membership_type: string;
