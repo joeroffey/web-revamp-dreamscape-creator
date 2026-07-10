@@ -6,6 +6,7 @@ import { CheckCircle, Calendar, Mail, Home, Clock, Users, CreditCard } from "luc
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fireGoogleAdsConversion } from "@/lib/gtagConversion";
 
 interface BookingDetails {
   customer_name: string;
@@ -43,6 +44,12 @@ const BookingSuccess = () => {
 
         if (!error && data) {
           setBooking(data);
+          // Google Ads conversion — fire once per booking id
+          const paidPence = data.final_amount ?? data.price_amount ?? 0;
+          fireGoogleAdsConversion({
+            value: paidPence / 100,
+            transactionId: data.id,
+          });
           // Send confirmation email as fallback (idempotent — Resend deduplicates)
           if (data.id) {
             supabase.functions.invoke('send-booking-confirmation', {
