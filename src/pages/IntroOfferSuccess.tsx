@@ -10,11 +10,21 @@ import { fireGoogleAdsConversion } from "@/lib/gtagConversion";
 
 const IntroOfferSuccess = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get("session_id");
 
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Google Ads conversion — intro offer is a fixed £35 charge
+  useEffect(() => {
+    fireGoogleAdsConversion({
+      value: 35,
+      transactionId: sessionId ?? `intro-${user?.id ?? "anon"}`,
+    });
+  }, [sessionId, user?.id]);
 
   return (
     <div className="min-h-screen">
