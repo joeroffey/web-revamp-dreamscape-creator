@@ -3,9 +3,10 @@ import { NoIndexHead } from "@/components/NoIndexHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Gift, Check, Mail, Calendar, Home } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
+import { fireGoogleAdsConversion } from "@/lib/gtagConversion";
 
 const IntroOfferSuccess = () => {
   const { user } = useAuth();
