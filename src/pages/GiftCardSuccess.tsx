@@ -3,9 +3,37 @@ import { NoIndexHead } from "@/components/NoIndexHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Gift, Mail, Home } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { fireGoogleAdsConversion } from "@/lib/gtagConversion";
 
 const GiftCardSuccess = () => {
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get("session_id");
+
+  // Google Ads conversion — fetch actual amount charged, fire once per session.
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("gift_cards")
+        .select("id, final_amount, amount")
+        .eq("stripe_session_id", sessionId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const pence = data.final_amount ?? data.amount ?? 0;
+      fireGoogleAdsConversion({
+        value: pence / 100,
+        transactionId: data.id ?? sessionId,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
   return (
     <div className="min-h-screen">
       <NoIndexHead />
