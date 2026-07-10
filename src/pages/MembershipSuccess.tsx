@@ -39,6 +39,10 @@ const MembershipSuccess = () => {
 
         if (!error && data) {
           setMembership(data);
+          fireGoogleAdsConversion({
+            value: (data.price_amount ?? 0) / 100,
+            transactionId: sessionId,
+          });
         }
       } catch (err) {
         console.error("Error fetching membership:", err);
