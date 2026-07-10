@@ -44,6 +44,12 @@ const BookingSuccess = () => {
 
         if (!error && data) {
           setBooking(data);
+          // Google Ads conversion — fire once per booking id
+          const paidPence = data.final_amount ?? data.price_amount ?? 0;
+          fireGoogleAdsConversion({
+            value: paidPence / 100,
+            transactionId: data.id,
+          });
           // Send confirmation email as fallback (idempotent — Resend deduplicates)
           if (data.id) {
             supabase.functions.invoke('send-booking-confirmation', {
