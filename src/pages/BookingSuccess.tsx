@@ -6,6 +6,7 @@ import { CheckCircle, Calendar, Mail, Home, Clock, Users, CreditCard } from "luc
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fireGoogleAdsConversion } from "@/lib/gtagConversion";
 
 interface BookingDetails {
   customer_name: string;
