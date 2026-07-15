@@ -17,6 +17,13 @@ serve(async (req) => {
   }
 
   try {
+    // Server-to-server only: require service role bearer
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const bearer = (authHeader || "").replace("Bearer ", "");
+    if (!bearer || bearer !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       throw new Error("RESEND_API_KEY not configured");
