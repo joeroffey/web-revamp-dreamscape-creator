@@ -24,6 +24,21 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // AuthZ: allow service-role bearer or admin user
+    const bearer = authHeader.replace("Bearer ", "");
+    const isServiceRole = bearer === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!isServiceRole) {
+      const { data: authData, error: authErr } = await supabase.auth.getUser(bearer);
+      if (authErr || !authData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: corsHeaders });
+      }
+      const { data: adminRole } = await supabase
+        .from("user_roles").select("role").eq("user_id", authData.user.id).eq("role", "admin").maybeSingle();
+      if (!adminRole) {
+        return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403, headers: corsHeaders });
+      }
+    }
+
     const apiKey = Deno.env.get("MAILCHIMP_API_KEY");
     const listId = Deno.env.get("MAILCHIMP_LIST_ID");
     const serverPrefix = Deno.env.get("MAILCHIMP_SERVER_PREFIX");
