@@ -13,8 +13,29 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase (needed for auth check + subsequent queries)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // AuthZ: admin only (this endpoint mutates bookings after re-checking Stripe)
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const authToken = authHeader.replace('Bearer ', '');
+    const { data: authData, error: authErr } = await supabase.auth.getUser(authToken);
+    if (authErr || !authData?.user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const { data: adminRole } = await supabase
+      .from('user_roles').select('role').eq('user_id', authData.user.id).eq('role', 'admin').maybeSingle();
+    if (!adminRole) {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const { bookingId } = await req.json();
-    
+
     if (!bookingId) {
       return new Response(
         JSON.stringify({ error: 'Booking ID is required' }),
@@ -30,11 +51,6 @@ Deno.serve(async (req) => {
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
-
-    // Initialize Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch the booking
     const { data: booking, error: bookingError } = await supabase
