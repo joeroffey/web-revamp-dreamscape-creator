@@ -61,21 +61,25 @@ serve(async (req) => {
       .single();
     if (slotErr || !newSlot) throw new Error("Selected time slot not found");
 
-    // Validate capacity using paid bookings on the new slot
+    // Validate capacity on the new slot using ALL non-cancelled bookings
+    // (all booking types — paid, membership, token, credit, partial credit —
+    // are persisted with payment_status='paid'; excluding 'cancelled' is the
+    // safest single filter and won't miss confirmed bookings.)
     const { data: existingBookings } = await supabase
       .from("bookings")
-      .select("booking_type, guest_count, payment_status")
+      .select("id, booking_type, guest_count, payment_status")
       .eq("time_slot_id", newTimeSlotId)
-      .eq("payment_status", "paid");
+      .neq("payment_status", "cancelled");
 
-    const hasPrivate = (existingBookings || []).some((b) => b.booking_type === "private");
-    const communalCount = (existingBookings || [])
+    const otherBookings = (existingBookings || []).filter((b) => b.id !== bookingId);
+    const hasPrivate = otherBookings.some((b) => b.booking_type === "private");
+    const communalCount = otherBookings
       .filter((b) => b.booking_type === "communal")
       .reduce((sum, b) => sum + (b.guest_count || 0), 0);
 
     const guestCount = booking.guest_count || 1;
     if (booking.booking_type === "private") {
-      if ((existingBookings || []).length > 0) {
+      if (otherBookings.length > 0) {
         throw new Error("This slot is no longer available for a private booking");
       }
     } else {
@@ -85,50 +89,9 @@ serve(async (req) => {
       }
     }
 
-    // Free old slot
-    if (booking.time_slot_id) {
-      const { data: oldSlot } = await supabase
-        .from("time_slots")
-        .select("booked_count")
-        .eq("id", booking.time_slot_id)
-        .single();
-      if (booking.booking_type === "private") {
-        await supabase
-          .from("time_slots")
-          .update({ booked_count: 0, is_available: true, updated_at: new Date().toISOString() })
-          .eq("id", booking.time_slot_id);
-      } else if (oldSlot) {
-        const newCount = Math.max(0, (oldSlot.booked_count || 0) - guestCount);
-        await supabase
-          .from("time_slots")
-          .update({
-            booked_count: newCount,
-            is_available: newCount < 5,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", booking.time_slot_id);
-      }
-    }
+    const oldSlotId = booking.time_slot_id;
 
-    // Occupy new slot
-    if (booking.booking_type === "private") {
-      await supabase
-        .from("time_slots")
-        .update({ booked_count: 5, is_available: false, updated_at: new Date().toISOString() })
-        .eq("id", newTimeSlotId);
-    } else {
-      const newCount = communalCount + guestCount;
-      await supabase
-        .from("time_slots")
-        .update({
-          booked_count: newCount,
-          is_available: newCount < 5,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", newTimeSlotId);
-    }
-
-    // Update booking row
+    // Update booking row first, so we can recompute both slots from the source of truth
     const { error: updErr } = await supabase
       .from("bookings")
       .update({
@@ -139,6 +102,33 @@ serve(async (req) => {
       })
       .eq("id", bookingId);
     if (updErr) throw updErr;
+
+    // Helper: recompute a slot's booked_count from the bookings table
+    const recomputeSlot = async (slotId: string) => {
+      const { data: rows } = await supabase
+        .from("bookings")
+        .select("booking_type, guest_count, payment_status")
+        .eq("time_slot_id", slotId)
+        .neq("payment_status", "cancelled");
+      const hasPriv = (rows || []).some((r) => r.booking_type === "private");
+      const commCount = (rows || [])
+        .filter((r) => r.booking_type === "communal")
+        .reduce((sum, r) => sum + (r.guest_count || 0), 0);
+      const bookedCount = hasPriv ? 5 : commCount;
+      await supabase
+        .from("time_slots")
+        .update({
+          booked_count: bookedCount,
+          is_available: !hasPriv && bookedCount < 5,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", slotId);
+    };
+
+    if (oldSlotId && oldSlotId !== newTimeSlotId) {
+      await recomputeSlot(oldSlotId);
+    }
+    await recomputeSlot(newTimeSlotId);
 
     // Send updated booking email (best effort)
     try {
