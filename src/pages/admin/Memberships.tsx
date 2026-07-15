@@ -382,8 +382,9 @@ export default function AdminMemberships() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => updateMembershipStatus(membership.id, 'paused')}
+                              onClick={() => pauseMembership(membership)}
                               className="min-h-[40px]"
+                              title={membership.stripe_subscription_id ? "Pauses in app only — Stripe billing continues" : "Pause membership"}
                             >
                               <Pause className="h-4 w-4 mr-2" />
                               Pause
