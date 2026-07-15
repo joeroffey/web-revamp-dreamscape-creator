@@ -13,74 +13,91 @@ serve(async (req) => {
   }
 
   try {
-    const { membershipId, userId } = await req.json();
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) throw new Error("Authentication required");
 
-    if (!membershipId || !userId) {
-      throw new Error("Missing required fields");
-    }
-
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
-
-    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
-    // Get the membership
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userErr } = await supabaseClient.auth.getUser(token);
+    if (userErr || !userData?.user) throw new Error("Invalid authentication");
+    const user = userData.user;
+
+    const { membershipId } = await req.json();
+    if (!membershipId) throw new Error("Missing membershipId");
+
+    // Load & verify ownership using authenticated user id (do NOT trust body)
     const { data: membership, error: membershipError } = await supabaseClient
-      .from('memberships')
-      .select('*')
-      .eq('id', membershipId)
-      .eq('user_id', userId)
+      .from("memberships")
+      .select("*")
+      .eq("id", membershipId)
       .single();
 
-    if (membershipError || !membership) {
-      throw new Error("Membership not found");
+    if (membershipError || !membership) throw new Error("Membership not found");
+    if (membership.user_id !== user.id) {
+      throw new Error("You do not have permission to cancel this membership");
     }
 
-    // Cancel the Stripe subscription if it exists and is auto-renewing
-    if (membership.stripe_subscription_id && membership.is_auto_renew) {
+    // If we have a Stripe subscription id, always ask Stripe for its true state
+    if (membership.stripe_subscription_id) {
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+        apiVersion: "2023-10-16",
+      });
+
       try {
-        // Cancel at period end to allow user to use remaining time
-        await stripe.subscriptions.update(membership.stripe_subscription_id, {
-          cancel_at_period_end: true,
-        });
-        console.log("Stripe subscription set to cancel at period end:", membership.stripe_subscription_id);
+        const sub = await stripe.subscriptions.retrieve(membership.stripe_subscription_id);
+        const shouldCancel = ["active", "trialing", "past_due", "unpaid", "paused"].includes(sub.status);
+
+        if (shouldCancel && !sub.cancel_at_period_end) {
+          await stripe.subscriptions.update(membership.stripe_subscription_id, {
+            cancel_at_period_end: true,
+          });
+          console.log("Stripe subscription set to cancel at period end:", membership.stripe_subscription_id);
+        } else {
+          console.log(
+            "Stripe subscription not modified (status:",
+            sub.status,
+            ", cancel_at_period_end:",
+            sub.cancel_at_period_end,
+            ")"
+          );
+        }
       } catch (stripeError) {
-        console.error("Error canceling Stripe subscription:", stripeError);
-        // Continue to update local record even if Stripe fails
+        console.error("Stripe cancellation failed:", stripeError);
+        const msg = stripeError instanceof Error ? stripeError.message : "Stripe error";
+        // Do NOT update the local record — avoids silent recurring charges
+        return new Response(
+          JSON.stringify({
+            error: `Could not cancel your Stripe subscription: ${msg}. No changes were made. Please contact support.`,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 502 }
+        );
       }
     }
 
-    // Update the membership to mark as cancelled (will expire at end of period)
     const { error: updateError } = await supabaseClient
-      .from('memberships')
-      .update({ 
+      .from("memberships")
+      .update({
         is_auto_renew: false,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', membershipId);
+      .eq("id", membershipId);
+    if (updateError) throw updateError;
 
-    if (updateError) {
-      throw updateError;
-    }
-
-    return new Response(JSON.stringify({ success: true, message: "Subscription will not renew" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-
+    return new Response(
+      JSON.stringify({ success: true, message: "Subscription will not renew" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
   } catch (error) {
     console.error("Error canceling membership:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: msg }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
   }
 });

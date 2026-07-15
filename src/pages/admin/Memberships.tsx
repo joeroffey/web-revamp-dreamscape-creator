@@ -94,6 +94,53 @@ export default function AdminMemberships() {
     }
   };
 
+  const cancelMembershipWithStripe = async (membership: Membership) => {
+    const hasStripe = !!membership.stripe_subscription_id;
+    const confirmMsg = hasStripe
+      ? "This will cancel the customer's Stripe subscription at the end of the current billing period, and mark the membership as cancelled. Continue?"
+      : "This membership has no Stripe subscription attached. Mark it cancelled?";
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-cancel-membership', {
+        body: { membershipId: membership.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+
+      setMemberships(prev =>
+        prev.map(m =>
+          m.id === membership.id
+            ? { ...m, status: 'cancelled', is_auto_renew: false }
+            : m
+        )
+      );
+
+      toast({
+        title: (data as any)?.stripeCancelled ? 'Cancelled in Stripe & database' : 'Cancelled in database',
+        description: (data as any)?.stripeDetail || 'Membership cancelled.',
+      });
+    } catch (error: any) {
+      console.error('Cancel membership error:', error);
+      toast({
+        title: 'Cancellation failed',
+        description: error?.message || 'Membership was NOT cancelled. Try again or cancel in Stripe manually.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const pauseMembership = async (membership: Membership) => {
+    if (membership.stripe_subscription_id) {
+      const proceed = window.confirm(
+        "⚠️ IMPORTANT: Pausing here only pauses access in this app. It does NOT stop Stripe billing — the customer will keep being charged on renewal. To stop billing, use the Cancel button (cancels at period end) or pause the subscription directly in the Stripe dashboard.\n\nContinue with local pause anyway?"
+      );
+      if (!proceed) return;
+    }
+    await updateMembershipStatus(membership.id, 'paused');
+  };
+
+
   const adjustSessions = async (membership: Membership, delta: number) => {
     const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
     if (isUnlimited) {
@@ -335,8 +382,9 @@ export default function AdminMemberships() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => updateMembershipStatus(membership.id, 'paused')}
+                              onClick={() => pauseMembership(membership)}
                               className="min-h-[40px]"
+                              title={membership.stripe_subscription_id ? "Pauses in app only — Stripe billing continues" : "Pause membership"}
                             >
                               <Pause className="h-4 w-4 mr-2" />
                               Pause
@@ -382,7 +430,7 @@ export default function AdminMemberships() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => updateMembershipStatus(membership.id, 'cancelled')}
+                              onClick={() => cancelMembershipWithStripe(membership)}
                               className="min-h-[40px]"
                             >
                               <X className="h-4 w-4 mr-2" />

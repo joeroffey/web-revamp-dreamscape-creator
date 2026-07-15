@@ -78,43 +78,40 @@ serve(async (req) => {
       .eq("id", bookingId);
     if (updErr) throw updErr;
 
-    // 2) Free time slot
+    // 2) Recompute the time slot's booked_count from the bookings table
+    //    (source of truth). This heals any prior drift.
     if (booking.time_slot_id) {
-      const { data: slot } = await supabase
+      const { data: slotBookings } = await supabase
+        .from("bookings")
+        .select("booking_type, guest_count, payment_status")
+        .eq("time_slot_id", booking.time_slot_id)
+        .neq("payment_status", "cancelled");
+      const hasPriv = (slotBookings || []).some((b) => b.booking_type === "private");
+      const commCount = (slotBookings || [])
+        .filter((b) => b.booking_type === "communal")
+        .reduce((sum, b) => sum + (b.guest_count || 0), 0);
+      const bookedCount = hasPriv ? 5 : commCount;
+      await supabase
         .from("time_slots")
-        .select("booked_count")
-        .eq("id", booking.time_slot_id)
-        .single();
-      if (booking.booking_type === "private") {
-        await supabase
-          .from("time_slots")
-          .update({ booked_count: 0, is_available: true, updated_at: new Date().toISOString() })
-          .eq("id", booking.time_slot_id);
-      } else if (slot) {
-        const guestCount = booking.guest_count || 1;
-        const newCount = Math.max(0, (slot.booked_count || 0) - guestCount);
-        await supabase
-          .from("time_slots")
-          .update({
-            booked_count: newCount,
-            is_available: newCount < 5,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", booking.time_slot_id);
-      }
+        .update({
+          booked_count: bookedCount,
+          is_available: !hasPriv && bookedCount < 5,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", booking.time_slot_id);
     }
 
     // 3) Apply refund
     if (isMembership) {
-      // Refund a session
-      const { data: ms } = await supabase
+      // Refund a session. Look up the membership consistent with how ownership
+      // was established (may have matched by email if booking.user_id is null).
+      const { data: msList } = await supabase
         .from("memberships")
-        .select("id, sessions_remaining, membership_type, status, end_date")
-        .eq("user_id", user.id)
+        .select("id, sessions_remaining, membership_type, status, end_date, user_id, customer_email")
+        .or(`user_id.eq.${user.id},customer_email.eq.${userEmail}`)
         .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
+      const ms = (msList || [])[0];
       if (ms && ms.membership_type !== "unlimited") {
         await supabase
           .from("memberships")
@@ -125,9 +122,12 @@ serve(async (req) => {
           .eq("id", ms.id);
         refundType = "membership";
         refundDetail = "1 membership session has been added back to your account.";
-      } else {
+      } else if (ms) {
         refundType = "membership";
         refundDetail = "Your membership session has been released.";
+      } else {
+        refundType = "membership";
+        refundDetail = "Your session has been released.";
       }
     } else if (isToken) {
       const { data: tokens } = await supabase

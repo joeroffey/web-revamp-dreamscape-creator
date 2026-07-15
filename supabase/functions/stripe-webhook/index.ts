@@ -786,7 +786,7 @@ serve(async (req) => {
     // Handle subscription cancellation
     if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
-      
+
       // Mark membership as cancelled
       await supabase
         .from('memberships')
@@ -796,6 +796,39 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         })
         .eq('stripe_subscription_id', subscription.id);
+      console.log("Membership cancelled via subscription.deleted:", subscription.id);
+    }
+
+    // Handle subscription updates (including cancel_at_period_end toggles and pauses)
+    if (event.type === "customer.subscription.updated") {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+      if (subscription.cancel_at_period_end) {
+        update.is_auto_renew = false;
+        // Keep status active so the customer keeps access until end of period.
+      } else if (subscription.status === "active" || subscription.status === "trialing") {
+        // Subscription resumed / cancellation reverted
+        update.is_auto_renew = true;
+        update.status = "active";
+      }
+
+      if (subscription.status === "canceled") {
+        update.status = "cancelled";
+        update.is_auto_renew = false;
+      } else if (subscription.status === "paused") {
+        update.status = "paused";
+      } else if (subscription.status === "past_due" || subscription.status === "unpaid") {
+        // Do not flip status here — Stripe will retry; log for visibility.
+        console.log("Subscription in", subscription.status, "for", subscription.id);
+      }
+
+      await supabase
+        .from('memberships')
+        .update(update)
+        .eq('stripe_subscription_id', subscription.id);
+      console.log("Membership synced via subscription.updated:", subscription.id, update);
     }
 
     return new Response(JSON.stringify({ received: true }), {
