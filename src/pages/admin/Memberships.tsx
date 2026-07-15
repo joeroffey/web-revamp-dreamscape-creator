@@ -430,7 +430,7 @@ export default function AdminMemberships() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => updateMembershipStatus(membership.id, 'cancelled')}
+                              onClick={() => cancelMembershipWithStripe(membership)}
                               className="min-h-[40px]"
                             >
                               <X className="h-4 w-4 mr-2" />
