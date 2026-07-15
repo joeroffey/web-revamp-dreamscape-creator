@@ -49,6 +49,20 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // AuthZ: require authenticated user matching body.userId
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authErr } = await supabase.auth.getUser(token);
+    if (authErr || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (authData.user.id !== userId) {
+      return new Response(JSON.stringify({ error: "User ID mismatch" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Check user has an active membership with available credits
     const { data: memberships, error: membershipError } = await supabase
       .from('memberships')

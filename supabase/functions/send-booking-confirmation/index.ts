@@ -48,8 +48,29 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // AuthZ: allow service-role (webhook), admin, or the booking owner.
+    // Test-email mode (no bookingId) requires admin or service-role.
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const bearer = (authHeader || "").replace("Bearer ", "");
+    const isServiceRole = !!bearer && bearer === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    let authedUser: { id: string; email?: string } | null = null;
+    let isAdmin = false;
+    if (!isServiceRole) {
+      if (!bearer) {
+        return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: authData, error: authErr } = await supabase.auth.getUser(bearer);
+      if (authErr || !authData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      authedUser = { id: authData.user.id, email: (authData.user.email || "").toLowerCase() };
+      const { data: adminRole } = await supabase
+        .from("user_roles").select("role").eq("user_id", authedUser.id).eq("role", "admin").maybeSingle();
+      isAdmin = !!adminRole;
+    }
+
     const body: BookingConfirmationRequest = await req.json();
-    
+
     let customerName: string;
     let customerEmail: string;
     let sessionDate: string;
@@ -65,7 +86,16 @@ serve(async (req) => {
         .eq('id', body.bookingId)
         .single();
       if (error || !booking) throw new Error("Booking not found");
-      
+
+      // If caller is a plain user (not service-role, not admin), enforce ownership
+      if (!isServiceRole && !isAdmin) {
+        const ownsById = authedUser && booking.user_id && booking.user_id === authedUser.id;
+        const ownsByEmail = authedUser && (booking.customer_email || "").toLowerCase() === authedUser.email;
+        if (!ownsById && !ownsByEmail) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
       customerName = booking.customer_name;
       customerEmail = booking.customer_email;
       sessionDate = booking.session_date;
@@ -74,6 +104,10 @@ serve(async (req) => {
       bookingType = booking.booking_type;
       specialRequests = booking.special_requests;
     } else {
+      // Test-email path: admin or service-role only
+      if (!isServiceRole && !isAdmin) {
+        return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       customerName = body.customerName || 'Guest';
       customerEmail = body.customerEmail || '';
       sessionDate = body.sessionDate || new Date().toISOString().split('T')[0];

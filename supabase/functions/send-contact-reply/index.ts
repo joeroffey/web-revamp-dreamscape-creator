@@ -37,6 +37,22 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // AuthZ: admin only
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const authToken = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authErr } = await supabase.auth.getUser(authToken);
+    if (authErr || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: adminRole } = await supabase
+      .from("user_roles").select("role").eq("user_id", authData.user.id).eq("role", "admin").maybeSingle();
+    if (!adminRole) {
+      return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Get the original message
     const { data: msg, error: fetchError } = await supabase
       .from("contact_messages")

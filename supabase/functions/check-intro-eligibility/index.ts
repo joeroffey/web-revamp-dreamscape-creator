@@ -50,15 +50,9 @@ serve(async (req) => {
     
     const isEligible = !hasPreviousBookings && !hasUsedIntroOffer;
 
+    // Minimise leaked info about arbitrary emails: return only a boolean.
     return new Response(
-      JSON.stringify({ 
-        isEligible,
-        reason: hasPreviousBookings 
-          ? "You have previous bookings with us" 
-          : hasUsedIntroOffer 
-            ? "You have already used the Introductory Offer"
-            : null
-      }),
+      JSON.stringify({ isEligible }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
