@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.user-reschedule-booking]
 verify_jwt = false
+
+[functions.admin-cancel-membership]
+verify_jwt = false
+
+[functions.cancel-membership]
+verify_jwt = false
