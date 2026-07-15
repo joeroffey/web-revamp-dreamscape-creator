@@ -18,8 +18,15 @@ serve(async (req) => {
   try {
     const { name, email, phone, message } = await req.json();
 
-    if (!name || !email || !message) {
-      throw new Error("Name, email, and message are required");
+    // Basic input validation
+    const isNonEmptyString = (v: unknown, min = 1, max = 5000) =>
+      typeof v === "string" && v.trim().length >= min && v.trim().length <= max;
+    const emailOk = typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+    if (!isNonEmptyString(name, 1, 200) || !emailOk || !isNonEmptyString(message, 1, 5000)) {
+      return new Response(JSON.stringify({ error: "Invalid input: name, valid email, and message are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (phone !== undefined && phone !== null && phone !== "" && (typeof phone !== "string" || phone.length > 40)) {
+      return new Response(JSON.stringify({ error: "Invalid phone" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Save to database
