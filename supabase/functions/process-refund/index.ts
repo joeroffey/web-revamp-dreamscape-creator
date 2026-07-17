@@ -102,28 +102,32 @@ serve(async (req) => {
       throw new Error("Refund processed but failed to update booking status");
     }
 
-    // If booking had a time slot, decrement the booked count
+    // Recompute the time slot's booked_count from bookings as source of truth
     if (booking.time_slot_id) {
-      await supabase.rpc("get_available_communal_spaces", {
-        p_time_slot_id: booking.time_slot_id,
-      });
-      
-      // Decrement booked_count for the time slot
-      const { data: slot } = await supabase
-        .from("time_slots")
-        .select("booked_count")
-        .eq("id", booking.time_slot_id)
-        .single();
+      const { data: activeBookings } = await supabase
+        .from("bookings")
+        .select("booking_type, guest_count")
+        .eq("time_slot_id", booking.time_slot_id)
+        .eq("payment_status", "paid")
+        .neq("booking_status", "cancelled");
 
-      if (slot) {
-        await supabase
-          .from("time_slots")
-          .update({
-            booked_count: Math.max(0, (slot.booked_count || 0) - booking.guest_count),
-            is_available: true,
-          })
-          .eq("id", booking.time_slot_id);
-      }
+      const hasPrivate = activeBookings?.some((b) => b.booking_type === "private");
+      const communalCount = activeBookings
+        ?.filter((b) => b.booking_type === "communal")
+        .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
+
+      // Private counts as 5 (fills the slot)
+      const recomputedCount = hasPrivate ? 5 : communalCount;
+      const isAvailable = !hasPrivate && recomputedCount < 5;
+
+      await supabase
+        .from("time_slots")
+        .update({
+          booked_count: recomputedCount,
+          is_available: isAvailable,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", booking.time_slot_id);
     }
 
     return new Response(
