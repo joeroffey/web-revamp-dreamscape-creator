@@ -478,6 +478,8 @@ serve(async (req) => {
 
         // Sync customer to Mailchimp
         syncToMailchimp(customerEmail, customerName);
+        } // end else (timeSlot found)
+        } // end else (not already fulfilled)
       }
 
       // Handle member booking with paying guests
