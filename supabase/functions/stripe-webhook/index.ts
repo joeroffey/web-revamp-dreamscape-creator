@@ -980,30 +980,39 @@ serve(async (req) => {
       // Only process renewals (not first subscription payment)
       if (invoice.billing_reason === 'subscription_cycle' && invoice.subscription) {
         const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
-        
-        // Find the existing membership with this subscription
-        const { data: existingMembership } = await supabase
+
+        // Find the latest membership for this subscription (any non-cancelled state)
+        const { data: matchingMemberships } = await supabase
           .from('memberships')
           .select('*')
           .eq('stripe_subscription_id', subscriptionId)
-          .eq('status', 'active')
-          .single();
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const existingMembership = matchingMemberships && matchingMemberships.length > 0 ? matchingMemberships[0] : null;
 
         if (existingMembership) {
-          // Extend the membership by 30 days and reset sessions to monthly allocation
-          const newEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          
+          // Use invoice's actual billing period end when available, fallback to +30 days
+          const periodEndUnix = invoice.lines?.data?.[0]?.period?.end;
+          const newEndDate = periodEndUnix
+            ? new Date(periodEndUnix * 1000).toISOString().split('T')[0]
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
           await supabase
             .from('memberships')
             .update({
               end_date: newEndDate,
-              // Reset sessions to their monthly allocation (stored in sessions_per_week column)
+              status: 'active', // Stripe just charged them, so reactivate any past_due/paused state
+              is_auto_renew: true,
               sessions_remaining: existingMembership.membership_type === 'unlimited' ? 999 : existingMembership.sessions_per_week,
               updated_at: new Date().toISOString()
             })
             .eq('id', existingMembership.id);
 
-          console.log('Membership renewed:', existingMembership.id);
+          console.log('Membership renewed:', existingMembership.id, 'new end:', newEndDate);
+        } else {
+          console.error('DATA DRIFT: invoice.paid subscription_cycle received with NO matching membership record. subscriptionId=', subscriptionId, 'invoice=', invoice.id, 'customer=', invoice.customer, '— manual attention required.');
         }
       }
     }
