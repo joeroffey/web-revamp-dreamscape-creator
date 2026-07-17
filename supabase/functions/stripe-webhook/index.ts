@@ -511,9 +511,21 @@ serve(async (req) => {
             .eq('id', timeSlotId)
             .single();
 
+          member_guest_block: {
           if (!timeSlot) {
             console.error("Time slot not found for member booking with guests");
-            throw new Error("Time slot not found");
+            await autoRefundAndRecord(stripe, supabase, session, 'Member+guest booking: time slot not found at fulfillment', {
+              user_id: userId,
+              customer_name: customerName,
+              customer_email: (customerEmail || '').toLowerCase(),
+              service_type: 'combined',
+              session_date: null,
+              session_time: null,
+              duration_minutes: 60,
+              booking_type: 'communal',
+              guest_count: totalGuestCount,
+            });
+            break member_guest_block;
           }
 
           // Get pricing for guest payment calculation
