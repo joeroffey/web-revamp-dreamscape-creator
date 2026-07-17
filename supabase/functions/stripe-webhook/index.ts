@@ -814,6 +814,9 @@ serve(async (req) => {
           }
         }
         } // end else (not already fulfilled)
+      }
+
+
 
       // Handle one-time membership payments (no auto-renew)
       if (session.mode === 'payment' && session.metadata?.type === 'membership_onetime' && session.metadata?.userId) {
