@@ -32,6 +32,48 @@ async function syncToMailchimp(email: string, name: string) {
   }
 }
 
+// Auto-refund a Stripe session and record a cancelled/refunded booking row
+// so admins can see why the customer was charged & refunded automatically.
+async function autoRefundAndRecord(
+  stripe: Stripe,
+  supabase: ReturnType<typeof createClient>,
+  session: Stripe.Checkout.Session,
+  reason: string,
+  bookingRow: Record<string, unknown>
+) {
+  const paymentIntentId = typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : session.payment_intent?.id || null;
+
+  let refundStatus: 'refunded' | 'refund_required' = 'refund_required';
+  let refundId: string | null = null;
+  if (paymentIntentId) {
+    try {
+      const refund = await stripe.refunds.create({ payment_intent: paymentIntentId });
+      refundId = refund.id;
+      refundStatus = 'refunded';
+      console.log('Auto-refund succeeded:', refund.id, 'for session', session.id, 'reason:', reason);
+    } catch (err) {
+      console.error('AUTO-REFUND FAILED for session', session.id, 'reason:', reason, err);
+    }
+  } else {
+    console.error('AUTO-REFUND: no payment_intent on session', session.id, 'reason:', reason);
+  }
+
+  try {
+    await supabase.from('bookings').insert({
+      ...bookingRow,
+      stripe_session_id: session.id,
+      stripe_payment_id: paymentIntentId,
+      payment_status: refundStatus,
+      booking_status: 'cancelled',
+      special_requests: `[AUTO-REFUND] ${reason}${refundId ? ` (refund ${refundId})` : ''}${bookingRow.special_requests ? ` — original note: ${bookingRow.special_requests}` : ''}`,
+    });
+  } catch (insErr) {
+    console.error('AUTO-REFUND: failed to insert cancelled booking record for session', session.id, insErr);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
