@@ -920,26 +920,39 @@ serve(async (req) => {
         const customerName = session.metadata.customerName || '';
 
         if (customerEmail) {
-          // Calculate expiry date (3 months from now)
-          const expiresAt = new Date();
-          expiresAt.setMonth(expiresAt.getMonth() + 3);
-
-          // Insert tokens for the customer
-          const { error: tokenError } = await supabase
+          // Idempotency: dedupe by session id embedded in notes
+          const sessionTag = `[session:${session.id}]`;
+          const { data: existingIntroTokens } = await supabase
             .from('customer_tokens')
-            .insert({
-              customer_email: customerEmail,
-              tokens_remaining: 3,
-              expires_at: expiresAt.toISOString(),
-              notes: `Introductory Offer - 3 Sessions for £35 (purchased by ${customerName})`
-            });
+            .select('id')
+            .eq('customer_email', customerEmail)
+            .ilike('notes', `%${sessionTag}%`)
+            .limit(1);
 
-          if (tokenError) {
-            console.error('Error inserting intro offer tokens:', tokenError);
+          if (existingIntroTokens && existingIntroTokens.length > 0) {
+            console.log('Intro offer tokens already exist for session, skipping:', session.id);
           } else {
-            console.log('Intro offer tokens created for:', customerEmail);
-            // Sync intro offer customer to Mailchimp
-            syncToMailchimp(customerEmail, customerName);
+            // Calculate expiry date (3 months from now)
+            const expiresAt = new Date();
+            expiresAt.setMonth(expiresAt.getMonth() + 3);
+
+            // Insert tokens for the customer
+            const { error: tokenError } = await supabase
+              .from('customer_tokens')
+              .insert({
+                customer_email: customerEmail,
+                tokens_remaining: 3,
+                expires_at: expiresAt.toISOString(),
+                notes: `Introductory Offer - 3 Sessions for £35 (purchased by ${customerName}) ${sessionTag}`
+              });
+
+            if (tokenError) {
+              console.error('Error inserting intro offer tokens:', tokenError);
+            } else {
+              console.log('Intro offer tokens created for:', customerEmail);
+              // Sync intro offer customer to Mailchimp
+              syncToMailchimp(customerEmail, customerName);
+            }
           }
 
           // Also add/update customer record if not exists
