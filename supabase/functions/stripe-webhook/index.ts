@@ -633,58 +633,75 @@ serve(async (req) => {
       }
 
       if (session.metadata?.type === "gift_card") {
-        // Mark gift card as paid
-        const { data: gcRow } = await supabase
+        // Idempotency: check current payment_status BEFORE flipping it, so retries don't re-send email
+        const { data: existingGc } = await supabase
           .from('gift_cards')
-          .update({ payment_status: 'paid' })
+          .select('id, purchaser_name, purchaser_email, payment_status')
           .eq('stripe_session_id', session.id)
-          .select('id, purchaser_name, purchaser_email')
           .maybeSingle();
 
-        // Sync gift card purchaser to Mailchimp
-        if (gcRow) {
-          syncToMailchimp(gcRow.purchaser_email, gcRow.purchaser_name);
+        const alreadyPaid = existingGc?.payment_status === 'paid';
+
+        // Mark gift card as paid (safe even if already paid)
+        let gcRow = existingGc;
+        if (!alreadyPaid) {
+          const { data: updatedGc } = await supabase
+            .from('gift_cards')
+            .update({ payment_status: 'paid' })
+            .eq('stripe_session_id', session.id)
+            .select('id, purchaser_name, purchaser_email')
+            .maybeSingle();
+          gcRow = updatedGc as typeof existingGc;
+        } else {
+          console.log("Gift card already marked paid, skipping email & redemption insert:", session.id);
         }
 
-        // Send gift card email to recipient
-        if (gcRow?.id) {
-          try {
-            const emailResponse = await fetch(
-              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-gift-card-email`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
-                },
-                body: JSON.stringify({ giftCardId: gcRow.id })
-              }
-            );
-            if (!emailResponse.ok) {
-              console.error("Failed to send gift card email:", await emailResponse.text());
-            } else {
-              console.log("Gift card email sent successfully");
-            }
-          } catch (emailError) {
-            console.error("Error sending gift card email:", emailError);
+        if (!alreadyPaid) {
+          // Sync gift card purchaser to Mailchimp
+          if (gcRow) {
+            syncToMailchimp(gcRow.purchaser_email, gcRow.purchaser_name);
           }
-        }
 
-        const discountCodeId = session.metadata?.discountCodeId;
-        const originalAmount = Number(session.metadata?.originalAmount || 0);
-        const discountAmount = Number(session.metadata?.discountAmount || 0);
-        const finalAmount = Number(session.metadata?.finalAmount || 0);
-        if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && gcRow?.id) {
-          await supabase
-            .from('discount_redemptions')
-            .insert({
-              discount_code_id: discountCodeId,
-              entity_type: 'gift_card',
-              entity_id: gcRow.id,
-              original_amount: originalAmount,
-              discount_amount: discountAmount,
-              final_amount: finalAmount
-            });
+          // Send gift card email to recipient
+          if (gcRow?.id) {
+            try {
+              const emailResponse = await fetch(
+                `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-gift-card-email`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                  },
+                  body: JSON.stringify({ giftCardId: gcRow.id })
+                }
+              );
+              if (!emailResponse.ok) {
+                console.error("Failed to send gift card email:", await emailResponse.text());
+              } else {
+                console.log("Gift card email sent successfully");
+              }
+            } catch (emailError) {
+              console.error("Error sending gift card email:", emailError);
+            }
+          }
+
+          const discountCodeId = session.metadata?.discountCodeId;
+          const originalAmount = Number(session.metadata?.originalAmount || 0);
+          const discountAmount = Number(session.metadata?.discountAmount || 0);
+          const finalAmount = Number(session.metadata?.finalAmount || 0);
+          if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && gcRow?.id) {
+            await supabase
+              .from('discount_redemptions')
+              .insert({
+                discount_code_id: discountCodeId,
+                entity_type: 'gift_card',
+                entity_id: gcRow.id,
+                original_amount: originalAmount,
+                discount_amount: discountAmount,
+                final_amount: finalAmount
+              });
+          }
         }
       }
 
