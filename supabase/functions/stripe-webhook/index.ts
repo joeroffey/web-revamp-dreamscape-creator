@@ -365,6 +365,16 @@ serve(async (req) => {
 
         console.log("Processing partial credit booking:", { timeSlotId, creditAmount, amountToPay });
 
+        // Idempotency: if this session was already fulfilled, skip everything (prevents double credit deduction on Stripe retries)
+        const { data: existingPartialCreditBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingPartialCreditBooking) {
+          console.log("Partial credit booking already exists for this session, skipping:", session.id);
+        } else {
         // Get time slot details
         const { data: timeSlot } = await supabase
           .from('time_slots')
@@ -374,8 +384,22 @@ serve(async (req) => {
 
         if (!timeSlot) {
           console.error("Time slot not found for partial credit booking");
-          throw new Error("Time slot not found");
-        }
+          await autoRefundAndRecord(stripe, supabase, session, 'Partial-credit booking: time slot not found at fulfillment', {
+            user_id: userId,
+            customer_name: customerName,
+            customer_email: (customerEmail || '').toLowerCase(),
+            customer_phone: customerPhone,
+            service_type: 'combined',
+            session_date: null,
+            session_time: null,
+            duration_minutes: 60,
+            price_amount: baseAmount,
+            discount_amount: discountFromCode + creditAmount,
+            final_amount: amountToPay,
+            booking_type: bookingType,
+            guest_count: guestCount,
+          });
+        } else {
 
         // Deduct credits
         for (const { id, amount } of creditsToDeduct) {
