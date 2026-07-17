@@ -563,6 +563,7 @@ export type Database = {
           sessions_remaining: number | null
           start_date: string | null
           status: string
+          stripe_session_id: string | null
           stripe_subscription_id: string | null
           updated_at: string
           user_id: string | null
@@ -584,6 +585,7 @@ export type Database = {
           sessions_remaining?: number | null
           start_date?: string | null
           status?: string
+          stripe_session_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
@@ -605,6 +607,7 @@ export type Database = {
           sessions_remaining?: number | null
           start_date?: string | null
           status?: string
+          stripe_session_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
