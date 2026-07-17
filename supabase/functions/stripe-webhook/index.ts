@@ -36,7 +36,7 @@ async function syncToMailchimp(email: string, name: string) {
 // so admins can see why the customer was charged & refunded automatically.
 async function autoRefundAndRecord(
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   session: Stripe.Checkout.Session,
   reason: string,
   bookingRow: Record<string, unknown>
