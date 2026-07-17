@@ -311,40 +311,8 @@ serve(async (req) => {
           }
           } // end booking_block
         }
-          
-          // Update time slot availability
-          if (bookingType === 'private') {
-            await supabase
-              .from('time_slots')
-              .update({ is_available: false, booked_count: 5, updated_at: new Date().toISOString() })
-              .eq('id', timeSlotId);
-          } else {
-            const newBookedCount = currentCommunalCount + guestCount;
-            await supabase
-              .from('time_slots')
-              .update({
-                booked_count: newBookedCount,
-                is_available: newBookedCount < 5,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', timeSlotId);
-          }
-          
-          // Promo redemption tracking (if a discount code was used)
-          if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && booking?.id) {
-            await supabase
-              .from('discount_redemptions')
-              .insert({
-                discount_code_id: discountCodeId,
-                entity_type: 'booking',
-                entity_id: booking.id,
-                original_amount: originalAmount,
-                discount_amount: discountAmount,
-                final_amount: finalAmount
-              });
-          }
-        }
       }
+
 
       // Handle partial credit booking (credit + card payment)
       if (session.metadata?.type === "partial_credit_booking") {
