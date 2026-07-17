@@ -136,6 +136,7 @@ serve(async (req) => {
         if (existingBooking) {
           console.log("Booking already exists for this session, skipping:", session.id);
         } else {
+          booking_block: {
           // Verify slot availability one final time before creating booking
           const { data: timeSlot } = await supabase
             .from('time_slots')
@@ -145,7 +146,21 @@ serve(async (req) => {
           
           if (!timeSlot) {
             console.error("Time slot not found:", timeSlotId);
-            throw new Error("Time slot not found");
+            await autoRefundAndRecord(stripe, supabase, session, 'Time slot not found at fulfillment time', {
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || null,
+              session_time: slotTime || null,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              booking_type: bookingType,
+              guest_count: guestCount,
+            });
+            break booking_block;
           }
           
           // Get current booking count (excluding cancelled)
@@ -160,15 +175,45 @@ serve(async (req) => {
           const currentCommunalCount = currentBookings?.filter(b => b.booking_type === 'communal')
             .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
           
-          // Validate availability
+          // Validate availability — auto-refund if slot filled since payment started
           if (bookingType === 'private' && (hasPrivateBooking || currentCommunalCount > 0)) {
             console.error("Private booking not available - slot has existing bookings");
-            throw new Error("Time slot no longer available for private booking");
+            await autoRefundAndRecord(stripe, supabase, session, 'Private slot no longer available (filled after payment started)', {
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || timeSlot.slot_date,
+              session_time: slotTime || timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              time_slot_id: timeSlotId,
+              booking_type: bookingType,
+              guest_count: guestCount,
+            });
+            break booking_block;
           }
           
           if (bookingType === 'communal' && (hasPrivateBooking || currentCommunalCount + guestCount > 5)) {
             console.error("Communal booking not available - insufficient spaces");
-            throw new Error("Not enough spaces available");
+            await autoRefundAndRecord(stripe, supabase, session, 'Communal slot no longer had enough spaces (filled after payment started)', {
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || timeSlot.slot_date,
+              session_time: slotTime || timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              time_slot_id: timeSlotId,
+              booking_type: bookingType,
+              guest_count: guestCount,
+            });
+            break booking_block;
           }
           
           // Create the booking (now that payment is confirmed)
@@ -232,6 +277,40 @@ serve(async (req) => {
               console.error("Error sending booking confirmation email:", emailErr);
             }
           }
+          
+          // Update time slot availability
+          if (bookingType === 'private') {
+            await supabase
+              .from('time_slots')
+              .update({ is_available: false, booked_count: 5, updated_at: new Date().toISOString() })
+              .eq('id', timeSlotId);
+          } else {
+            const newBookedCount = currentCommunalCount + guestCount;
+            await supabase
+              .from('time_slots')
+              .update({
+                booked_count: newBookedCount,
+                is_available: newBookedCount < 5,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', timeSlotId);
+          }
+          
+          // Promo redemption tracking (if a discount code was used)
+          if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && booking?.id) {
+            await supabase
+              .from('discount_redemptions')
+              .insert({
+                discount_code_id: discountCodeId,
+                entity_type: 'booking',
+                entity_id: booking.id,
+                original_amount: originalAmount,
+                discount_amount: discountAmount,
+                final_amount: finalAmount
+              });
+          }
+          } // end booking_block
+        }
           
           // Update time slot availability
           if (bookingType === 'private') {
