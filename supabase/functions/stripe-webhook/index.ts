@@ -911,6 +911,7 @@ serve(async (req) => {
             console.error("Error sending one-time membership confirmation email:", emailErr);
           }
         }
+        } // end else (not already fulfilled)
       }
 
       // Handle intro offer purchase (adds tokens to customer_tokens)
