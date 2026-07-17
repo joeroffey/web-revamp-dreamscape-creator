@@ -727,7 +727,6 @@ serve(async (req) => {
 
         if (existingSubMembership) {
           console.log("Subscription membership already exists for session, skipping:", session.id);
-          continue_sub_membership: {} // no-op sentinel
         } else {
 
         // Get user email and name from Supabase auth
