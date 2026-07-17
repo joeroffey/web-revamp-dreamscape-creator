@@ -718,6 +718,18 @@ serve(async (req) => {
         const discountCodeId = session.metadata?.discountCodeId || null;
         const isAutoRenew = session.metadata?.isAutoRenew === 'true';
 
+        // Idempotency: skip if this checkout session was already turned into a membership
+        const { data: existingSubMembership } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingSubMembership) {
+          console.log("Subscription membership already exists for session, skipping:", session.id);
+          continue_sub_membership: {} // no-op sentinel
+        } else {
+
         // Get user email and name from Supabase auth
         const { data: userData } = await supabase.auth.admin.getUserById(userId);
         const customerEmail = userData?.user?.email || session.customer_email || '';
@@ -725,19 +737,30 @@ serve(async (req) => {
                             userData?.user?.user_metadata?.name || 
                             session.customer_details?.name || '';
 
-        // Calculate start and end dates
-        const startDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days from now
+        // Calculate start date; end date from Stripe subscription current_period_end if available
+        const startDate = new Date().toISOString().split('T')[0];
+        let endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        if (subscriptionId) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            if (sub?.current_period_end) {
+              endDate = new Date(sub.current_period_end * 1000).toISOString().split('T')[0];
+            }
+          } catch (subErr) {
+            console.error('Could not retrieve subscription for period end, falling back to +30 days:', subErr);
+          }
+        }
 
         const { data: membershipRow, error: membershipInsertError } = await supabase
           .from('memberships')
           .insert({
             user_id: userId,
             membership_type: membershipType,
-            sessions_per_week: sessionsPerMonth, // Column still named sessions_per_week but now stores monthly allocation
+            sessions_per_week: sessionsPerMonth,
             sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerMonth,
             status: 'active',
             stripe_subscription_id: subscriptionId,
+            stripe_session_id: session.id,
             discount_percentage: discountPercentage,
             discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
             discount_amount: discountAmount,
