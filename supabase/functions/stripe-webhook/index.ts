@@ -826,6 +826,17 @@ serve(async (req) => {
         const discountAmount = Number(session.metadata?.discountAmount || 0);
         const discountCodeId = session.metadata?.discountCodeId || null;
 
+        // Idempotency: skip if this checkout session was already turned into a membership
+        const { data: existingOneTimeMembership } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingOneTimeMembership) {
+          console.log("One-time membership already exists for session, skipping:", session.id);
+        } else {
+
         // Get user email and name from Supabase auth
         const { data: userData } = await supabase.auth.admin.getUserById(userId);
         const customerEmail = userData?.user?.email || session.customer_email || '';
@@ -842,10 +853,11 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             membership_type: membershipType,
-            sessions_per_week: sessionsPerMonth, // Column still named sessions_per_week but now stores monthly allocation
+            sessions_per_week: sessionsPerMonth,
             sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerMonth,
             status: 'active',
             stripe_subscription_id: null,
+            stripe_session_id: session.id,
             discount_percentage: discountPercentage,
             discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
             discount_amount: discountAmount,
