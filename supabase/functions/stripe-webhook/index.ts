@@ -628,6 +628,7 @@ serve(async (req) => {
               console.error("Error sending member booking confirmation email:", emailErr);
             }
           }
+          } // end member_guest_block
         }
       }
 
