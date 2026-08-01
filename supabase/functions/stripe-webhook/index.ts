@@ -1,4 +1,4 @@
-﻿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -67,7 +67,7 @@ async function autoRefundAndRecord(
       stripe_payment_id: paymentIntentId,
       payment_status: refundStatus,
       booking_status: 'cancelled',
-      special_requests: `[AUTO-REFUND] ${reason}${refundId ? ` (refund ${refundId})` : ''}${bookingRow.special_requests ? ` â€” original note: ${bookingRow.special_requests}` : ''}`,
+      special_requests: `[AUTO-REFUND] ${reason}${refundId ? ` (refund ${refundId})` : ''}${bookingRow.special_requests ? ` — original note: ${bookingRow.special_requests}` : ''}`,
     });
   } catch (insErr) {
     console.error('AUTO-REFUND: failed to insert cancelled booking record for session', session.id, insErr);
@@ -175,7 +175,7 @@ serve(async (req) => {
           const currentCommunalCount = currentBookings?.filter(b => b.booking_type === 'communal')
             .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
           
-          // Validate availability â€” auto-refund if slot filled since payment started
+          // Validate availability — auto-refund if slot filled since payment started
           if (bookingType === 'private' && (hasPrivateBooking || currentCommunalCount > 0)) {
             console.error("Private booking not available - slot has existing bookings");
             await autoRefundAndRecord(stripe, supabase, session, 'Private slot no longer available (filled after payment started)', {
@@ -743,14 +743,6 @@ serve(async (req) => {
 
         if (membershipInsertError) {
           console.error('Error inserting membership:', membershipInsertError);
-          // Return error so Stripe will retry the webhook
-          return new Response(
-            JSON.stringify({ error: 'Failed to create membership record' }),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 500
-            }
-          );
         } else {
           // Sync membership customer to Mailchimp
           syncToMailchimp(customerEmail, customerName);
@@ -852,14 +844,6 @@ serve(async (req) => {
 
         if (membershipInsertError) {
           console.error('Error inserting one-time membership:', membershipInsertError);
-          // Return error so Stripe will retry the webhook
-          return new Response(
-            JSON.stringify({ error: 'Failed to create membership record' }),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 500
-            }
-          );
         } else {
           // Sync one-time membership customer to Mailchimp
           syncToMailchimp(customerEmail, customerName);
@@ -930,20 +914,12 @@ serve(async (req) => {
                 customer_email: customerEmail,
                 tokens_remaining: 3,
                 expires_at: expiresAt.toISOString(),
-                notes: `Introductory Offer - 3 Sessions for Â£35 (purchased by ${customerName}) ${sessionTag}`
+                notes: `Introductory Offer - 3 Sessions for £35 (purchased by ${customerName}) ${sessionTag}`
               });
 
             if (tokenError) {
-                console.error('Error inserting intro offer tokens:', tokenError);
-                // Return error so Stripe will retry the webhook
-                return new Response(
-                  JSON.stringify({ error: 'Failed to create intro offer tokens' }),
-                  {
-                    headers: { ...corsHeaders, "Content-Type": "application/json" },
-                    status: 500
-                  }
-                );
-              } else {
+              console.error('Error inserting intro offer tokens:', tokenError);
+            } else {
               console.log('Intro offer tokens created for:', customerEmail);
               // Sync intro offer customer to Mailchimp
               syncToMailchimp(customerEmail, customerName);
@@ -958,26 +934,11 @@ serve(async (req) => {
             .maybeSingle();
 
           if (!existingCustomer) {
-              const { error: customerError } = await supabase
-                .from('customers')
-                .insert({
-                  email: customerEmail,
-                  full_name: customerName,
-                  phone: session.metadata.customerPhone || null
-                });
-
-              if (customerError) {
-                console.error('Error inserting customer record:', customerError);
-                // Return error so Stripe will retry the webhook
-                return new Response(
-                  JSON.stringify({ error: 'Failed to create customer record' }),
-                  {
-                    headers: { ...corsHeaders, "Content-Type": "application/json" },
-                    status: 500
-                  }
-                );
-              }
-            }
+            await supabase.from('customers').insert({
+              email: customerEmail,
+              full_name: customerName,
+              phone: session.metadata.customerPhone || null
+            });
           }
         }
       }
@@ -1022,7 +983,7 @@ serve(async (req) => {
 
           console.log('Membership renewed:', existingMembership.id, 'new end:', newEndDate);
         } else {
-          console.error('DATA DRIFT: invoice.paid subscription_cycle received with NO matching membership record. subscriptionId=', subscriptionId, 'invoice=', invoice.id, 'customer=', invoice.customer, 'â€” manual attention required.');
+          console.error('DATA DRIFT: invoice.paid subscription_cycle received with NO matching membership record. subscriptionId=', subscriptionId, 'invoice=', invoice.id, 'customer=', invoice.customer, '— manual attention required.');
         }
       }
     }
@@ -1064,7 +1025,7 @@ serve(async (req) => {
       } else if (subscription.status === "paused") {
         update.status = "paused";
       } else if (subscription.status === "past_due" || subscription.status === "unpaid") {
-        // Do not flip status here â€” Stripe will retry; log for visibility.
+        // Do not flip status here — Stripe will retry; log for visibility.
         console.log("Subscription in", subscription.status, "for", subscription.id);
       }
 
@@ -1092,4 +1053,3 @@ serve(async (req) => {
     );
   }
 });
-

@@ -71,24 +71,12 @@ serve(async (req) => {
     let refundType: RefundType = "none";
     let refundDetail = "";
 
-    // 1) Update booking to cancelled - make conditional to prevent race conditions
-    const { data: updatedBooking, error: updErr, count: updateCount } = await supabase
+    // 1) Update booking to cancelled
+    const { error: updErr } = await supabase
       .from("bookings")
       .update({ payment_status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("id", bookingId)
-      .neq("payment_status", "cancelled") // Only update if not already cancelled
-      .select()
-      .single();
-
+      .eq("id", bookingId);
     if (updErr) throw updErr;
-
-    // If no rows were updated, it means the booking was already cancelled by another process
-    if (!updatedBooking || updateCount === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "Booking already cancelled", refundType: "none" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-      );
-    }
 
     // 2) Recompute the time slot's booked_count from the bookings table
     //    (source of truth). This heals any prior drift.
@@ -135,37 +123,11 @@ serve(async (req) => {
         refundType = "membership";
         refundDetail = "1 membership session has been added back to your account.";
       } else if (ms) {
-        // Unlimited membership - session released but no counter to increment
         refundType = "membership";
         refundDetail = "Your membership session has been released.";
       } else {
-        // No active membership found - this shouldn't happen for a membership booking
-        // but handle gracefully by falling back to token if possible
-        console.warn("No active membership found for membership booking cancellation", { userId: user.id, userEmail, bookingId });
-
-        // Try to fall back to token refund if available
-        const { data: tokens } = await supabase
-          .from("customer_tokens")
-          .select("*")
-          .eq("customer_email", userEmail)
-          .order("expires_at", { ascending: true, nullsFirst: false })
-          .limit(1);
-
-        if (tokens && tokens.length > 0) {
-          await supabase
-            .from("customer_tokens")
-            .update({
-              tokens_remaining: tokens[0].tokens_remaining + 1,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", tokens[0].id);
-          refundType = "token";
-          refundDetail = "No active membership found; 1 session token has been returned to your account instead.";
-        } else {
-          // No fallback available
-          refundType = "none";
-          refundDetail = "No active membership or tokens found to refund.";
-        }
+        refundType = "membership";
+        refundDetail = "Your session has been released.";
       }
     } else if (isToken) {
       const { data: tokens } = await supabase
