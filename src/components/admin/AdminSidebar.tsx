@@ -26,6 +26,7 @@ import {
   CalendarDays,
   FileText,
   MessageSquare,
+  Mail,
   BarChart3,
   Settings,
   Home,
