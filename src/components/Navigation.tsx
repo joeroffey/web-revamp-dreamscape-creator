@@ -74,23 +74,23 @@ export const Navigation = () => {
             <img 
               src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-20 sm:h-24 md:h-28 lg:h-36 xl:h-40 w-auto transition-all duration-300 hover:scale-105"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-36 w-auto transition-all duration-300 hover:scale-105"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4 xl:space-x-6 2xl:space-x-8">
+          <div className="hidden xl:flex items-center gap-3 2xl:gap-6 min-w-0">
             {/* Home Link */}
             <Link
               to="/"
-              className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+              className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-[11px] xl:text-sm tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
             >
               Home
             </Link>
 
             {/* About Dropdown */}
             <div className="relative group">
-              <button className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap flex items-center gap-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 group-hover:after:w-full">
+              <button className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-[11px] xl:text-sm tracking-wide uppercase whitespace-nowrap flex items-center gap-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 group-hover:after:w-full">
                 About
                 <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
               </button>
@@ -114,7 +114,7 @@ export const Navigation = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-[11px] xl:text-sm tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
               >
                 {item.name}
               </Link>
@@ -122,11 +122,11 @@ export const Navigation = () => {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center flex-shrink-0">
+          <div className="hidden xl:flex items-center flex-shrink-0">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="rounded-full px-4 lg:px-6 py-2 transition-all duration-300 hover:scale-105">
+                  <Button variant="outline" className="rounded-full px-3 xl:px-5 py-2 whitespace-nowrap transition-all duration-300 hover:scale-105">
                     <User className="h-4 w-4 mr-2" />
                     {firstName || user.email?.split('@')[0] || 'Account'}
                   </Button>
@@ -151,7 +151,7 @@ export const Navigation = () => {
               </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <Button variant="outline" className="rounded-full px-4 lg:px-6 py-2 transition-all duration-300 hover:scale-105">
+                <Button variant="outline" className="rounded-full px-3 xl:px-5 py-2 whitespace-nowrap transition-all duration-300 hover:scale-105">
                   <User className="h-4 w-4 mr-2" />
                   Sign In
                 </Button>
@@ -162,7 +162,7 @@ export const Navigation = () => {
           {/* Mobile Menu Button */}
           <button
             type="button"
-            className="md:hidden p-2 -mr-2 touch-manipulation"
+            className="xl:hidden p-2 -mr-2 touch-manipulation"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
@@ -173,7 +173,7 @@ export const Navigation = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden border-t border-border">
+          <div className="xl:hidden border-t border-border">
             <div className="max-h-[calc(100vh-5rem)] overflow-y-auto py-6">
               <div className="flex flex-col space-y-6">
                 <Link
