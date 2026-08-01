@@ -532,50 +532,25 @@ export default function AdminDashboard() {
               <BarChart3 className="h-4 w-4 ml-2" />
             </CardHeader>
             <CardContent>
-              <ChartContainer>
-                <BarChart
-                  data={stats.weeklyBookings}
-                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                >
-                  <XAxis dataKey="name" tickLine={false} tick={false} />
-                  <YAxis
-                    tickLine={false}
-                    tick={false}
-                    width={40}
-                    domain={[0, Math.max(...stats.weeklyBookings.map(d => d.bookings)) + 2]}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                  </YAxis>
-                  <Tooltip
-                    labelFormatter={({ payload }) => payload.label}
-                    formatter={(value) => `${value} bookings`}
-                  />
-                  <Legend verticalAlign="top" height={36} />
-                  <Bar
-                    dataKey="bookings"
-                    barSize={20}
-                    radius={{ topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 }}
-                    fill="#2563eb"
-                  >
-                    {stats.weeklyBookings.map((entry, index) => (
-                      <div key={index}>
-                        {entry.bookings > 0 && (
-                          <text
-                            x={0}
-                            y={-10}
-                            fill="#64748b"
-                            fontSize="12"
-                            textAnchor="middle"
-                          >
-                            {entry.bookings}
-                          </text>
-                        )}
-                      </div>
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+              <div className="flex items-end justify-between gap-3 h-48">
+                {stats.weeklyBookings.map((d) => {
+                  const max = Math.max(1, ...stats.weeklyBookings.map((x) => x.bookings));
+                  const pct = Math.round((d.bookings / max) * 100);
+                  return (
+                    <div key={d.name} className="flex-1 flex flex-col items-center justify-end gap-2 h-full">
+                      <span className="text-xs text-muted-foreground">{d.bookings}</span>
+                      <div
+                        className="w-full rounded-t-md bg-primary/80 transition-all"
+                        style={{ height: `${Math.max(pct, d.bookings > 0 ? 6 : 2)}%` }}
+                        title={`${d.bookings} bookings`}
+                      />
+                      <span className="text-xs text-muted-foreground">{d.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
+
           </Card>
         </div>
 
