@@ -91,6 +91,7 @@ const App = () => (
             <Route path="/admin/partner-codes" element={<PartnerCodes />} />
             <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/messages" element={<ModernMessageManagement />} />
+            <Route path="/admin/conditional-emails" element={<ConditionalEmails />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
