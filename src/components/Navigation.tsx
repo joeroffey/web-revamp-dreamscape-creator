@@ -79,7 +79,7 @@ export const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-7 min-w-0">
+          <div className="hidden xl:flex items-center gap-3 2xl:gap-6 min-w-0">
             {/* Home Link */}
             <Link
               to="/"
@@ -122,7 +122,7 @@ export const Navigation = () => {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center flex-shrink-0">
+          <div className="hidden xl:flex items-center flex-shrink-0">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -162,7 +162,7 @@ export const Navigation = () => {
           {/* Mobile Menu Button */}
           <button
             type="button"
-            className="lg:hidden p-2 -mr-2 touch-manipulation"
+            className="xl:hidden p-2 -mr-2 touch-manipulation"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
@@ -173,7 +173,7 @@ export const Navigation = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="lg:hidden border-t border-border">
+          <div className="xl:hidden border-t border-border">
             <div className="max-h-[calc(100vh-5rem)] overflow-y-auto py-6">
               <div className="flex flex-col space-y-6">
                 <Link
