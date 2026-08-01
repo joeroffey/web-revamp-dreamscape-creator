@@ -43,6 +43,7 @@ import AdminBlog from "./pages/admin/Blog";
 import PartnerCodes from "./pages/admin/PartnerCodes";
 import AdminEvents from "./pages/admin/Events";
 import ModernMessageManagement from "./components/admin/ModernMessageManagement";
+import ConditionalEmails from "./pages/admin/ConditionalEmails";
 const queryClient = new QueryClient();
 
 const App = () => (
