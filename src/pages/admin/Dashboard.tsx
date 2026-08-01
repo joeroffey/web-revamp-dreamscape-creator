@@ -27,7 +27,7 @@ import { formatGBP, formatDateTime } from '@/lib/format';
 import { CreateBookingDialog } from '@/components/admin/CreateBookingDialog';
 import { AddTokensDialog } from '@/components/admin/AddTokensDialog';
 import { useCustomerSearch, CustomerSearchResult } from '@/hooks/useCustomerSearch';
-import { ChartContainer } from '@/components/ui/chart';
+
 
 interface DashboardStats {
   totalCustomers: number;
