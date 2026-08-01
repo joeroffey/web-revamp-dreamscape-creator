@@ -19,7 +19,9 @@ import {
   Menu,
   Plus,
   MenuIcon,
-  BarChart3
+  BarChart3,
+  Phone,
+  Eye
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { BookingDetailsDialog } from '@/components/admin/BookingDetailsDialog';
@@ -581,7 +583,7 @@ export default function AdminDashboard() {
               setShowAddTokens(false);
             }}
             customerEmail={selectedCustomerForTokens.email}
-            customerName={selectedCustomerForTokens.name || 'Unknown Customer'}
+            customerName={selectedCustomerForTokens.full_name || 'Unknown Customer'}
             onTokensAdded={() => {
               setShowAddTokens(false);
               setSelectedCustomerForTokens(null);
