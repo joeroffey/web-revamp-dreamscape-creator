@@ -26,6 +26,7 @@ import {
   CalendarDays,
   FileText,
   MessageSquare,
+  Mail,
   BarChart3,
   Settings,
   Home,
@@ -68,6 +69,7 @@ const groups: { label: string; items: NavItem[] }[] = [
     label: 'Insights',
     items: [
       { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
+      { href: '/admin/conditional-emails', icon: Mail, label: 'Conditional Emails' },
       { href: '/admin/settings', icon: Settings, label: 'Settings' },
     ],
   },
