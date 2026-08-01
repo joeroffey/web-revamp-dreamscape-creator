@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /reset-password
+Disallow: /booking-success
+Disallow: /membership-success
+Disallow: /gift-card-success
+Disallow: /intro-offer-success
+
+Sitemap: https://www.revitalisehub.co.uk/sitemap.xml

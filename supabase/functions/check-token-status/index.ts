@@ -1,0 +1,135 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { email, checkDate } = await req.json();
+
+    if (!email) {
+      throw new Error("Email is required");
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // AuthZ: caller must be authenticated and email must be their own (or admin)
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const authToken = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authErr } = await supabase.auth.getUser(authToken);
+    if (authErr || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: adminRole } = await supabase
+      .from("user_roles").select("role").eq("user_id", authData.user.id).eq("role", "admin").maybeSingle();
+    if (!adminRole && (authData.user.email || "").toLowerCase() !== email.trim().toLowerCase()) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const now = new Date().toISOString();
+    
+    // Get all valid tokens for this email (not expired, with remaining tokens)
+    const { data: tokens, error } = await supabase
+      .from('customer_tokens')
+      .select('*')
+      .eq('customer_email', normalizedEmail)
+      .gt('tokens_remaining', 0)
+      .or(`expires_at.is.null,expires_at.gt.${now}`)
+      .order('expires_at', { ascending: true, nullsFirst: false });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!tokens || tokens.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          hasTokens: false,
+          tokensRemaining: 0,
+          canBook: false,
+          tokenDetails: null
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    // Calculate total tokens available
+    const totalTokens = tokens.reduce((sum, t) => sum + t.tokens_remaining, 0);
+    
+    // Get the first token record (with earliest expiry) for display purposes
+    const primaryToken = tokens[0];
+    
+    // Check if it's an introductory offer
+    const isIntroOffer = primaryToken.notes?.includes('Introductory Offer');
+
+    // Check if user already used a free session (token OR membership) for the specified date
+    // Any free booking (final_amount = 0 or null) blocks additional token usage
+    let hasUsedTokenForDate = false;
+    let tokenBookingForDate = null;
+    
+    if (checkDate) {
+      const { data: existingFreeBookings } = await supabase
+        .from('bookings')
+        .select('id, session_date, session_time, booking_type, final_amount')
+        .eq('customer_email', normalizedEmail)
+        .eq('session_date', checkDate)
+        .eq('payment_status', 'paid')
+        .or('final_amount.eq.0,final_amount.is.null');
+      
+      if (existingFreeBookings && existingFreeBookings.length > 0) {
+        hasUsedTokenForDate = true;
+        tokenBookingForDate = existingFreeBookings[0];
+      }
+    }
+
+    // Can use token if: has tokens AND hasn't used token for this date
+    const canBook = totalTokens > 0 && !hasUsedTokenForDate;
+
+    return new Response(
+      JSON.stringify({
+        hasTokens: true,
+        tokensRemaining: totalTokens,
+        isIntroOffer,
+        canBook,
+        hasUsedTokenForDate,
+        tokenBookingForDate,
+        tokenDetails: {
+          id: primaryToken.id,
+          expiresAt: primaryToken.expires_at,
+          notes: primaryToken.notes,
+          tokensInFirstBatch: primaryToken.tokens_remaining
+        },
+        allTokens: tokens.map(t => ({
+          id: t.id,
+          tokensRemaining: t.tokens_remaining,
+          expiresAt: t.expires_at,
+          notes: t.notes
+        }))
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
+
+  } catch (error) {
+    console.error("Error checking token status:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+});

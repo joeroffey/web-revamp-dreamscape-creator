@@ -1,0 +1,260 @@
+import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Clock, Thermometer, Snowflake, Waves, Users, Sun, ArrowRight } from "lucide-react";
+
+const OurHub = () => {
+  const facilities = [
+    {
+      title: "Ice Baths",
+      description: "State-of-the-art cold immersion tanks maintained at optimal temperatures for maximum therapeutic benefit.",
+      icon: Snowflake,
+      image: "/images/e66be255-48c0-42a2-92bb-1f189a14976d.png"
+    },
+    {
+      title: "Traditional Saunas", 
+      description: "Premium traditional sauna pods designed for deep heat therapy and complete relaxation.",
+      icon: Thermometer,
+      image: "/images/8e9e8578-24af-421e-9d1c-3b71d4e13523.png"
+    },
+    {
+      title: "Recovery Lounge",
+      description: "Comfortable relaxation area for post-session recovery with refreshments and amenities.",
+      icon: Users,
+      image: "/images/0f10c721-e834-4cf4-9182-2bd24811ad45.png"
+    },
+    {
+      title: "EIRA Therapy Equipment",
+      description: "Professional-grade therapy equipment including our signature ice baths for optimal recovery.",
+      icon: Waves,
+      image: "/images/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
+    },
+    {
+      title: "Red Light Therapy Room",
+      description: "Our new red light therapy space — included with every session at no extra cost. Wind down and recover at a cellular level.",
+      icon: Sun,
+      image: "/images/red-light/room.jpg"
+    }
+  ];
+
+
+  const features = [
+    "Professional-grade equipment",
+    "Hygienic and sanitized environment", 
+    "Climate-controlled facility",
+    "Expert staff supervision",
+    "Premium amenities included",
+    "Convenient location"
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <SEOHead title="Our Hub - Facilities & Location" description="Explore Revitalise Hub's facilities in Lymington. Ice baths, traditional saunas, recovery lounge and professional-grade therapy equipment." path="/our-hub" />
+      <Navigation />
+      
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="py-24 bg-white">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Waves className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+                Our Wellness Hub
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
+                Step into our state-of-the-art facility designed for optimal contrast therapy experiences. 
+                Every detail has been carefully crafted to enhance your wellness journey.
+              </p>
+            </div>
+
+            {/* Location & Hours */}
+            <div className="grid md:grid-cols-2 gap-8 mb-16">
+              <Card className="wellness-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Location</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-2">
+                    Unit 7, Ensign yard<br />
+                    670 Ampress Ln<br />
+                    Lymington SO41 8QY
+                  </p>
+                  <Badge variant="secondary" className="mt-2">
+                    Easy Parking Available
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="wellness-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Opening Hours</h3>
+                  </div>
+                  <div className="space-y-2 text-muted-foreground text-sm">
+                    <div className="flex justify-between gap-4">
+                      <span className="font-medium">Tue - Sat</span>
+                      <span className="whitespace-nowrap">8:30 AM - 8:00 PM</span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="font-medium">Sunday</span>
+                      <span className="whitespace-nowrap">8:30 AM - 5:30 PM</span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="font-medium">Monday</span>
+                      <span>Closed</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Facilities Gallery */}
+        <section className="py-16 bg-gallery">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-light text-center mb-12">
+              Our Premium Facilities
+            </h2>
+            
+            {(() => {
+              const renderFacility = (facility: typeof facilities[number], index: number) => (
+                <Card key={index} className="wellness-card overflow-hidden">
+                  <div className="aspect-video bg-muted overflow-hidden">
+                    <img
+                      src={facility.image}
+                      alt={facility.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <facility.icon className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold">{facility.title}</h3>
+                    </div>
+                    <p className="text-muted-foreground">{facility.description}</p>
+                  </CardContent>
+                </Card>
+              );
+              const top = facilities.slice(0, 4);
+              const rest = facilities.slice(4);
+              return (
+                <>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {top.map(renderFacility)}
+                  </div>
+                  {rest.length > 0 && (
+                    <div className="mt-8 md:w-[calc(50%-1rem)] md:mx-auto">
+                      {rest.map((f, i) => renderFacility(f, i + top.length))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </section>
+
+
+        {/* Internal Links Section */}
+        <section className="py-16 bg-gallery">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-light text-center mb-10">
+              Explore More
+            </h2>
+            {(() => {
+              const exploreCards = [
+                {
+                  eyebrow: "First Visit",
+                  title: "YOUR FIRST VISIT",
+                  description: "What to expect, what to bring, and how your session works.",
+                  cta: "READ THE GUIDE",
+                  href: "/your-visit",
+                },
+                {
+                  eyebrow: "Save",
+                  title: "MEMBERSHIP PLANS",
+                  description: "Regular visitor? Save with our flexible monthly membership options.",
+                  cta: "VIEW MEMBERSHIPS",
+                  href: "/memberships",
+                },
+                {
+                  eyebrow: "What's On",
+                  title: "UPCOMING EVENTS",
+                  description: "Breathwork, yoga, and guided contrast therapy experiences.",
+                  cta: "SEE EVENTS",
+                  href: "/events",
+                },
+              ];
+              return (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {exploreCards.map((card) => (
+                    <a
+                      key={card.title}
+                      href={card.href}
+                      className="group relative block bg-foreground/5 border border-foreground/15 p-8 transition-all duration-500 hover:bg-foreground/10 hover:border-foreground/25"
+                    >
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-foreground/30" />
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-foreground/30" />
+                      <div className="flex flex-col h-full justify-between min-h-[220px]">
+                        <div>
+                          <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase mb-3 block">
+                            {card.eyebrow}
+                          </span>
+                          <h3 className="text-2xl md:text-3xl font-light text-foreground mb-4 tracking-wide">
+                            {card.title}
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {card.description}
+                          </p>
+                        </div>
+                        <span className="mt-6 inline-flex items-center gap-3 text-foreground border-b border-foreground/40 pb-1 w-fit group-hover:border-foreground transition-colors duration-300">
+                          <span className="text-sm tracking-wider">{card.cta}</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                        </span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+
+        {/* Contact CTA Section */}
+        <section className="py-16">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2 className="text-2xl md:text-3xl font-light mb-6">
+              Ready to Experience Our Hub?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Book your first session today and discover the transformative power of contrast therapy in our premium facility.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a 
+                href="/booking"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-medium transition-colors"
+              >
+                Book a Session
+              </a>
+              <a 
+                href="/contact"
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-3 rounded-full font-medium transition-colors"
+              >
+                Get in Touch
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default OurHub;

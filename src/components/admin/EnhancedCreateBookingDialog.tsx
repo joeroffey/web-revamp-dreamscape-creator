@@ -1,0 +1,978 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useCustomerSearch } from "@/hooks/useCustomerSearch";
+import { Search, Phone, Mail, Calendar, PoundSterling, Plus, Coins, AlertCircle, Building2, Crown } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { AdminTimeSlotPicker } from "./AdminTimeSlotPicker";
+
+interface PartnerCode {
+  id: string;
+  company_name: string;
+  promo_code: string;
+  discount_percentage: number;
+}
+
+interface TokenRecord {
+  id: string;
+  customer_email: string;
+  tokens_remaining: number;
+  expires_at: string | null;
+  notes: string | null;
+}
+
+interface EnhancedCreateBookingDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedDate?: Date;
+  selectedTime?: string;
+}
+
+export function EnhancedCreateBookingDialog({ 
+  open, 
+  onOpenChange, 
+  selectedDate, 
+  selectedTime 
+}: EnhancedCreateBookingDialogProps) {
+  const [step, setStep] = useState(1);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [availableTokens, setAvailableTokens] = useState<TokenRecord[]>([]);
+  const [totalTokens, setTotalTokens] = useState(0);
+  const [useToken, setUseToken] = useState(false);
+  const [useMembership, setUseMembership] = useState(false);
+  const [membershipData, setMembershipData] = useState<any>(null);
+  const [selectedPartnerCode, setSelectedPartnerCode] = useState<PartnerCode | null>(null);
+  const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ hasCommunalBookings: boolean; hasPrivateBooking: boolean; availableSpaces: number } | null>(null);
+  const [bookingForm, setBookingForm] = useState({
+    customer_name: "",
+    customer_email: "",
+    customer_phone: "",
+    booking_type: "communal",
+    service_type: "",
+    session_date: "",
+    session_time: "",
+    time_slot_id: "",
+    duration_minutes: 60,
+    guest_count: 1,
+    price_amount: 0,
+    special_requests: "",
+    booking_status: "confirmed",
+    payment_status: "pending"
+  });
+
+  const queryClient = useQueryClient();
+
+  // Use the shared customer search hook for better filtering
+  const { customers: existingCustomers, isLoading: searchingCustomers } = useCustomerSearch(
+    customerSearch,
+    { enabled: open && customerSearch.length >= 2, limit: 10 }
+  );
+
+  const { data: pricingConfig } = useQuery({
+    queryKey: ["pricing-config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pricing_config")
+        .select("*");
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: partnerCodes } = useQuery({
+    queryKey: ["partner-codes-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("partner_codes")
+        .select("id, company_name, promo_code, discount_percentage")
+        .eq("is_active", true)
+        .order("company_name", { ascending: true });
+
+      if (error) throw error;
+      return data as PartnerCode[];
+    },
+  });
+
+  // Fetch tokens when email changes
+  useEffect(() => {
+    const fetchTokens = async () => {
+      const email = bookingForm.customer_email?.toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        setAvailableTokens([]);
+        setTotalTokens(0);
+        setUseToken(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('customer_tokens')
+        .select('*')
+        .eq('customer_email', email)
+        .gt('tokens_remaining', 0);
+
+      if (!error && data) {
+        const validTokens = data.filter(token => 
+          !token.expires_at || new Date(token.expires_at) > new Date()
+        );
+        setAvailableTokens(validTokens);
+        const total = validTokens.reduce((sum, t) => sum + t.tokens_remaining, 0);
+        setTotalTokens(total);
+      } else {
+        setAvailableTokens([]);
+        setTotalTokens(0);
+      }
+    };
+
+    fetchTokens();
+  }, [bookingForm.customer_email]);
+
+  // Fetch membership when email changes
+  useEffect(() => {
+    const fetchMembership = async () => {
+      const email = bookingForm.customer_email?.toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        setMembershipData(null);
+        setUseMembership(false);
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('customer_email', email)
+        .eq('status', 'active')
+        .gte('end_date', today)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setMembershipData(data[0]);
+      } else {
+        setMembershipData(null);
+        setUseMembership(false);
+      }
+    };
+
+    fetchMembership();
+  }, [bookingForm.customer_email]);
+
+  // Reset useToken when guest count exceeds available tokens OR when switching to private session
+  useEffect(() => {
+    if (useToken && (bookingForm.guest_count > totalTokens || bookingForm.service_type === 'Private Session')) {
+      setUseToken(false);
+    }
+  }, [bookingForm.guest_count, totalTokens, useToken, bookingForm.service_type]);
+
+  // Membership and token are mutually exclusive
+  useEffect(() => {
+    if (useMembership && useToken) {
+      setUseToken(false);
+    }
+  }, [useMembership]);
+
+  useEffect(() => {
+    if (useToken && useMembership) {
+      setUseMembership(false);
+    }
+  }, [useToken]);
+
+  // When membership is toggled on, lock to communal + 1 guest
+  useEffect(() => {
+    if (useMembership) {
+      setBookingForm(prev => ({
+        ...prev,
+        service_type: 'Communal Session',
+        booking_type: 'communal',
+        guest_count: 1,
+        payment_status: 'paid'
+      }));
+    }
+  }, [useMembership]);
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (booking: any) => {
+      // If creating a new customer or if no customer is selected, upsert the customer record first.
+      if (!selectedCustomer?.id || isNewCustomer) {
+        const { error: customerErr } = await supabase
+          .from("customers")
+          .upsert(
+            {
+              full_name: booking.customer_name,
+              email: booking.customer_email,
+              phone: booking.customer_phone || null,
+            },
+            { onConflict: "email" }
+          );
+        if (customerErr) throw customerErr;
+      }
+
+      // Calculate discount if partner code is applied
+      let discountAmount = 0;
+      let finalAmount = booking.price_amount;
+      let discountNote = '';
+
+      if (selectedPartnerCode && !useToken) {
+        discountAmount = Math.round(booking.price_amount * (selectedPartnerCode.discount_percentage / 100));
+        finalAmount = booking.price_amount - discountAmount;
+        discountNote = ` [Partner: ${selectedPartnerCode.company_name} - ${selectedPartnerCode.discount_percentage}% off]`;
+      }
+
+      // Adjust payment if using membership or tokens
+      const finalBooking = {
+        ...booking,
+        payment_status: (useToken || useMembership) ? 'paid' : booking.payment_status,
+        discount_amount: (useToken || useMembership) ? 0 : discountAmount,
+        final_amount: (useToken || useMembership) ? 0 : finalAmount,
+        special_requests: useMembership
+          ? `${booking.special_requests || ''} [Membership booking]`.trim()
+          : useToken 
+            ? `${booking.special_requests || ''} [Paid with ${booking.guest_count} token(s)]`.trim()
+            : `${booking.special_requests || ''}${discountNote}`.trim(),
+      };
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert(finalBooking)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update time slot availability if we have a time_slot_id
+      if (booking.time_slot_id) {
+        // Fetch current bookings for this slot (both paid and pending)
+        const { data: existingBookings } = await supabase
+          .from("bookings")
+          .select("booking_type, guest_count")
+          .eq("time_slot_id", booking.time_slot_id)
+          .in("payment_status", ["paid", "pending"]);
+
+        const totalGuests = (existingBookings || [])
+          .filter(b => b.booking_type === 'communal')
+          .reduce((sum, b) => sum + (b.guest_count || 1), 0);
+
+        const hasPrivate = (existingBookings || []).some(b => b.booking_type === 'private');
+
+        await supabase
+          .from("time_slots")
+          .update({
+            booked_count: hasPrivate ? 5 : totalGuests,
+            is_available: hasPrivate ? false : totalGuests < 5,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", booking.time_slot_id);
+      }
+
+      // Deduct tokens if using token payment
+      if (useToken) {
+        let tokensToDeduct = booking.guest_count;
+        
+        // Sort tokens by expiry (soonest first, never-expire last)
+        const sortedTokens = [...availableTokens].sort((a, b) => {
+          if (!a.expires_at) return 1;
+          if (!b.expires_at) return -1;
+          return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+        });
+
+        for (const token of sortedTokens) {
+          if (tokensToDeduct <= 0) break;
+          
+          const deductFromThis = Math.min(tokensToDeduct, token.tokens_remaining);
+          tokensToDeduct -= deductFromThis;
+          
+          await supabase
+            .from('customer_tokens')
+            .update({ 
+              tokens_remaining: token.tokens_remaining - deductFromThis,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', token.id);
+        }
+      }
+
+      // Decrement membership sessions if using membership
+      if (useMembership && membershipData) {
+        const isUnlimited = membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999;
+        if (!isUnlimited) {
+          await supabase
+            .from('memberships')
+            .update({
+              sessions_remaining: Math.max(0, (membershipData.sessions_remaining || 0) - 1),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', membershipData.id);
+        }
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["daily-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-tokens"] });
+      queryClient.invalidateQueries({ queryKey: ["time-slots"] });
+      queryClient.invalidateQueries({ queryKey: ["memberships"] });
+      toast.success(useMembership
+        ? "Booking created using membership credit"
+        : useToken 
+          ? `Booking created using ${bookingForm.guest_count} token(s)`
+          : "Booking created successfully"
+      );
+
+      // Send confirmation email to the customer
+      if (data?.id) {
+        supabase.functions.invoke('send-booking-confirmation', {
+          body: { bookingId: data.id }
+        }).then(({ error }) => {
+          if (error) {
+            console.error("Failed to send confirmation email:", error);
+          } else {
+            console.log("Confirmation email sent for booking:", data.id);
+          }
+        });
+      }
+
+      resetForm();
+    },
+    onError: (error) => {
+      toast.error("Failed to create booking");
+      console.error("Create booking error:", error);
+    },
+  });
+
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      // Use local date components to avoid UTC shift (e.g. BST midnight -> previous day in UTC)
+      const y = selectedDate.getFullYear();
+      const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const d = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+      setBookingForm(prev => ({
+        ...prev,
+        session_date: dateStr,
+        session_time: selectedTime
+      }));
+    }
+  }, [selectedDate, selectedTime]);
+
+  useEffect(() => {
+    if (bookingForm.service_type && pricingConfig) {
+      const pricing = pricingConfig.find(p => p.service_type.toLowerCase() === bookingForm.service_type.toLowerCase());
+      if (pricing) {
+        setBookingForm(prev => ({
+          ...prev,
+          price_amount: pricing.price_amount,
+          duration_minutes: pricing.duration_minutes
+        }));
+      }
+    }
+  }, [bookingForm.service_type, pricingConfig]);
+
+  const resetForm = () => {
+    setStep(1);
+    setCustomerSearch("");
+    setSelectedCustomer(null);
+    setIsNewCustomer(false);
+    setAvailableTokens([]);
+    setTotalTokens(0);
+    setUseToken(false);
+    setUseMembership(false);
+    setMembershipData(null);
+    setSelectedPartnerCode(null);
+    setSelectedSlotInfo(null);
+    setBookingForm({
+      customer_name: "",
+      customer_email: "",
+      customer_phone: "",
+      booking_type: "communal",
+      service_type: "",
+      session_date: "",
+      session_time: "",
+      time_slot_id: "",
+      duration_minutes: 60,
+      guest_count: 1,
+      price_amount: 0,
+      special_requests: "",
+      booking_status: "confirmed",
+      payment_status: "pending"
+    });
+    onOpenChange(false);
+  };
+
+  const handleCustomerSelect = (customer: any) => {
+    setSelectedCustomer(customer);
+    setBookingForm(prev => ({
+      ...prev,
+      customer_name: customer.full_name || "",
+      customer_email: customer.email || "",
+      customer_phone: customer.phone || ""
+    }));
+    setStep(2);
+  };
+
+  const handleNewCustomer = () => {
+    setIsNewCustomer(true);
+    setSelectedCustomer(null);
+    setStep(2);
+  };
+
+  const handleCreateBooking = () => {
+    if (!bookingForm.customer_name || !bookingForm.customer_email || !bookingForm.service_type || !bookingForm.session_date) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Prevent private booking if communal bookings exist in this slot
+    if (bookingForm.service_type === 'Private Session' && selectedSlotInfo?.hasCommunalBookings) {
+      toast.error("Cannot book a private session - this slot already has communal bookings");
+      return;
+    }
+
+    // Prevent overbooking for communal sessions - enforce 5 guest maximum
+    if (bookingForm.service_type === 'Communal Session' && selectedSlotInfo) {
+      const availableSpaces = selectedSlotInfo.availableSpaces;
+      if (bookingForm.guest_count > availableSpaces) {
+        toast.error(`Only ${availableSpaces} space(s) available. Cannot book ${bookingForm.guest_count} guests.`);
+        return;
+      }
+    }
+
+    createBookingMutation.mutate(bookingForm);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Create New Booking
+            <Badge variant="outline">Step {step} of 3</Badge>
+          </DialogTitle>
+        </DialogHeader>
+
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Search for existing customer</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search by name, email, or phone..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {existingCustomers && existingCustomers.length > 0 && (
+              <div className="space-y-2">
+                <Label>Existing Customers</Label>
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {existingCustomers.map((customer) => (
+                    <div
+                      key={customer.id}
+                      className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleCustomerSelect(customer)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{customer.full_name || "No name"}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Mail className="h-3 w-3" />
+                            {customer.email}
+                            {customer.phone && (
+                              <>
+                                <Phone className="h-3 w-3 ml-2" />
+                                {customer.phone}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <Button size="sm">Select</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-4 border-t">
+              <Button onClick={handleNewCustomer} className="w-full" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Customer
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Customer Information</h3>
+              <Button variant="outline" size="sm" onClick={() => setStep(1)}>
+                Back
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customer_name">Full Name *</Label>
+                <Input
+                  id="customer_name"
+                  value={bookingForm.customer_name}
+                  onChange={(e) => setBookingForm({ ...bookingForm, customer_name: e.target.value })}
+                  disabled={!isNewCustomer && selectedCustomer}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="customer_email">Email *</Label>
+                <Input
+                  id="customer_email"
+                  type="email"
+                  value={bookingForm.customer_email}
+                  onChange={(e) => setBookingForm({ ...bookingForm, customer_email: e.target.value })}
+                  disabled={!isNewCustomer && selectedCustomer}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer_phone">Phone</Label>
+              <Input
+                id="customer_phone"
+                value={bookingForm.customer_phone}
+                onChange={(e) => setBookingForm({ ...bookingForm, customer_phone: e.target.value })}
+                disabled={!isNewCustomer && selectedCustomer}
+              />
+            </div>
+
+            {/* Show token balance if customer has tokens */}
+            {totalTokens > 0 && (
+              <Card className="border-primary/50 bg-primary/5">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary text-primary-foreground">
+                      <Coins className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Customer has {totalTokens} session token(s)</p>
+                      <p className="text-sm text-muted-foreground">Can be used for payment in the next step</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show membership info if customer has active membership */}
+            {membershipData && (
+              <Card className="border-green-500/50 bg-green-50/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-green-600 text-white">
+                      <Crown className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Active Membership</p>
+                      <p className="text-sm text-muted-foreground">
+                        {membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999
+                          ? 'Unlimited sessions'
+                          : `${membershipData.sessions_remaining ?? 0} session(s) remaining`}
+                        {' • Can be used for booking in the next step'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Button onClick={() => setStep(3)} className="w-full">
+              Continue to Booking Details
+            </Button>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Booking Details</h3>
+              <Button variant="outline" size="sm" onClick={() => setStep(2)}>
+                Back
+              </Button>
+            </div>
+
+            {/* Token Payment Option - Only for communal sessions */}
+            {totalTokens > 0 && bookingForm.service_type === 'Communal Session' && (
+              <Card className={cn(
+                "border-2 transition-colors",
+                useToken ? "border-primary bg-primary/5" : "border-dashed"
+              )}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-full",
+                        useToken ? "bg-primary text-primary-foreground" : "bg-muted"
+                      )}>
+                        <Coins className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Pay with Session Tokens</p>
+                        <p className="text-sm text-muted-foreground">
+                          {totalTokens} token(s) available • Uses {bookingForm.guest_count} token(s)
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={useToken}
+                      onCheckedChange={setUseToken}
+                      disabled={bookingForm.guest_count > totalTokens}
+                    />
+                  </div>
+                  {bookingForm.guest_count > totalTokens && (
+                    <p className="text-sm text-destructive mt-2">
+                      Not enough tokens. Customer has {totalTokens} but needs {bookingForm.guest_count}.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Membership Payment Option */}
+            {membershipData && bookingForm.service_type === 'Communal Session' && (
+              <Card className={cn(
+                "border-2 transition-colors",
+                useMembership ? "border-green-600 bg-green-50" : "border-dashed"
+              )}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-full",
+                        useMembership ? "bg-green-600 text-white" : "bg-muted"
+                      )}>
+                        <Crown className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Use Membership Credit</p>
+                        <p className="text-sm text-muted-foreground">
+                          {membershipData.membership_type === 'unlimited' || membershipData.sessions_per_week === 999
+                            ? 'Unlimited sessions available'
+                            : `${membershipData.sessions_remaining ?? 0} session(s) remaining`}
+                          {' • 1 guest only'}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={useMembership}
+                      onCheckedChange={setUseMembership}
+                      disabled={!membershipData.sessions_remaining && membershipData.membership_type !== 'unlimited' && membershipData.sessions_per_week !== 999}
+                    />
+                  </div>
+                  {!membershipData.sessions_remaining && membershipData.membership_type !== 'unlimited' && membershipData.sessions_per_week !== 999 && (
+                    <p className="text-sm text-destructive mt-2">
+                      No sessions remaining on this membership.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show message when membership available but private selected */}
+            {membershipData && bookingForm.service_type === 'Private Session' && (
+              <Card className="border-dashed border-muted-foreground/30">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <Crown className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Membership Credit Available</p>
+                      <p className="text-sm text-muted-foreground">Membership credits can only be used for communal sessions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Show message when tokens available but private selected */}
+            {totalTokens > 0 && bookingForm.service_type === 'Private Session' && (
+              <Card className="border-dashed border-muted-foreground/30">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <Coins className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Session Tokens ({totalTokens} available)</p>
+                      <p className="text-sm text-muted-foreground">Tokens can only be used for communal sessions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="service_type">Service Type *</Label>
+                <Select value={bookingForm.service_type} onValueChange={(value) => setBookingForm({ ...bookingForm, service_type: value })} disabled={useMembership}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Communal Session">Communal Session</SelectItem>
+                    <SelectItem value="Private Session">Private Session</SelectItem>
+                  </SelectContent>
+                </Select>
+                {/* Warning when private selected but slot has communal bookings */}
+                {bookingForm.service_type === 'Private Session' && selectedSlotInfo?.hasCommunalBookings && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Slot has communal bookings - private unavailable
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="booking_status">Booking Status</Label>
+                <Select value={bookingForm.booking_status} onValueChange={(value) => setBookingForm({ ...bookingForm, booking_status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment_status">Payment Status</Label>
+                <Select value={bookingForm.payment_status} onValueChange={(value) => setBookingForm({ ...bookingForm, payment_status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Unpaid (Pay on arrival)</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Date and Time Slot Picker */}
+            {bookingForm.service_type && (
+              <AdminTimeSlotPicker
+                serviceType={bookingForm.service_type}
+                selectedDate={bookingForm.session_date}
+                selectedTime={bookingForm.session_time}
+                onDateChange={(date) => {
+                  setBookingForm({ ...bookingForm, session_date: date, time_slot_id: "" });
+                  setSelectedSlotInfo(null);
+                }}
+                onTimeChange={(time, timeSlotId, slotInfo) => {
+                  setBookingForm({ ...bookingForm, session_time: time, time_slot_id: timeSlotId || "" });
+                  if (slotInfo) {
+                    setSelectedSlotInfo(slotInfo);
+                    // If selecting private but slot has communal bookings, show warning
+                    if (bookingForm.service_type === 'Private Session' && slotInfo.hasCommunalBookings) {
+                      toast.error("This slot has communal bookings - private session not available");
+                    }
+                  }
+                }}
+              />
+            )}
+
+            {!bookingForm.service_type && (
+              <Card className="border-dashed">
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Select a service type to see available dates and times</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="booking_type">Booking Type</Label>
+                <Select value={bookingForm.booking_type} onValueChange={(value) => setBookingForm({ ...bookingForm, booking_type: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="communal">Communal</SelectItem>
+                    <SelectItem value="private">Private</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="guest_count">
+                  Guest Count
+                  {selectedSlotInfo && bookingForm.service_type === 'Communal Session' && (
+                    <span className="text-muted-foreground font-normal ml-2">
+                      (max {selectedSlotInfo.availableSpaces} available)
+                    </span>
+                  )}
+                </Label>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    disabled={useMembership || bookingForm.guest_count <= 1}
+                    onClick={() => setBookingForm({ ...bookingForm, guest_count: Math.max(1, bookingForm.guest_count - 1) })}
+                  >
+                    <span className="text-lg font-medium">−</span>
+                  </Button>
+                  <span className="text-xl font-semibold w-8 text-center">{bookingForm.guest_count}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    disabled={useMembership || bookingForm.guest_count >= (bookingForm.service_type === 'Communal Session' && selectedSlotInfo ? selectedSlotInfo.availableSpaces : 5)}
+                    onClick={() => {
+                      const maxSpaces = bookingForm.service_type === 'Communal Session' && selectedSlotInfo
+                        ? selectedSlotInfo.availableSpaces
+                        : 5;
+                      setBookingForm({ ...bookingForm, guest_count: Math.min(bookingForm.guest_count + 1, maxSpaces) });
+                    }}
+                  >
+                    <span className="text-lg font-medium">+</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="duration_minutes">Duration (minutes)</Label>
+                <Input
+                  id="duration_minutes"
+                  type="number"
+                  value={bookingForm.duration_minutes}
+                  onChange={(e) => setBookingForm({ ...bookingForm, duration_minutes: parseInt(e.target.value) || 60 })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price_amount">
+                  Price (£) {useMembership && <Badge variant="secondary" className="ml-2">Membership</Badge>}
+                  {useToken && !useMembership && <Badge variant="secondary" className="ml-2">Using Tokens</Badge>}
+                  {selectedPartnerCode && !useToken && !useMembership && <Badge variant="outline" className="ml-2">{selectedPartnerCode.discount_percentage}% off</Badge>}
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">£</span>
+                  <Input
+                    id="price_amount"
+                    type="number"
+                    min="0"
+                    value={bookingForm.price_amount === 0 ? '' : bookingForm.price_amount / 100}
+                    onChange={(e) => setBookingForm({ ...bookingForm, price_amount: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                    className={cn("pl-8", (useToken || useMembership) && "opacity-50")}
+                    disabled={useToken || useMembership}
+                    placeholder="18"
+                  />
+                </div>
+                {useMembership && (
+                  <p className="text-xs text-muted-foreground">Price will be £0 (membership credit)</p>
+                )}
+                {useToken && !useMembership && (
+                  <p className="text-xs text-muted-foreground">Price will be £0 (paid with tokens)</p>
+                )}
+                {selectedPartnerCode && !useToken && bookingForm.price_amount > 0 && (
+                  <p className="text-xs text-primary">
+                    Final: £{((bookingForm.price_amount - Math.round(bookingForm.price_amount * (selectedPartnerCode.discount_percentage / 100))) / 100).toFixed(2)} 
+                    (saves £{(Math.round(bookingForm.price_amount * (selectedPartnerCode.discount_percentage / 100)) / 100).toFixed(2)})
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Partner Code Selection */}
+            {partnerCodes && partnerCodes.length > 0 && !useToken && !useMembership && (
+              <div className="space-y-2">
+                <Label>Partner Company Discount</Label>
+                <Select 
+                  value={selectedPartnerCode?.id || "none"} 
+                  onValueChange={(value) => {
+                    if (value === "none") {
+                      setSelectedPartnerCode(null);
+                    } else {
+                      const code = partnerCodes.find(c => c.id === value);
+                      setSelectedPartnerCode(code || null);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No discount applied" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No discount</SelectItem>
+                    {partnerCodes.map((code) => (
+                      <SelectItem key={code.id} value={code.id}>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3 w-3" />
+                          {code.company_name} ({code.discount_percentage}% off)
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedPartnerCode && (
+                  <p className="text-xs text-muted-foreground">
+                    Code: <code className="px-1 py-0.5 bg-muted rounded">{selectedPartnerCode.promo_code}</code>
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="special_requests">Special Requests</Label>
+              <Textarea
+                id="special_requests"
+                placeholder="Any special requirements or notes..."
+                value={bookingForm.special_requests}
+                onChange={(e) => setBookingForm({ ...bookingForm, special_requests: e.target.value })}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={resetForm}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateBooking}
+                disabled={createBookingMutation.isPending}
+              >
+                {useMembership ? 'Create Booking (Membership)' : useToken ? `Create Booking (${bookingForm.guest_count} Token${bookingForm.guest_count > 1 ? 's' : ''})` : 'Create Booking'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

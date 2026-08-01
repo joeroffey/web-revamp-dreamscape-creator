@@ -1,0 +1,140 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { userId, email, checkDate } = await req.json();
+
+    if (!userId && !email) {
+      throw new Error("Either userId or email is required");
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // AuthZ: caller must be authenticated and be the subject (or admin)
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const authToken = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authErr } = await supabase.auth.getUser(authToken);
+    if (authErr || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: adminRole } = await supabase
+      .from("user_roles").select("role").eq("user_id", authData.user.id).eq("role", "admin").maybeSingle();
+    const isAdmin = !!adminRole;
+    const callerEmail = (authData.user.email || "").toLowerCase();
+    if (!isAdmin) {
+      if (userId && userId !== authData.user.id) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (email && email.toLowerCase() !== callerEmail) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    // Build query based on what we have
+    let query = supabase
+      .from('memberships')
+      .select('*')
+      .eq('status', 'active')
+      .gte('end_date', new Date().toISOString().split('T')[0]);
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    } else if (email) {
+      query = query.eq('customer_email', email);
+    }
+
+    const { data: memberships, error } = await query.order('created_at', { ascending: false }).limit(1);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!memberships || memberships.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          hasMembership: false,
+          membership: null,
+          todayBooking: null
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    const membership = memberships[0];
+    const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
+    const sessionsRemaining = isUnlimited ? 999 : membership.sessions_remaining;
+
+    // Check if member already used their membership credit for the specified date
+    // A membership booking is one where final_amount is 0 or null (free via membership)
+    const dateToCheck = checkDate || null;
+    
+    let membershipBookingForDate = null;
+    if (userId && dateToCheck) {
+      const { data: existingMembershipBookings } = await supabase
+        .from('bookings')
+        .select('id, session_date, session_time, booking_type, final_amount')
+        .eq('user_id', userId)
+        .eq('session_date', dateToCheck)
+        .eq('payment_status', 'paid')
+        .or('final_amount.eq.0,final_amount.is.null')
+        .limit(1);
+      
+      membershipBookingForDate = existingMembershipBookings && existingMembershipBookings.length > 0 
+        ? existingMembershipBookings[0] 
+        : null;
+    }
+
+    // Member has used their credit for the day if they have a free booking
+    const hasUsedCreditForDate = !!membershipBookingForDate;
+    
+    // Can use membership credit if: has sessions AND hasn't used credit for this date
+    const canBook = (isUnlimited || sessionsRemaining > 0) && !hasUsedCreditForDate;
+
+    return new Response(
+      JSON.stringify({
+        hasMembership: true,
+        canBook,
+        hasUsedCreditForDate,
+        membershipBookingForDate,
+        membership: {
+          id: membership.id,
+          type: membership.membership_type,
+          sessionsPerWeek: membership.sessions_per_week,
+          sessionsRemaining: sessionsRemaining,
+          isUnlimited,
+          startDate: membership.start_date,
+          endDate: membership.end_date,
+          lastReset: membership.last_session_reset,
+          customerEmail: membership.customer_email,
+          customerName: membership.customer_name
+        }
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
+
+  } catch (error) {
+    console.error("Error checking membership status:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+});

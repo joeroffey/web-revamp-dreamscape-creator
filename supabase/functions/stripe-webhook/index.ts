@@ -1,0 +1,1095 @@
+﻿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Fire-and-forget Mailchimp sync helper
+async function syncToMailchimp(email: string, name: string) {
+  try {
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
+    const res = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-to-mailchimp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ email, firstName, lastName }),
+      }
+    );
+    if (!res.ok) console.error("Mailchimp sync failed:", await res.text());
+    else console.log("Mailchimp sync triggered for:", email);
+  } catch (err) {
+    console.error("Mailchimp sync error (non-blocking):", err);
+  }
+}
+
+// Auto-refund a Stripe session and record a cancelled/refunded booking row
+// so admins can see why the customer was charged & refunded automatically.
+async function autoRefundAndRecord(
+  stripe: Stripe,
+  supabase: any,
+  session: Stripe.Checkout.Session,
+  reason: string,
+  bookingRow: Record<string, unknown>
+) {
+  const paymentIntentId = typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : session.payment_intent?.id || null;
+
+  let refundStatus: 'refunded' | 'refund_required' = 'refund_required';
+  let refundId: string | null = null;
+  if (paymentIntentId) {
+    try {
+      const refund = await stripe.refunds.create({ payment_intent: paymentIntentId });
+      refundId = refund.id;
+      refundStatus = 'refunded';
+      console.log('Auto-refund succeeded:', refund.id, 'for session', session.id, 'reason:', reason);
+    } catch (err) {
+      console.error('AUTO-REFUND FAILED for session', session.id, 'reason:', reason, err);
+    }
+  } else {
+    console.error('AUTO-REFUND: no payment_intent on session', session.id, 'reason:', reason);
+  }
+
+  try {
+    await supabase.from('bookings').insert({
+      ...bookingRow,
+      stripe_session_id: session.id,
+      stripe_payment_id: paymentIntentId,
+      payment_status: refundStatus,
+      booking_status: 'cancelled',
+      special_requests: `[AUTO-REFUND] ${reason}${refundId ? ` (refund ${refundId})` : ''}${bookingRow.special_requests ? ` â€” original note: ${bookingRow.special_requests}` : ''}`,
+    });
+  } catch (insErr) {
+    console.error('AUTO-REFUND: failed to insert cancelled booking record for session', session.id, insErr);
+  }
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2023-10-16",
+    });
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    const body = await req.text();
+    const signature = req.headers.get("stripe-signature");
+    
+    if (!signature) {
+      throw new Error("No Stripe signature found");
+    }
+
+    // Verify webhook signature
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      throw new Error("Webhook secret not configured");
+    }
+
+    const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    console.log("Webhook event received:", event.type);
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      
+      if (session.metadata?.type === "booking") {
+        const timeSlotId = session.metadata.timeSlotId;
+        const customerName = session.metadata.customerName || '';
+        const customerEmail = session.metadata.customerEmail || session.customer_email || '';
+        const customerPhone = session.metadata.customerPhone || null;
+        const bookingType = (session.metadata.bookingType || 'communal') as 'communal' | 'private';
+        const guestCount = Number(session.metadata.guestCount || 1);
+        const specialRequests = session.metadata.specialRequests || null;
+        const originalAmount = Number(session.metadata.originalAmount || 0);
+        const discountAmount = Number(session.metadata.discountAmount || 0);
+        const finalAmount = Number(session.metadata.finalAmount || 0);
+        const discountCodeId = session.metadata.discountCodeId || null;
+        const slotDate = session.metadata.slotDate || '';
+        const slotTime = session.metadata.slotTime || '';
+        
+        console.log("Processing booking creation for:", { timeSlotId, customerEmail, bookingType, guestCount });
+        
+        // Check if booking already exists (prevent duplicates)
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+        
+        if (existingBooking) {
+          console.log("Booking already exists for this session, skipping:", session.id);
+        } else {
+          booking_block: {
+          // Verify slot availability one final time before creating booking
+          const { data: timeSlot } = await supabase
+            .from('time_slots')
+            .select('*')
+            .eq('id', timeSlotId)
+            .single();
+          
+          if (!timeSlot) {
+            console.error("Time slot not found:", timeSlotId);
+            await autoRefundAndRecord(stripe, supabase, session, 'Time slot not found at fulfillment time', {
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || null,
+              session_time: slotTime || null,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              booking_type: bookingType,
+              guest_count: guestCount,
+            });
+            break booking_block;
+          }
+          
+          // Get current booking count (excluding cancelled)
+          const { data: currentBookings } = await supabase
+            .from('bookings')
+            .select('booking_type, guest_count')
+            .eq('time_slot_id', timeSlotId)
+            .eq('payment_status', 'paid')
+            .neq('booking_status', 'cancelled');
+          
+          const hasPrivateBooking = currentBookings?.some(b => b.booking_type === 'private');
+          const currentCommunalCount = currentBookings?.filter(b => b.booking_type === 'communal')
+            .reduce((sum, b) => sum + (b.guest_count || 1), 0) || 0;
+          
+          // Validate availability â€” auto-refund if slot filled since payment started
+          if (bookingType === 'private' && (hasPrivateBooking || currentCommunalCount > 0)) {
+            console.error("Private booking not available - slot has existing bookings");
+            await autoRefundAndRecord(stripe, supabase, session, 'Private slot no longer available (filled after payment started)', {
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || timeSlot.slot_date,
+              session_time: slotTime || timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              time_slot_id: timeSlotId,
+              booking_type: bookingType,
+              guest_count: guestCount,
+            });
+            break booking_block;
+          }
+          
+          if (bookingType === 'communal' && (hasPrivateBooking || currentCommunalCount + guestCount > 5)) {
+            console.error("Communal booking not available - insufficient spaces");
+            await autoRefundAndRecord(stripe, supabase, session, 'Communal slot no longer had enough spaces (filled after payment started)', {
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || timeSlot.slot_date,
+              session_time: slotTime || timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              time_slot_id: timeSlotId,
+              booking_type: bookingType,
+              guest_count: guestCount,
+            });
+            break booking_block;
+          }
+          
+          // Create the booking (now that payment is confirmed)
+          const paymentIntentId = typeof session.payment_intent === 'string' 
+            ? session.payment_intent 
+            : session.payment_intent?.id || null;
+          
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .insert({
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              customer_phone: customerPhone,
+              service_type: 'combined',
+              session_date: slotDate || timeSlot.slot_date,
+              session_time: slotTime || timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: originalAmount,
+              discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
+              discount_amount: discountAmount,
+              final_amount: finalAmount,
+              stripe_session_id: session.id,
+              stripe_payment_id: paymentIntentId,
+              time_slot_id: timeSlotId,
+              special_requests: specialRequests,
+              payment_status: 'paid',
+              booking_status: 'confirmed',
+              booking_type: bookingType,
+              guest_count: guestCount,
+            })
+            .select()
+            .single();
+          
+          if (bookingError) {
+            console.error("Error creating booking:", bookingError);
+            throw bookingError;
+          }
+          
+          console.log("Booking created successfully:", booking?.id);
+
+          // Sync customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+
+          // Send booking confirmation email
+          if (booking?.id) {
+            try {
+              const emailRes = await fetch(
+                `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-booking-confirmation`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                  },
+                  body: JSON.stringify({ bookingId: booking.id })
+                }
+              );
+              if (!emailRes.ok) console.error("Failed to send booking confirmation email:", await emailRes.text());
+              else console.log("Booking confirmation email sent");
+            } catch (emailErr) {
+              console.error("Error sending booking confirmation email:", emailErr);
+            }
+          }
+          
+          // Update time slot availability
+          if (bookingType === 'private') {
+            await supabase
+              .from('time_slots')
+              .update({ is_available: false, booked_count: 5, updated_at: new Date().toISOString() })
+              .eq('id', timeSlotId);
+          } else {
+            const newBookedCount = currentCommunalCount + guestCount;
+            await supabase
+              .from('time_slots')
+              .update({
+                booked_count: newBookedCount,
+                is_available: newBookedCount < 5,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', timeSlotId);
+          }
+          
+          // Promo redemption tracking (if a discount code was used)
+          if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && booking?.id) {
+            await supabase
+              .from('discount_redemptions')
+              .insert({
+                discount_code_id: discountCodeId,
+                entity_type: 'booking',
+                entity_id: booking.id,
+                original_amount: originalAmount,
+                discount_amount: discountAmount,
+                final_amount: finalAmount
+              });
+          }
+          } // end booking_block
+        }
+      }
+
+
+      // Handle partial credit booking (credit + card payment)
+      if (session.metadata?.type === "partial_credit_booking") {
+        const timeSlotId = session.metadata.timeSlotId;
+        const userId = session.metadata.userId;
+        const customerName = session.metadata.customerName;
+        const customerEmail = session.metadata.customerEmail;
+        const customerPhone = session.metadata.customerPhone || null;
+        const bookingType = session.metadata.bookingType as 'communal' | 'private';
+        const guestCount = Number(session.metadata.guestCount || 1);
+        const specialRequests = session.metadata.specialRequests || null;
+        const baseAmount = Number(session.metadata.baseAmount || 0);
+        const discountFromCode = Number(session.metadata.discountFromCode || 0);
+        const creditAmount = Number(session.metadata.creditAmount || 0);
+        const amountToPay = Number(session.metadata.amountToPay || 0);
+        const creditsToDeduct = JSON.parse(session.metadata.creditsToDeduct || '[]');
+        const discountCodeId = session.metadata.discountCodeId || null;
+
+        console.log("Processing partial credit booking:", { timeSlotId, creditAmount, amountToPay });
+
+        // Idempotency: if this session was already fulfilled, skip everything (prevents double credit deduction on Stripe retries)
+        const { data: existingPartialCreditBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingPartialCreditBooking) {
+          console.log("Partial credit booking already exists for this session, skipping:", session.id);
+        } else {
+        // Get time slot details
+        const { data: timeSlot } = await supabase
+          .from('time_slots')
+          .select('*')
+          .eq('id', timeSlotId)
+          .single();
+
+        if (!timeSlot) {
+          console.error("Time slot not found for partial credit booking");
+          await autoRefundAndRecord(stripe, supabase, session, 'Partial-credit booking: time slot not found at fulfillment', {
+            user_id: userId,
+            customer_name: customerName,
+            customer_email: (customerEmail || '').toLowerCase(),
+            customer_phone: customerPhone,
+            service_type: 'combined',
+            session_date: null,
+            session_time: null,
+            duration_minutes: 60,
+            price_amount: baseAmount,
+            discount_amount: discountFromCode + creditAmount,
+            final_amount: amountToPay,
+            booking_type: bookingType,
+            guest_count: guestCount,
+          });
+        } else {
+
+        // Deduct credits
+        for (const { id, amount } of creditsToDeduct) {
+          const { data: currentCredit } = await supabase
+            .from('customer_credits')
+            .select('credit_balance')
+            .eq('id', id)
+            .single();
+          
+          if (currentCredit) {
+            await supabase
+              .from('customer_credits')
+              .update({ 
+                credit_balance: currentCredit.credit_balance - amount,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', id);
+          }
+        }
+
+        // Create confirmed booking
+        const partialCreditPaymentId = typeof session.payment_intent === 'string' 
+          ? session.payment_intent 
+          : session.payment_intent?.id || null;
+        
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .insert({
+            user_id: userId,
+            customer_name: customerName,
+            customer_email: customerEmail.toLowerCase(),
+            customer_phone: customerPhone,
+            time_slot_id: timeSlotId,
+            service_type: 'combined',
+            session_date: timeSlot.slot_date,
+            session_time: timeSlot.slot_time,
+            duration_minutes: 60,
+            price_amount: baseAmount,
+            discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
+            discount_amount: discountFromCode + creditAmount,
+            final_amount: amountToPay,
+            guest_count: guestCount,
+            booking_type: bookingType,
+            special_requests: specialRequests,
+            payment_status: 'paid',
+            stripe_session_id: session.id,
+            stripe_payment_id: partialCreditPaymentId,
+          })
+          .select()
+          .single();
+
+        if (bookingError) {
+          console.error("Error creating partial credit booking:", bookingError);
+          throw bookingError;
+        }
+
+        // Update time slot availability
+        if (bookingType === 'private') {
+          await supabase
+            .from('time_slots')
+            .update({ is_available: false, booked_count: 5, updated_at: new Date().toISOString() })
+            .eq('id', timeSlotId);
+        } else {
+          const newBookedCount = (timeSlot.booked_count || 0) + guestCount;
+          await supabase
+            .from('time_slots')
+            .update({
+              booked_count: newBookedCount,
+              is_available: newBookedCount < 5,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', timeSlotId);
+        }
+
+        console.log("Partial credit booking confirmed:", booking?.id);
+
+        // Sync customer to Mailchimp
+        syncToMailchimp(customerEmail, customerName);
+        } // end else (timeSlot found)
+        } // end else (not already fulfilled)
+      }
+
+      // Handle member booking with paying guests
+      if (session.metadata?.type === "member_booking_with_guests") {
+        const timeSlotId = session.metadata.timeSlotId;
+        const userId = session.metadata.userId;
+        const membershipId = session.metadata.membershipId;
+        const customerName = session.metadata.customerName;
+        const customerEmail = session.metadata.customerEmail;
+        const payingGuestCount = Number(session.metadata.payingGuestCount || 0);
+        const totalGuestCount = Number(session.metadata.totalGuestCount || 1);
+
+        console.log("Processing member booking with guests:", { timeSlotId, userId, payingGuestCount });
+
+        // Check if booking already exists (prevent duplicates)
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingBooking) {
+          console.log("Member booking already exists for this session, skipping:", session.id);
+        } else {
+          // Get time slot details
+          const { data: timeSlot } = await supabase
+            .from('time_slots')
+            .select('*')
+            .eq('id', timeSlotId)
+            .single();
+
+          member_guest_block: {
+          if (!timeSlot) {
+            console.error("Time slot not found for member booking with guests");
+            await autoRefundAndRecord(stripe, supabase, session, 'Member+guest booking: time slot not found at fulfillment', {
+              user_id: userId,
+              customer_name: customerName,
+              customer_email: (customerEmail || '').toLowerCase(),
+              service_type: 'combined',
+              session_date: null,
+              session_time: null,
+              duration_minutes: 60,
+              booking_type: 'communal',
+              guest_count: totalGuestCount,
+            });
+            break member_guest_block;
+          }
+
+          // Get pricing for guest payment calculation
+          const { data: pricingData } = await supabase
+            .from("pricing_config")
+            .select("price_amount")
+            .eq("service_type", "combined")
+            .eq("is_active", true)
+            .single();
+
+          const pricePerPerson = pricingData?.price_amount || 1800;
+          const guestTotalAmount = pricePerPerson * payingGuestCount;
+
+          // Create the booking (member + paying guests)
+          const memberGuestPaymentId = typeof session.payment_intent === 'string' 
+            ? session.payment_intent 
+            : session.payment_intent?.id || null;
+          
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .insert({
+              user_id: userId,
+              customer_name: customerName,
+              customer_email: customerEmail.toLowerCase(),
+              service_type: 'combined',
+              session_date: timeSlot.slot_date,
+              session_time: timeSlot.slot_time,
+              duration_minutes: 60,
+              price_amount: guestTotalAmount,
+              final_amount: guestTotalAmount,
+              discount_amount: pricePerPerson, // Member's free session
+              stripe_session_id: session.id,
+              stripe_payment_id: memberGuestPaymentId,
+              time_slot_id: timeSlotId,
+              payment_status: 'paid',
+              booking_status: 'confirmed',
+              booking_type: 'communal',
+              guest_count: totalGuestCount,
+            })
+            .select()
+            .single();
+
+          if (bookingError) {
+            console.error("Error creating member booking with guests:", bookingError);
+            throw bookingError;
+          }
+
+          // Update time slot availability
+          const newBookedCount = (timeSlot.booked_count || 0) + totalGuestCount;
+          await supabase
+            .from('time_slots')
+            .update({
+              booked_count: newBookedCount,
+              is_available: newBookedCount < 5,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', timeSlotId);
+
+          // Decrement membership sessions
+          if (membershipId) {
+            const { data: membership } = await supabase
+              .from('memberships')
+              .select('sessions_remaining, membership_type')
+              .eq('id', membershipId)
+              .single();
+
+            if (membership && membership.membership_type !== 'unlimited' && membership.sessions_remaining > 0) {
+              await supabase
+                .from('memberships')
+                .update({
+                  sessions_remaining: membership.sessions_remaining - 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', membershipId);
+            }
+          }
+
+          console.log("Member booking with guests created:", booking?.id);
+
+          // Sync customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+
+          // Send booking confirmation email
+          if (booking?.id) {
+            try {
+              const emailRes = await fetch(
+                `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-booking-confirmation`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                  },
+                  body: JSON.stringify({ bookingId: booking.id })
+                }
+              );
+              if (!emailRes.ok) console.error("Failed to send member booking confirmation email:", await emailRes.text());
+              else console.log("Member booking confirmation email sent");
+            } catch (emailErr) {
+              console.error("Error sending member booking confirmation email:", emailErr);
+            }
+          }
+          } // end member_guest_block
+        }
+      }
+
+      if (session.metadata?.type === "gift_card") {
+        // Idempotency: check current payment_status BEFORE flipping it, so retries don't re-send email
+        const { data: existingGc } = await supabase
+          .from('gift_cards')
+          .select('id, purchaser_name, purchaser_email, payment_status')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        const alreadyPaid = existingGc?.payment_status === 'paid';
+
+        // Mark gift card as paid (safe even if already paid)
+        let gcRow = existingGc;
+        if (!alreadyPaid) {
+          const { data: updatedGc } = await supabase
+            .from('gift_cards')
+            .update({ payment_status: 'paid' })
+            .eq('stripe_session_id', session.id)
+            .select('id, purchaser_name, purchaser_email')
+            .maybeSingle();
+          gcRow = updatedGc as typeof existingGc;
+        } else {
+          console.log("Gift card already marked paid, skipping email & redemption insert:", session.id);
+        }
+
+        if (!alreadyPaid) {
+          // Sync gift card purchaser to Mailchimp
+          if (gcRow) {
+            syncToMailchimp(gcRow.purchaser_email, gcRow.purchaser_name);
+          }
+
+          // Send gift card email to recipient
+          if (gcRow?.id) {
+            try {
+              const emailResponse = await fetch(
+                `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-gift-card-email`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                  },
+                  body: JSON.stringify({ giftCardId: gcRow.id })
+                }
+              );
+              if (!emailResponse.ok) {
+                console.error("Failed to send gift card email:", await emailResponse.text());
+              } else {
+                console.log("Gift card email sent successfully");
+              }
+            } catch (emailError) {
+              console.error("Error sending gift card email:", emailError);
+            }
+          }
+
+          const discountCodeId = session.metadata?.discountCodeId;
+          const originalAmount = Number(session.metadata?.originalAmount || 0);
+          const discountAmount = Number(session.metadata?.discountAmount || 0);
+          const finalAmount = Number(session.metadata?.finalAmount || 0);
+          if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && gcRow?.id) {
+            await supabase
+              .from('discount_redemptions')
+              .insert({
+                discount_code_id: discountCodeId,
+                entity_type: 'gift_card',
+                entity_id: gcRow.id,
+                original_amount: originalAmount,
+                discount_amount: discountAmount,
+                final_amount: finalAmount
+              });
+          }
+        }
+      }
+
+      // Handle subscription memberships (auto-renew)
+      if (session.mode === 'subscription' && session.metadata?.membershipType && session.metadata?.userId) {
+        const userId = session.metadata.userId;
+        const membershipType = session.metadata.membershipType;
+        // Support both old (sessions_per_week) and new (sessions_per_month) metadata
+        const sessionsPerMonth = Number(session.metadata.sessions_per_month || session.metadata.sessions_per_week || 0);
+        const discountPercentage = Number(session.metadata.discount_percentage || 0);
+        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : null;
+        const originalAmount = Number(session.metadata?.originalAmount || 0);
+        const discountAmount = Number(session.metadata?.discountAmount || 0);
+        const discountCodeId = session.metadata?.discountCodeId || null;
+        const isAutoRenew = session.metadata?.isAutoRenew === 'true';
+
+        // Idempotency: skip if this checkout session was already turned into a membership
+        const { data: existingSubMembership } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingSubMembership) {
+          console.log("Subscription membership already exists for session, skipping:", session.id);
+        } else {
+
+        // Get user email and name from Supabase auth
+        const { data: userData } = await supabase.auth.admin.getUserById(userId);
+        const customerEmail = userData?.user?.email || session.customer_email || '';
+        const customerName = userData?.user?.user_metadata?.full_name || 
+                            userData?.user?.user_metadata?.name || 
+                            session.customer_details?.name || '';
+
+        // Calculate start date; end date from Stripe subscription current_period_end if available
+        const startDate = new Date().toISOString().split('T')[0];
+        let endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        if (subscriptionId) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            if (sub?.current_period_end) {
+              endDate = new Date(sub.current_period_end * 1000).toISOString().split('T')[0];
+            }
+          } catch (subErr) {
+            console.error('Could not retrieve subscription for period end, falling back to +30 days:', subErr);
+          }
+        }
+
+        const { data: membershipRow, error: membershipInsertError } = await supabase
+          .from('memberships')
+          .insert({
+            user_id: userId,
+            membership_type: membershipType,
+            sessions_per_week: sessionsPerMonth,
+            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerMonth,
+            status: 'active',
+            stripe_subscription_id: subscriptionId,
+            stripe_session_id: session.id,
+            discount_percentage: discountPercentage,
+            discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
+            discount_amount: discountAmount,
+            price_amount: originalAmount,
+            customer_email: customerEmail,
+            customer_name: customerName,
+            start_date: startDate,
+            end_date: endDate,
+            is_auto_renew: isAutoRenew
+          })
+          .select('id')
+          .maybeSingle();
+
+        if (membershipInsertError) {
+          console.error('Error inserting membership:', membershipInsertError);
+          // Return error so Stripe will retry the webhook
+          return new Response(
+            JSON.stringify({ error: 'Failed to create membership record' }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500
+            }
+          );
+        } else {
+          // Sync membership customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+        }
+
+        if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
+          await supabase
+            .from('discount_redemptions')
+            .insert({
+              discount_code_id: discountCodeId,
+              entity_type: 'membership',
+              entity_id: membershipRow.id,
+              original_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: Math.max(0, originalAmount - discountAmount)
+            });
+        }
+
+        // Send membership confirmation email
+        if (membershipRow?.id) {
+          try {
+            const emailRes = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-membership-confirmation`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                },
+                body: JSON.stringify({ membershipId: membershipRow.id })
+              }
+            );
+            if (!emailRes.ok) console.error("Failed to send membership confirmation email:", await emailRes.text());
+            else console.log("Membership confirmation email sent");
+          } catch (emailErr) {
+            console.error("Error sending membership confirmation email:", emailErr);
+          }
+        }
+        } // end else (not already fulfilled)
+      }
+
+
+
+      // Handle one-time membership payments (no auto-renew)
+      if (session.mode === 'payment' && session.metadata?.type === 'membership_onetime' && session.metadata?.userId) {
+        const userId = session.metadata.userId;
+        const membershipType = session.metadata.membershipType;
+        // Support both old (sessions_per_week) and new (sessions_per_month) metadata
+        const sessionsPerMonth = Number(session.metadata.sessions_per_month || session.metadata.sessions_per_week || 0);
+        const discountPercentage = Number(session.metadata.discount_percentage || 0);
+        const originalAmount = Number(session.metadata?.originalAmount || 0);
+        const discountAmount = Number(session.metadata?.discountAmount || 0);
+        const discountCodeId = session.metadata?.discountCodeId || null;
+
+        // Idempotency: skip if this checkout session was already turned into a membership
+        const { data: existingOneTimeMembership } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('stripe_session_id', session.id)
+          .maybeSingle();
+
+        if (existingOneTimeMembership) {
+          console.log("One-time membership already exists for session, skipping:", session.id);
+        } else {
+
+        // Get user email and name from Supabase auth
+        const { data: userData } = await supabase.auth.admin.getUserById(userId);
+        const customerEmail = userData?.user?.email || session.customer_email || '';
+        const customerName = userData?.user?.user_metadata?.full_name || 
+                            userData?.user?.user_metadata?.name || 
+                            session.customer_details?.name || '';
+
+        // Calculate start and end dates
+        const startDate = new Date().toISOString().split('T')[0];
+        const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const { data: membershipRow, error: membershipInsertError } = await supabase
+          .from('memberships')
+          .insert({
+            user_id: userId,
+            membership_type: membershipType,
+            sessions_per_week: sessionsPerMonth,
+            sessions_remaining: membershipType === 'unlimited' ? 999 : sessionsPerMonth,
+            status: 'active',
+            stripe_subscription_id: null,
+            stripe_session_id: session.id,
+            discount_percentage: discountPercentage,
+            discount_code_id: discountCodeId && discountCodeId.length > 0 ? discountCodeId : null,
+            discount_amount: discountAmount,
+            price_amount: originalAmount,
+            customer_email: customerEmail,
+            customer_name: customerName,
+            start_date: startDate,
+            end_date: endDate,
+            is_auto_renew: false
+          })
+          .select('id')
+          .maybeSingle();
+
+        if (membershipInsertError) {
+          console.error('Error inserting one-time membership:', membershipInsertError);
+          // Return error so Stripe will retry the webhook
+          return new Response(
+            JSON.stringify({ error: 'Failed to create membership record' }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500
+            }
+          );
+        } else {
+          // Sync one-time membership customer to Mailchimp
+          syncToMailchimp(customerEmail, customerName);
+        }
+
+        if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
+          await supabase
+            .from('discount_redemptions')
+            .insert({
+              discount_code_id: discountCodeId,
+              entity_type: 'membership',
+              entity_id: membershipRow.id,
+              original_amount: originalAmount,
+              discount_amount: discountAmount,
+              final_amount: Math.max(0, originalAmount - discountAmount)
+            });
+        }
+
+        // Send membership confirmation email
+        if (membershipRow?.id) {
+          try {
+            const emailRes = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-membership-confirmation`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                },
+                body: JSON.stringify({ membershipId: membershipRow.id })
+              }
+            );
+            if (!emailRes.ok) console.error("Failed to send one-time membership confirmation email:", await emailRes.text());
+            else console.log("One-time membership confirmation email sent");
+          } catch (emailErr) {
+            console.error("Error sending one-time membership confirmation email:", emailErr);
+          }
+        }
+        } // end else (not already fulfilled)
+      }
+
+      // Handle intro offer purchase (adds tokens to customer_tokens)
+      if (session.mode === 'payment' && session.metadata?.type === 'intro_offer') {
+        const customerEmail = session.metadata.customerEmail?.toLowerCase().trim();
+        const customerName = session.metadata.customerName || '';
+
+        if (customerEmail) {
+          // Idempotency: dedupe by session id embedded in notes
+          const sessionTag = `[session:${session.id}]`;
+          const { data: existingIntroTokens } = await supabase
+            .from('customer_tokens')
+            .select('id')
+            .eq('customer_email', customerEmail)
+            .ilike('notes', `%${sessionTag}%`)
+            .limit(1);
+
+          if (existingIntroTokens && existingIntroTokens.length > 0) {
+            console.log('Intro offer tokens already exist for session, skipping:', session.id);
+          } else {
+            // Calculate expiry date (3 months from now)
+            const expiresAt = new Date();
+            expiresAt.setMonth(expiresAt.getMonth() + 3);
+
+            // Insert tokens for the customer
+            const { error: tokenError } = await supabase
+              .from('customer_tokens')
+              .insert({
+                customer_email: customerEmail,
+                tokens_remaining: 3,
+                expires_at: expiresAt.toISOString(),
+                notes: `Introductory Offer - 3 Sessions for Â£35 (purchased by ${customerName}) ${sessionTag}`
+              });
+
+            if (tokenError) {
+                console.error('Error inserting intro offer tokens:', tokenError);
+                // Return error so Stripe will retry the webhook
+                return new Response(
+                  JSON.stringify({ error: 'Failed to create intro offer tokens' }),
+                  {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    status: 500
+                  }
+                );
+              } else {
+              console.log('Intro offer tokens created for:', customerEmail);
+              // Sync intro offer customer to Mailchimp
+              syncToMailchimp(customerEmail, customerName);
+            }
+          }
+
+          // Also add/update customer record if not exists
+          const { data: existingCustomer } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('email', customerEmail)
+            .maybeSingle();
+
+          if (!existingCustomer) {
+              const { error: customerError } = await supabase
+                .from('customers')
+                .insert({
+                  email: customerEmail,
+                  full_name: customerName,
+                  phone: session.metadata.customerPhone || null
+                });
+
+              if (customerError) {
+                console.error('Error inserting customer record:', customerError);
+                // Return error so Stripe will retry the webhook
+                return new Response(
+                  JSON.stringify({ error: 'Failed to create customer record' }),
+                  {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    status: 500
+                  }
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Handle subscription renewal (invoice paid for recurring subscriptions)
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice;
+      
+      // Only process renewals (not first subscription payment)
+      if (invoice.billing_reason === 'subscription_cycle' && invoice.subscription) {
+        const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
+
+        // Find the latest membership for this subscription (any non-cancelled state)
+        const { data: matchingMemberships } = await supabase
+          .from('memberships')
+          .select('*')
+          .eq('stripe_subscription_id', subscriptionId)
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const existingMembership = matchingMemberships && matchingMemberships.length > 0 ? matchingMemberships[0] : null;
+
+        if (existingMembership) {
+          // Use invoice's actual billing period end when available, fallback to +30 days
+          const periodEndUnix = invoice.lines?.data?.[0]?.period?.end;
+          const newEndDate = periodEndUnix
+            ? new Date(periodEndUnix * 1000).toISOString().split('T')[0]
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+          await supabase
+            .from('memberships')
+            .update({
+              end_date: newEndDate,
+              status: 'active', // Stripe just charged them, so reactivate any past_due/paused state
+              is_auto_renew: true,
+              sessions_remaining: existingMembership.membership_type === 'unlimited' ? 999 : existingMembership.sessions_per_week,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingMembership.id);
+
+          console.log('Membership renewed:', existingMembership.id, 'new end:', newEndDate);
+        } else {
+          console.error('DATA DRIFT: invoice.paid subscription_cycle received with NO matching membership record. subscriptionId=', subscriptionId, 'invoice=', invoice.id, 'customer=', invoice.customer, 'â€” manual attention required.');
+        }
+      }
+    }
+
+    // Handle subscription cancellation
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      // Mark membership as cancelled
+      await supabase
+        .from('memberships')
+        .update({
+          status: 'cancelled',
+          is_auto_renew: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_subscription_id', subscription.id);
+      console.log("Membership cancelled via subscription.deleted:", subscription.id);
+    }
+
+    // Handle subscription updates (including cancel_at_period_end toggles and pauses)
+    if (event.type === "customer.subscription.updated") {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+      if (subscription.cancel_at_period_end) {
+        update.is_auto_renew = false;
+        // Keep status active so the customer keeps access until end of period.
+      } else if (subscription.status === "active" || subscription.status === "trialing") {
+        // Subscription resumed / cancellation reverted
+        update.is_auto_renew = true;
+        update.status = "active";
+      }
+
+      if (subscription.status === "canceled") {
+        update.status = "cancelled";
+        update.is_auto_renew = false;
+      } else if (subscription.status === "paused") {
+        update.status = "paused";
+      } else if (subscription.status === "past_due" || subscription.status === "unpaid") {
+        // Do not flip status here â€” Stripe will retry; log for visibility.
+        console.log("Subscription in", subscription.status, "for", subscription.id);
+      }
+
+      await supabase
+        .from('memberships')
+        .update(update)
+        .eq('stripe_subscription_id', subscription.id);
+      console.log("Membership synced via subscription.updated:", subscription.id, update);
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+
+  } catch (error) {
+    console.error("Webhook error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
+  }
+});
+

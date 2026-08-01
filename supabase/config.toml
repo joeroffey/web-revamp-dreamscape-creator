@@ -1,0 +1,55 @@
+project_id = "ismifvjzvvyleahdmdrz"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.check-membership-status]
+verify_jwt = false
+
+[functions.create-member-booking]
+verify_jwt = false
+
+[functions.send-gift-card-email]
+verify_jwt = false
+
+[functions.redeem-gift-card]
+verify_jwt = false
+
+[functions.check-credit-balance]
+verify_jwt = false
+
+[functions.create-credit-booking]
+verify_jwt = false
+
+[functions.create-admin-membership-payment]
+verify_jwt = false
+
+[functions.verify-booking-payment]
+verify_jwt = false
+
+[functions.create-partial-credit-booking]
+verify_jwt = false
+
+[functions.send-contact-notification]
+verify_jwt = false
+
+[functions.send-contact-reply]
+verify_jwt = false
+
+[functions.sync-to-mailchimp]
+verify_jwt = false
+
+[functions.bulk-sync-mailchimp]
+verify_jwt = false
+
+[functions.user-cancel-booking]
+verify_jwt = false
+
+[functions.user-reschedule-booking]
+verify_jwt = false
+
+[functions.admin-cancel-membership]
+verify_jwt = false
+
+[functions.cancel-membership]
+verify_jwt = false
