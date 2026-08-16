@@ -66,7 +66,7 @@ serve(async (req) => {
         sessions_per_month: 8,
       },
       "unlimited": {
-        price: 10000, // £100 in pence
+        price: 6000, // £60 in pence (promotional)
         name: "Unlimited Membership",
         sessions_per_month: 999,
       },
