@@ -58,6 +58,8 @@ const Memberships = () => {
       id: "4_sessions_month",
       name: "4 Sessions Per Month",
       price: 48,
+      originalPrice: null as number | null,
+      promo: false,
       sessions: 4,
       period: "month",
       popular: false,
@@ -70,27 +72,14 @@ const Memberships = () => {
       description: "Perfect for establishing a consistent wellness routine with structured contrast therapy sessions."
     },
     {
-      id: "8_sessions_month", 
-      name: "8 Sessions Per Month",
-      price: 75,
-      sessions: 8,
-      period: "month",
-      popular: true,
-      features: [
-        "8 sessions per month",
-        "Use anytime within your billing period",
-        "Flexible 30-day cancellation",
-        "Personal use only"
-      ],
-      description: "Elevate your wellness journey with regular contrast therapy sessions."
-    },
-    {
       id: "unlimited",
       name: "Unlimited Membership",
-      price: 100,
+      price: 60,
+      originalPrice: 100 as number | null,
+      promo: true,
       sessions: 0,
       period: "month",
-      popular: false,
+      popular: true,
       features: [
         "Unlimited sessions",
         "30-day cancellation period",
@@ -100,6 +89,7 @@ const Memberships = () => {
       description: "Ultimate wellness freedom with unlimited access to contrast therapy sessions."
     }
   ];
+
 
   const validatePromoCode = async () => {
     if (!promoCode.trim()) {
