@@ -509,7 +509,7 @@ const Memberships = () => {
               </div>
             )}
 
-            <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="grid md:grid-cols-2 gap-8 mb-16 max-w-3xl mx-auto">
               {membershipPlans.map((plan) => (
                 <Card 
                   key={plan.id}
@@ -517,7 +517,14 @@ const Memberships = () => {
                     plan.popular ? 'ring-2 ring-primary border-primary/50' : ''
                   }`}
                 >
-                  {plan.popular && (
+                  {plan.promo ? (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm font-medium flex items-center gap-1">
+                        <Star className="h-3 w-3" />
+                        Promotion
+                      </Badge>
+                    </div>
+                  ) : plan.popular && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                       <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm font-medium flex items-center gap-1">
                         <Star className="h-3 w-3" />
@@ -538,12 +545,19 @@ const Memberships = () => {
                         </>
                       ) : (
                         <>
+                          {plan.originalPrice && (
+                            <span className="text-2xl text-muted-foreground line-through mr-2">£{plan.originalPrice}</span>
+                          )}
                           <span className="text-4xl font-bold text-primary">£{plan.price}</span>
                           <span className="text-muted-foreground">/{plan.period}</span>
+                          {plan.promo && (
+                            <p className="text-xs text-primary mt-1">Limited time promotional price</p>
+                          )}
                         </>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{plan.description}</p>
+
                   </CardHeader>
 
                   <CardContent className="pt-0">
