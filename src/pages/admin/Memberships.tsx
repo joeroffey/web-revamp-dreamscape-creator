@@ -36,10 +36,33 @@ export default function AdminMemberships() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'cancelled' | 'expired'>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [migratingPrice, setMigratingPrice] = useState(false);
 
   useEffect(() => {
     fetchMemberships();
   }, []);
+
+  const runUnlimitedPriceMigration = async () => {
+    if (!confirm('Move all active Unlimited memberships to £60/month from their next renewal?')) return;
+    setMigratingPrice(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('migrate-unlimited-price', { body: {} });
+      if (error) throw error;
+      const updated = (data?.results || []).filter((r: any) => r.updated).length;
+      const failed = (data?.results || []).filter((r: any) => r.error).length;
+      toast({
+        title: 'Unlimited pricing updated',
+        description: `${updated} subscription(s) moved to £60${failed ? `, ${failed} failed` : ''}.`,
+        variant: failed ? 'destructive' : 'default',
+      });
+      fetchMemberships();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'Migration failed', variant: 'destructive' });
+    } finally {
+      setMigratingPrice(false);
+    }
+  };
+
 
   const fetchMemberships = async () => {
     try {
