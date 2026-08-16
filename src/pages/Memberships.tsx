@@ -58,6 +58,8 @@ const Memberships = () => {
       id: "4_sessions_month",
       name: "4 Sessions Per Month",
       price: 48,
+      originalPrice: null as number | null,
+      promo: false,
       sessions: 4,
       period: "month",
       popular: false,
@@ -70,27 +72,14 @@ const Memberships = () => {
       description: "Perfect for establishing a consistent wellness routine with structured contrast therapy sessions."
     },
     {
-      id: "8_sessions_month", 
-      name: "8 Sessions Per Month",
-      price: 75,
-      sessions: 8,
-      period: "month",
-      popular: true,
-      features: [
-        "8 sessions per month",
-        "Use anytime within your billing period",
-        "Flexible 30-day cancellation",
-        "Personal use only"
-      ],
-      description: "Elevate your wellness journey with regular contrast therapy sessions."
-    },
-    {
       id: "unlimited",
       name: "Unlimited Membership",
-      price: 100,
+      price: 60,
+      originalPrice: 100 as number | null,
+      promo: true,
       sessions: 0,
       period: "month",
-      popular: false,
+      popular: true,
       features: [
         "Unlimited sessions",
         "30-day cancellation period",
@@ -100,6 +89,7 @@ const Memberships = () => {
       description: "Ultimate wellness freedom with unlimited access to contrast therapy sessions."
     }
   ];
+
 
   const validatePromoCode = async () => {
     if (!promoCode.trim()) {
@@ -519,7 +509,7 @@ const Memberships = () => {
               </div>
             )}
 
-            <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="grid md:grid-cols-2 gap-8 mb-16 max-w-3xl mx-auto">
               {membershipPlans.map((plan) => (
                 <Card 
                   key={plan.id}
@@ -527,7 +517,14 @@ const Memberships = () => {
                     plan.popular ? 'ring-2 ring-primary border-primary/50' : ''
                   }`}
                 >
-                  {plan.popular && (
+                  {plan.promo ? (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm font-medium flex items-center gap-1">
+                        <Star className="h-3 w-3" />
+                        Promotion
+                      </Badge>
+                    </div>
+                  ) : plan.popular && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                       <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm font-medium flex items-center gap-1">
                         <Star className="h-3 w-3" />
@@ -548,12 +545,19 @@ const Memberships = () => {
                         </>
                       ) : (
                         <>
+                          {plan.originalPrice && (
+                            <span className="text-2xl text-muted-foreground line-through mr-2">£{plan.originalPrice}</span>
+                          )}
                           <span className="text-4xl font-bold text-primary">£{plan.price}</span>
                           <span className="text-muted-foreground">/{plan.period}</span>
+                          {plan.promo && (
+                            <p className="text-xs text-primary mt-1">Limited time promotional price</p>
+                          )}
                         </>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{plan.description}</p>
+
                   </CardHeader>
 
                   <CardContent className="pt-0">

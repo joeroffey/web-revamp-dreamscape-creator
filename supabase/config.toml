@@ -53,3 +53,5 @@ verify_jwt = false
 
 [functions.cancel-membership]
 verify_jwt = false
+[functions.migrate-unlimited-price]
+verify_jwt = false

@@ -44,8 +44,8 @@ export function CreateMembershipDialog({ open, onOpenChange, onMembershipCreated
 
   const membershipOptions = [
     { value: '4_sessions_month', label: '4 Sessions Per Month', sessions: 4, price: 48 },
-    { value: '8_sessions_month', label: '8 Sessions Per Month', sessions: 8, price: 75 },
-    { value: 'unlimited', label: 'Unlimited', sessions: 999, price: 100 },
+    
+    { value: 'unlimited', label: 'Unlimited', sessions: 999, price: 60 },
   ];
 
   const durationOptions = [
