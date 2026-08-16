@@ -1,120 +1,48 @@
-## Goal
+# Membership pricing update: £48 (4 sessions) and £60 unlimited promo
 
-Replace the current single-textarea, single-image blog system with a **block-based editor** so admins can mix paragraphs and images in any order, upload images directly (no URLs), and pick a simple preset size — without touching pixel dimensions. Then redesign the public `/blog` page so each post looks like an editorial article rather than a repeating background.
+## What changes for customers
 
----
+The memberships page will show two plans only:
 
-## 1. Storage & Data Model
+- **4 Sessions Per Month — £48/month** (unchanged price)
+- **Unlimited — £60/month**, displayed with £100 struck through and a "Promotion" badge
 
-**New Supabase storage bucket: `blog-images`** (public, with admin-only write RLS on `storage.objects`).
+The 8-sessions-per-month £75 plan is removed from the site. The two customers currently on it keep their existing £75 subscriptions running untouched.
 
-**`blog_posts` table — add column:**
-- `content_blocks jsonb` — array of blocks. Existing `content` (text) is kept for backward compatibility; on first edit of a legacy post we auto-convert it into paragraph blocks.
+The 9 active unlimited members currently billing £100/month will be moved to £60/month, effective from their next renewal (no mid-cycle charge or credit).
 
-**Block shape:**
-```
-{ id, type: "paragraph", text: string }
-{ id, type: "image", url: string, alt: string, size: "small" | "medium" | "full", align: "left" | "center" }
-{ id, type: "heading", text: string, level: 2 | 3 }
-{ id, type: "quote", text: string }
-```
+## Site changes
 
-Image `size` maps to fixed Tailwind widths so admin never types pixels:
-- `small` → `max-w-sm` (inline, ~384px)
-- `medium` → `max-w-2xl` (~672px)
-- `full` → `w-full` (full article width, default)
+- `src/pages/Memberships.tsx`: remove the `8_sessions_month` plan from `membershipPlans`; set unlimited to £60 with an `originalPrice: 100` and `promo: true` flag; mark unlimited as the highlighted plan. Card rendering shows struck-through £100 next to £60 plus a "Promotion" badge, and keeps working with the existing promo-code discount display (discount applies to the £60 price).
+- `src/components/admin/CreateMembershipDialog.tsx`: options become 4 sessions (£48) and Unlimited (£60); the 8-session option is removed from new-membership creation.
+- Existing type labels for `8_sessions_month` stay in `src/pages/admin/Memberships.tsx`, `src/pages/Dashboard.tsx` and `MembershipSuccess.tsx` so legacy members still display correctly.
 
----
+## Backend / Stripe changes
 
-## 2. Admin Editor (`ModernBlogManagement.tsx`)
+- `supabase/functions/create-membership-payment/index.ts`: `unlimited` price becomes 6000 pence; `8_sessions_month` moves to the legacy block (kept so any in-flight session or webhook replay still resolves, but no longer offered in the UI).
+- `supabase/functions/create-admin-membership-payment/index.ts`: same price update for `unlimited` (6000).
+- Checkout uses inline `price_data`, so no Stripe dashboard product/price setup is needed for new signups — the new amounts apply immediately after deploy.
 
-Replace the single content `Textarea` with a **stacked block editor**:
+### Migrating the 9 existing unlimited subscriptions
 
-```text
-┌─ Title ──────────────────────────────┐
-├─ Excerpt ────────────────────────────┤
-├─ Cover image (upload) ───────────────┤
-│                                      │
-│  [Block 1: Paragraph]      ↑ ↓ ✕    │
-│  [Block 2: Image — medium] ↑ ↓ ✕    │
-│  [Block 3: Paragraph]      ↑ ↓ ✕    │
-│                                      │
-│  + Paragraph  + Heading  + Image  + Quote
-└──────────────────────────────────────┘
-```
+A one-off admin-only edge function (`migrate-unlimited-price`) that:
 
-Behaviour:
-- **Add block**: buttons at the bottom insert the chosen block type.
-- **Reorder**: up/down arrows on each block (no drag-and-drop dependency needed).
-- **Delete**: ✕ button with confirm.
-- **Paragraph block**: a `Textarea` — when admin presses Enter twice, we auto-split into two paragraph blocks (handles "paragraph space detection"). On render, single newlines become `<br/>`.
-- **Image block**: drag-and-drop or click-to-upload → uploads to `blog-images` bucket via Supabase Storage → stores public URL. Inline preview. Size selector = three buttons (Small / Medium / Full). Optional alt text field (required for accessibility, prefilled with post title).
-- **Heading / Quote blocks**: simple `Input` / `Textarea`.
+1. Requires an authenticated admin (same `user_roles` check pattern used by the other admin functions).
+2. Creates (or reuses) a Stripe recurring price of £60/month GBP for an "Unlimited Membership" product.
+3. Loads active memberships where `membership_type = 'unlimited'` and `stripe_subscription_id` is set, and for each: retrieves the subscription and updates its single item to the new price with `proration_behavior: 'none'` so the change lands at the next renewal.
+4. Updates `memberships.price_amount = 6000` for those rows.
+5. Returns a per-subscription success/failure report; failures are logged and skipped, never left half-applied for that row.
 
-Validation: title + at least one non-empty block required.
+I will run it once from the admin session after deploy and report the results back. Nothing is charged immediately.
 
-Existing posts: when opened in the editor, if `content_blocks` is null we split `content` on `\n\n` into paragraph blocks so the admin sees their old text as editable blocks immediately.
+## Verification
 
----
+- Load `/memberships` in the preview and confirm two plans, the struck-through £100/£60 promo display, and that promo-code entry still recalculates from £60.
+- Confirm the admin create-membership dialog shows only the two plans at the right prices.
+- Confirm the two legacy £75 members and any cancelled records still render with correct labels in `/admin/memberships` and the customer dashboard.
+- After running the migration function, re-query the memberships table and spot-check one Stripe subscription shows the £60 price scheduled.
 
-## 3. Public Blog Page (`src/pages/Blog.tsx`)
+## Not changing
 
-Redesign to feel like a real journal:
-
-**Hero / list page**
-- Keep the cream-toned hero header.
-- Below it, render posts as an **editorial list**: each post is a large card with cover image on one side and Title + Date + Excerpt + "Read article →" on the other. Alternate sides on desktop, stack on mobile. Use the link-tile pattern (corner accents, sliding arrow) per `mem://style/link-tile-pattern`.
-- Clicking a card navigates to `/blog/:id` (new route).
-
-**Article page (`/blog/:id`)**
-- Centered max-w-3xl column.
-- Eyebrow (date) → Title → optional cover image (full-bleed within column, rounded) → rendered blocks.
-- Block rendering:
-  - `paragraph`: `<p>` with generous leading + spacing, single `\n` → `<br/>`.
-  - `heading`: `<h2>` / `<h3>` with brand serif weight.
-  - `image`: respects `size` preset, centered, rounded, with optional caption from alt.
-  - `quote`: left brown border, italic, larger text.
-- Bottom: "Back to journal" link + the existing "Ready to experience contrast therapy?" CTA tile.
-
-This kills the "same background image throughout" problem because each post controls its own imagery and layout, and the public list shows distinct covers per post.
-
----
-
-## 4. Routing & SEO
-
-- Add `<Route path="/blog/:id" element={<BlogPost />} />` in `src/App.tsx`.
-- New page `src/pages/BlogPost.tsx` with `SEOHead` using post title + excerpt and `ScrollToTop`.
-- Update sitemap generation if dynamic, otherwise leave (posts are not in static sitemap today).
-
----
-
-## Technical details
-
-**Files to add**
-- `src/pages/BlogPost.tsx` — single article view.
-- `src/components/admin/BlogBlockEditor.tsx` — the block editor (paragraph / heading / image / quote blocks, reordering, upload).
-- `src/components/blog/BlogBlocks.tsx` — renderer used by `BlogPost.tsx`.
-
-**Files to edit**
-- `src/components/admin/ModernBlogManagement.tsx` — swap `Textarea` for `BlogBlockEditor`; cover image upload (replace URL `Input` with file upload to `blog-images`); save `content_blocks` on insert/update; keep `content` synced (concatenated paragraph text) for legacy/search.
-- `src/pages/Blog.tsx` — new editorial list, link to `/blog/:id`, drop inline full-content rendering.
-- `src/App.tsx` — add `/blog/:id` route.
-
-**Migrations**
-1. `alter table blog_posts add column content_blocks jsonb;`
-2. Create `blog-images` storage bucket (public) + RLS policies on `storage.objects`:
-   - Public SELECT on bucket `blog-images`.
-   - Admin-only INSERT/UPDATE/DELETE using `is_admin(auth.uid())`.
-
-**Image upload flow**
-- Client uses `supabase.storage.from('blog-images').upload(...)` with a `crypto.randomUUID()` filename.
-- Get public URL via `getPublicUrl`.
-- Store URL in the block.
-
----
-
-## Out of scope
-
-- Drag-and-drop block reordering (using up/down arrows is simpler and sufficient).
-- Rich text inside paragraphs (bold/italic/links) — can be a follow-up if needed.
-- Image cropping — admin uploads at desired aspect; size preset only controls displayed width.
+- Session allowances (4 per month; unlimited = 999), booking/token logic, membership discount percentages.
+- Any refunds, mid-cycle charges, or cancellations for existing members.
