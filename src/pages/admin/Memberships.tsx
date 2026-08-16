@@ -252,7 +252,16 @@ export default function AdminMemberships() {
               <Plus className="mr-2 h-4 w-4" />
               Add Membership
             </Button>
+            <Button
+              variant="outline"
+              className="hidden sm:flex"
+              disabled={migratingPrice}
+              onClick={runUnlimitedPriceMigration}
+            >
+              {migratingPrice ? 'Updating…' : 'Move Unlimited to £60'}
+            </Button>
           </div>
+
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-80">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
