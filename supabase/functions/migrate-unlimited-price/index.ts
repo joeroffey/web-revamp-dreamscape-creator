@@ -25,20 +25,25 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // AuthZ: admin only
+    // AuthZ: service role or admin only
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { data: authData, error: authErr } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authErr || !authData?.user) {
-      return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const token = authHeader.replace("Bearer ", "");
+    const isServiceRole = token === (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "__none__");
+    if (!isServiceRole) {
+      const { data: authData, error: authErr } = await supabaseClient.auth.getUser(token);
+      if (authErr || !authData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid authentication" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: adminRole } = await supabaseClient
+        .from("user_roles").select("role").eq("user_id", authData.user.id).eq("role", "admin").maybeSingle();
+      if (!adminRole) {
+        return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
-    const { data: adminRole } = await supabaseClient
-      .from("user_roles").select("role").eq("user_id", authData.user.id).eq("role", "admin").maybeSingle();
-    if (!adminRole) {
-      return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+
 
     // Find or create the £60/month recurring price
     let priceId: string | null = null;
