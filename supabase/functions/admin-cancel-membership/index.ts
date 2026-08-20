@@ -61,9 +61,27 @@ serve(async (req) => {
         const sub = await stripe.subscriptions.retrieve(membership.stripe_subscription_id);
         const cancellable = ["active", "trialing", "past_due", "unpaid", "paused"].includes(sub.status);
 
+        // If the subscription is managed by a subscription schedule, Stripe blocks
+        // direct cancellation edits. Release the schedule first so the subscription
+        // becomes independently manageable.
+        if (sub.schedule && sub.status !== "canceled") {
+          const scheduleId = typeof sub.schedule === "string" ? sub.schedule : (sub.schedule as { id: string }).id;
+          try {
+            await stripe.subscriptionSchedules.release(scheduleId);
+            console.log("Released subscription schedule:", scheduleId);
+          } catch (relErr) {
+            console.error("Schedule release failed, cancelling schedule instead:", relErr);
+            await stripe.subscriptionSchedules.cancel(scheduleId);
+            stripeCancelled = true;
+            stripeDetail = "Stripe subscription schedule cancelled (subscription cancelled).";
+          }
+        }
+
         if (sub.status === "canceled") {
           stripeCancelled = true;
           stripeDetail = "Stripe subscription was already cancelled.";
+        } else if (stripeCancelled) {
+          // Already handled via schedule cancellation above
         } else if (!cancellable) {
           stripeDetail = `Stripe subscription in status "${sub.status}" — nothing to cancel.`;
         } else if (immediate) {
