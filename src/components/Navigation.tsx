@@ -74,12 +74,12 @@ export const Navigation = () => {
             <img 
               src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-20 sm:h-24 md:h-28 lg:h-28 xl:h-32 2xl:h-36 w-auto transition-all duration-300 hover:scale-105 max-w-[140px] lg:max-w-[160px] xl:max-w-[180px]"
+              className="h-20 sm:h-24 md:h-28 lg:h-28 xl:h-32 2xl:h-36 w-auto transition-all duration-300 hover:scale-105 max-w-[120px] lg:max-w-[140px] xl:max-w-[160px] 2xl:max-w-[180px]"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden xl:flex items-center space-x-2 xl:space-x-4 2xl:space-x-6">
+          <div className="hidden xl:flex items-center space-x-2 xl:space-x-2 2xl:space-x-6">
             {/* Home Link */}
             <Link
               to="/"
