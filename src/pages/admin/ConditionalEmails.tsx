@@ -27,7 +27,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getFunctionErrorMessage } from "@/lib/functionError";
-import { describeTrigger, TRIGGER_MAP } from "@/lib/conditionalEmailTriggers";
+import {
+  describeTrigger,
+  TRIGGER_GROUPS,
+  TRIGGER_MAP,
+  TRIGGERS,
+} from "@/lib/conditionalEmailTriggers";
 import {
   ConditionalEmailRuleDialog,
   type MailchimpTemplate,
@@ -207,6 +212,7 @@ export default function ConditionalEmails() {
         <TabsList>
           <TabsTrigger value="rules">Rules</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="help">Help</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rules" className="mt-4">
@@ -338,6 +344,111 @@ export default function ConditionalEmails() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="help" className="mt-4 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>What each trigger does</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[220px]">Trigger</TableHead>
+                    <TableHead>What it does</TableHead>
+                    <TableHead className="w-[100px]">Timing</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {TRIGGER_GROUPS.map((group) => (
+                    <>
+                      <TableRow className="bg-muted/50">
+                        <TableCell colSpan={3} className="font-semibold text-sm py-2">
+                          {group}
+                        </TableCell>
+                      </TableRow>
+                      {TRIGGERS.filter((t) => t.group === group).map((t) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="font-medium text-sm align-top">{t.label}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground align-top">
+                            {t.description}
+                            {t.fields && t.fields.length > 0 && (
+                              <div className="mt-1 text-xs text-foreground/70">
+                                Configurable: {t.fields.map((f) => f.label).join(", ")}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm align-top whitespace-nowrap">
+                            <Badge variant="secondary">
+                              {t.kind === "event" ? "Instant" : t.kind === "manual" ? "Manual" : "Daily"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Filters & timing options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">Only send to</strong> — Limit the rule to active members, non-members, or any customer.
+                </p>
+                <p>
+                  <strong className="text-foreground">Minimum lifetime spend</strong> — Only send to customers who have spent at least this much in total.
+                </p>
+                <p>
+                  <strong className="text-foreground">Customer tag</strong> — Only send if the customer has a specific admin tag (e.g. VIP).
+                </p>
+                <p>
+                  <strong className="text-foreground">Wait before sending</strong> — Delays the email by the chosen number of minutes after the trigger fires.
+                </p>
+                <p>
+                  <strong className="text-foreground">How often per customer</strong> — Choose once ever, once every N days, or every time the condition occurs.
+                </p>
+                <p>
+                  <strong className="text-foreground">Mailchimp tag to apply</strong> — Tags the customer in Mailchimp when the email sends, so you can build segments and journeys.
+                </p>
+                <p>
+                  <strong className="text-foreground">Daily cap</strong> — Stops the rule after the chosen number of sends in one day, protecting against misconfiguration.
+                </p>
+                <p>
+                  <strong className="text-foreground">Respect quiet hours</strong> — Holds emails until 08:00–20:00 local time so nobody is woken up.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>How customers are linked</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">Matching</strong> — Customers are matched to Mailchimp by their lowercased email address, the same way the existing Mailchimp sync works.
+                </p>
+                <p>
+                  <strong className="text-foreground">Auto-add</strong> — If a customer is not already in your Mailchimp audience, their email, first name and last name are added automatically before the send.
+                </p>
+                <p>
+                  <strong className="text-foreground">Tagging</strong> — The rule's Mailchimp tag is applied on send, so you can build Mailchimp segments and journeys from the same conditions.
+                </p>
+                <p>
+                  <strong className="text-foreground">Unsubscribed</strong> — Unsubscribed customers are skipped and logged as "skipped — unsubscribed". They are not re-subscribed.
+                </p>
+                <p>
+                  <strong className="text-foreground">Timing types</strong> — Instant triggers fire from booking/payment events. Daily triggers are checked once a day around 7am. Manual triggers only run when you choose.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
