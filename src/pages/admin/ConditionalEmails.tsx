@@ -27,7 +27,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getFunctionErrorMessage } from "@/lib/functionError";
-import { describeTrigger, TRIGGER_MAP } from "@/lib/conditionalEmailTriggers";
+import {
+  describeTrigger,
+  TRIGGER_GROUPS,
+  TRIGGER_MAP,
+  TRIGGERS,
+} from "@/lib/conditionalEmailTriggers";
 import {
   ConditionalEmailRuleDialog,
   type MailchimpTemplate,
