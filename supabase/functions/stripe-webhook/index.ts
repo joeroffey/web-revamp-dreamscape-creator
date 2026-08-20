@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { fireConditionalEmailEvent } from "../_shared/conditionalEvents.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -256,6 +257,7 @@ serve(async (req) => {
 
           // Sync customer to Mailchimp
           syncToMailchimp(customerEmail, customerName);
+          fireConditionalEmailEvent({ type: 'booking_paid', email: customerEmail, name: customerName, data: { booking_id: booking?.id, booking_type: bookingType, guest_count: guestCount, amount: (finalAmount ?? originalAmount) / 100 } });
 
           // Send booking confirmation email
           if (booking?.id) {
@@ -446,6 +448,7 @@ serve(async (req) => {
 
         // Sync customer to Mailchimp
         syncToMailchimp(customerEmail, customerName);
+        fireConditionalEmailEvent({ type: 'booking_paid', email: customerEmail, name: customerName, data: { booking_id: booking?.id, booking_type: bookingType, guest_count: guestCount, amount: (amountToPay ?? 0) / 100 } });
         } // end else (timeSlot found)
         } // end else (not already fulfilled)
       }
@@ -575,6 +578,7 @@ serve(async (req) => {
 
           // Sync customer to Mailchimp
           syncToMailchimp(customerEmail, customerName);
+          fireConditionalEmailEvent({ type: 'booking_paid', email: customerEmail, name: customerName, data: { booking_id: booking?.id, booking_type: 'communal', guest_count: totalGuestCount, amount: guestTotalAmount / 100 } });
 
           // Send booking confirmation email
           if (booking?.id) {
@@ -628,6 +632,7 @@ serve(async (req) => {
           // Sync gift card purchaser to Mailchimp
           if (gcRow) {
             syncToMailchimp(gcRow.purchaser_email, gcRow.purchaser_name);
+            fireConditionalEmailEvent({ type: 'gift_card_purchased', email: gcRow.purchaser_email, name: gcRow.purchaser_name, data: { gift_card_id: gcRow.id } });
           }
 
           // Send gift card email to recipient
@@ -746,6 +751,7 @@ serve(async (req) => {
         } else {
           // Sync membership customer to Mailchimp
           syncToMailchimp(customerEmail, customerName);
+          fireConditionalEmailEvent({ type: 'membership_started', email: customerEmail, name: customerName, user_id: userId, data: { membership_id: membershipRow?.id, membership_type: membershipType, amount: originalAmount / 100 } });
         }
 
         if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
@@ -847,6 +853,7 @@ serve(async (req) => {
         } else {
           // Sync one-time membership customer to Mailchimp
           syncToMailchimp(customerEmail, customerName);
+          fireConditionalEmailEvent({ type: 'membership_started', email: customerEmail, name: customerName, user_id: userId, data: { membership_id: membershipRow?.id, membership_type: membershipType, amount: originalAmount / 100 } });
         }
 
         if (discountCodeId && discountCodeId.length > 0 && discountAmount > 0 && membershipRow?.id) {
@@ -923,6 +930,7 @@ serve(async (req) => {
               console.log('Intro offer tokens created for:', customerEmail);
               // Sync intro offer customer to Mailchimp
               syncToMailchimp(customerEmail, customerName);
+              fireConditionalEmailEvent({ type: 'intro_offer_purchased', email: customerEmail, name: customerName, data: { amount: 35 } });
             }
           }
 
