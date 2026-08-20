@@ -243,7 +243,9 @@ const Dashboard = () => {
       setCancelTarget(null);
       fetchUserData();
     } catch (e: any) {
-      toast({ title: "Could not cancel", description: e.message || "Please try again.", variant: "destructive" });
+      const description = await getFunctionErrorMessage(e);
+      toast({ title: "Could not cancel", description, variant: "destructive" });
+
     } finally {
       setCancelling(false);
     }
