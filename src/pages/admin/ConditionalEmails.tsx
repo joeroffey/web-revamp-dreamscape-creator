@@ -151,7 +151,7 @@ export default function ConditionalEmails() {
       <AdminPageHeader
         title="Conditional Emails"
         description="Send Mailchimp templates automatically when customers hit a condition."
-        actions={
+        right={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => runJob("sweep")} disabled={running !== null}>
               {running === "sweep" ? (
