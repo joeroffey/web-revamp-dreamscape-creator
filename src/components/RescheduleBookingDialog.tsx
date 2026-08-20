@@ -39,8 +39,8 @@ export const RescheduleBookingDialog = ({ open, onOpenChange, bookingId, booking
       const description = await getFunctionErrorMessage(e);
       toast({ title: "Could not reschedule", description, variant: "destructive" });
     } finally {
-
       setSubmitting(false);
+
     }
   };
 
