@@ -41,6 +41,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "As soon as a customer makes and pays for a booking",
+    description:
+      "Fires the moment a booking is marked as paid. Use for a quick 'see you soon' confirmation or pre-visit tips.",
   },
   {
     id: "nth_session",
@@ -49,6 +51,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "count", label: "Session number", type: "number", default: 3, min: 1 }],
     summary: (c) => `When a customer has completed ${n(c, "count", 3)} paid sessions`,
+    description:
+      "Perfect for loyalty milestones. Set the session number (e.g. 3) and the email sends once that many paid sessions have actually taken place.",
   },
   {
     id: "first_booking",
@@ -56,6 +60,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "When a customer makes their very first booking",
+    description:
+      "Fires when a customer makes their first booking with you. Use for a welcome email with arrival guidance.",
   },
   {
     id: "first_session_completed",
@@ -63,6 +69,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "sweep",
     summary: () => "After a customer's first session has taken place",
+    description:
+      "Sends after the customer's first session has started, not when it was booked. Good for a post-first-visit check-in.",
   },
   {
     id: "first_private_booking",
@@ -70,6 +78,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "The first time a customer books a private session",
+    description:
+      "Fires only the first time a customer books a private session. Use to explain what to expect from a private hire.",
   },
   {
     id: "first_communal_booking",
@@ -77,6 +87,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "The first time a customer books a communal session",
+    description:
+      "Fires only the first time a customer books a communal session. Useful for explaining shared-session etiquette.",
   },
   {
     id: "booking_with_guests",
@@ -85,6 +97,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "event",
     fields: [{ key: "min_guests", label: "Minimum guests", type: "number", default: 2, min: 2 }],
     summary: (c) => `When a booking includes ${n(c, "min_guests", 2)} or more guests`,
+    description:
+      "Fires when a booking includes the chosen number of guests or more. Use to thank them for bringing a group or share group-specific info.",
   },
   {
     id: "session_reminder",
@@ -93,6 +107,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "hours_before", label: "Hours before session", type: "number", default: 24, min: 1 }],
     summary: (c) => `${n(c, "hours_before", 24)} hours before a booked session`,
+    description:
+      "Checked daily. Sends the chosen number of hours before a customer's upcoming paid session. Great for arrival reminders.",
   },
   {
     id: "post_session_followup",
@@ -101,6 +117,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "hours_after", label: "Hours after session", type: "number", default: 24, min: 1 }],
     summary: (c) => `${n(c, "hours_after", 24)} hours after a completed session`,
+    description:
+      "Checked daily. Sends the chosen number of hours after a session has finished. Use for feedback requests or recovery tips.",
   },
   {
     id: "booking_cancelled",
@@ -108,6 +126,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "When a booking is cancelled",
+    description:
+      "Fires when a booking is cancelled by the customer or admin. Use for a polite 'sorry to see you go' or rebooking prompt.",
   },
   {
     id: "booking_refunded",
@@ -115,6 +135,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "When a booking is refunded",
+    description:
+      "Fires when a booking is fully or partially refunded. Use to confirm the refund and keep the relationship warm.",
   },
   {
     id: "booking_rescheduled",
@@ -122,6 +144,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Bookings & sessions",
     kind: "event",
     summary: () => "When a customer reschedules a booking",
+    description:
+      "Fires when a booking is moved to a new slot. Use to confirm the new time and re-share arrival details.",
   },
 
   // ---------------- Lapsed & re-engagement ----------------
@@ -132,6 +156,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days since last session", type: "number", default: 30, min: 1 }],
     summary: (c) => `When a customer hasn't had a session for ${n(c, "days", 30)} days`,
+    description:
+      "Win-back trigger. Checked daily and sends to anyone whose last paid session was the chosen number of days ago or longer.",
   },
   {
     id: "regular_lapsed",
@@ -144,6 +170,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     ],
     summary: (c) =>
       `When a customer with ${n(c, "min_sessions", 5)}+ sessions hasn't been in for ${n(c, "days", 45)} days`,
+    description:
+      "Targeted win-back. Only sends to customers with at least the chosen number of past sessions who have now been absent for the chosen number of days.",
   },
   {
     id: "no_booking_after_signup",
@@ -152,6 +180,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days since sign-up", type: "number", default: 7, min: 1 }],
     summary: (c) => `${n(c, "days", 7)} days after sign-up with no booking made`,
+    description:
+      "Checked daily. Sends to accounts created the chosen number of days ago that have never made a paid booking. Good for a first-timer nudge.",
   },
   {
     id: "abandoned_checkout",
@@ -160,6 +190,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "hours", label: "Hours left unpaid", type: "number", default: 6, min: 1 }],
     summary: (c) => `When a booking has been left unpaid for ${n(c, "hours", 6)} hours`,
+    description:
+      "Checked daily. Sends to bookings still in pending/unpaid status after the chosen number of hours. Use to recover lost sales.",
   },
 
   // ---------------- Memberships ----------------
@@ -169,6 +201,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Memberships",
     kind: "event",
     summary: () => "When a customer starts a membership",
+    description:
+      "Fires when a new membership subscription is created and paid. Use for a membership welcome email.",
   },
   {
     id: "membership_renewed",
@@ -180,6 +214,8 @@ export const TRIGGERS: TriggerDefinition[] = [
       n(c, "nth", 0) > 0
         ? `On a member's renewal number ${n(c, "nth", 0)}`
         : "Every time a membership renews",
+    description:
+      "Fires on successful membership renewal. Set 0 for every renewal, or a specific number (e.g. 3) for anniversary-style rewards.",
   },
   {
     id: "membership_cancelled",
@@ -187,6 +223,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Memberships",
     kind: "event",
     summary: () => "When a membership is cancelled",
+    description:
+      "Fires when a membership is cancelled. Use for a save attempt, feedback request, or simple confirmation.",
   },
   {
     id: "membership_plan_changed",
@@ -194,6 +232,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Memberships",
     kind: "event",
     summary: () => "When a member upgrades or downgrades their plan",
+    description:
+      "Fires when a member changes plan tier. Use to confirm the new plan and what it includes.",
   },
   {
     id: "membership_expiring",
@@ -202,6 +242,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days before it ends", type: "number", default: 7, min: 1 }],
     summary: (c) => `${n(c, "days", 7)} days before a membership ends`,
+    description:
+      "Checked daily. Sends the chosen number of days before a membership's current period ends. Use for renewal reminders.",
   },
   {
     id: "membership_sessions_low",
@@ -210,6 +252,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "remaining", label: "Sessions remaining at most", type: "number", default: 1, min: 0 }],
     summary: (c) => `When a member has ${n(c, "remaining", 1)} or fewer sessions left this period`,
+    description:
+      "Checked daily. Sends when a member has used most of their included sessions. Use to encourage booking before the period resets.",
   },
   {
     id: "member_unused_period",
@@ -218,6 +262,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days into the period", type: "number", default: 14, min: 1 }],
     summary: (c) => `When a member has used nothing ${n(c, "days", 14)} days into their period`,
+    description:
+      "Checked daily. Sends if a member has not used any sessions after the chosen number of days into their billing period. Use for engagement nudges.",
   },
 
   // ---------------- Intro offer, tokens & credit ----------------
@@ -227,6 +273,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Intro offer, tokens & credit",
     kind: "event",
     summary: () => "When a customer buys the intro offer",
+    description:
+      "Fires when the 3-for-£35 intro offer is purchased. Use for a welcome email explaining how to redeem tokens.",
   },
   {
     id: "tokens_remaining",
@@ -235,6 +283,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "remaining", label: "Tokens remaining", type: "number", default: 1, min: 0 }],
     summary: (c) => `When a customer has ${n(c, "remaining", 1)} token(s) left`,
+    description:
+      "Checked daily. Sends when a customer's token balance drops to the chosen number. Use to push membership conversion before tokens run out.",
   },
   {
     id: "intro_offer_used_up",
@@ -242,6 +292,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Intro offer, tokens & credit",
     kind: "sweep",
     summary: () => "When a customer has used all of their intro offer sessions",
+    description:
+      "Checked daily. Sends once all intro-offer tokens have been redeemed. Perfect time to suggest a membership.",
   },
   {
     id: "intro_offer_unused",
@@ -250,6 +302,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days since purchase", type: "number", default: 14, min: 1 }],
     summary: (c) => `${n(c, "days", 14)} days after buying the intro offer with tokens unused`,
+    description:
+      "Checked daily. Sends if a customer still has unused intro tokens the chosen number of days after purchase. Use to encourage a first visit.",
   },
   {
     id: "tokens_expiring",
@@ -258,6 +312,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days before expiry", type: "number", default: 7, min: 1 }],
     summary: (c) => `${n(c, "days", 7)} days before a customer's tokens expire`,
+    description:
+      "Checked daily. Sends the chosen number of days before any of the customer's tokens expire. Use for urgency-driven rebooking.",
   },
   {
     id: "credit_expiring",
@@ -266,6 +322,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days before expiry", type: "number", default: 30, min: 1 }],
     summary: (c) => `${n(c, "days", 30)} days before gift card credit expires`,
+    description:
+      "Checked daily. Sends the chosen number of days before unredeemed gift card credit expires. Use to remind recipients to book.",
   },
   {
     id: "credit_unspent",
@@ -274,6 +332,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days since redeeming", type: "number", default: 30, min: 1 }],
     summary: (c) => `${n(c, "days", 30)} days after redeeming, with credit still unspent`,
+    description:
+      "Checked daily. Sends if a customer still has gift card credit left the chosen number of days after redeeming it. Use to prompt a booking.",
   },
 
   // ---------------- Gift cards ----------------
@@ -283,6 +343,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Gift cards",
     kind: "event",
     summary: () => "When a customer buys a gift card (sent to the purchaser)",
+    description:
+      "Fires when a gift card is purchased. The email is sent to the purchaser, not the recipient, so use it as a thank-you.",
   },
   {
     id: "gift_card_redeemed",
@@ -290,6 +352,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Gift cards",
     kind: "event",
     summary: () => "When a gift card is redeemed",
+    description:
+      "Fires when a gift card is redeemed. Use to welcome the recipient and explain how to use their credit.",
   },
   {
     id: "gift_card_unredeemed",
@@ -298,6 +362,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "days", label: "Days since purchase", type: "number", default: 30, min: 1 }],
     summary: (c) => `${n(c, "days", 30)} days after purchase with the gift card still unredeemed`,
+    description:
+      "Checked daily. Sends to the recipient if the gift card has not been redeemed after the chosen number of days. Use as a gentle nudge.",
   },
 
   // ---------------- Spend & value ----------------
@@ -308,6 +374,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "amount", label: "Amount", type: "amount", default: 250, min: 1 }],
     summary: (c) => `When a customer's total spend passes £${n(c, "amount", 250)}`,
+    description:
+      "Checked daily. Sends once a customer's lifetime spend crosses the chosen amount. Use for VIP rewards or thank-yous.",
   },
   {
     id: "nth_purchase",
@@ -316,6 +384,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "count", label: "Purchase number", type: "number", default: 5, min: 1 }],
     summary: (c) => `On a customer's purchase number ${n(c, "count", 5)}`,
+    description:
+      "Checked daily. Counts any paid purchase (booking, membership, gift card, intro offer) and sends at the chosen purchase number.",
   },
   {
     id: "single_purchase_over",
@@ -324,6 +394,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "event",
     fields: [{ key: "amount", label: "Amount", type: "amount", default: 75, min: 1 }],
     summary: (c) => `When a single purchase is more than £${n(c, "amount", 75)}`,
+    description:
+      "Fires immediately when a single transaction exceeds the chosen amount. Use for high-value thank-yous or upsells.",
   },
 
   // ---------------- Lifecycle ----------------
@@ -333,6 +405,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Lifecycle",
     kind: "event",
     summary: () => "When someone creates an account",
+    description:
+      "Fires when a new account is created. Use for a welcome email with a booking CTA.",
   },
   {
     id: "first_visit_anniversary",
@@ -340,6 +414,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Lifecycle",
     kind: "sweep",
     summary: () => "Each year on the anniversary of a customer's first visit",
+    description:
+      "Checked daily. Sends once per year on the anniversary of a customer's first paid session. Use for birthday-style loyalty emails.",
   },
   {
     id: "customer_tagged",
@@ -348,6 +424,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     kind: "sweep",
     fields: [{ key: "tag", label: "Tag", type: "text", default: "vip" }],
     summary: (c) => `When a customer is tagged "${c?.tag || "vip"}" in admin`,
+    description:
+      "Checked daily. Sends when an admin adds the chosen tag to a customer profile. Use for VIP onboarding or segmented campaigns.",
   },
   {
     id: "contact_message_resolved",
@@ -355,6 +433,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Lifecycle",
     kind: "event",
     summary: () => "When a contact form message is marked as resolved",
+    description:
+      "Fires when a contact message is marked as resolved. Use to request feedback or offer a follow-up booking.",
   },
   {
     id: "manual",
@@ -362,6 +442,8 @@ export const TRIGGERS: TriggerDefinition[] = [
     group: "Lifecycle",
     kind: "manual",
     summary: () => "Only sent when you run the rule manually",
+    description:
+      "Never fires automatically. Use for one-off campaigns or backfills where you choose the recipients yourself.",
   },
 ];
 
