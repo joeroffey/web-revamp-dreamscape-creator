@@ -207,6 +207,7 @@ export default function ConditionalEmails() {
         <TabsList>
           <TabsTrigger value="rules">Rules</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="help">Help</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rules" className="mt-4">
