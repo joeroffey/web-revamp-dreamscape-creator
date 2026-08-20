@@ -649,8 +649,12 @@ serve(async (req) => {
 
   try {
     const supabase = serviceClient();
-    const authError = await requireAdmin(req, supabase);
-    if (authError) return json({ error: authError.message }, authError.status);
+    const cronSecret = Deno.env.get("CONDITIONAL_EMAILS_CRON_SECRET");
+    const isCron = !!cronSecret && req.headers.get("x-cron-secret") === cronSecret;
+    if (!isCron) {
+      const authError = await requireAdmin(req, supabase);
+      if (authError) return json({ error: authError.message }, authError.status);
+    }
 
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || (body.event ? "event" : "sweep");
