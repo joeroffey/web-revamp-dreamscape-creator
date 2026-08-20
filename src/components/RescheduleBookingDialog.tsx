@@ -55,7 +55,7 @@ export const RescheduleBookingDialog = ({ open, onOpenChange, bookingId, booking
         </DialogHeader>
 
         <TimeSlotPicker
-          serviceType={bookingType === "private" ? "private" : "combined"}
+          serviceType="combined"
           onSlotSelect={(slotId) => setSelectedSlotId(slotId)}
           selectedSlotId={selectedSlotId}
         />
