@@ -179,6 +179,164 @@ export type Database = {
           },
         ]
       }
+      conditional_email_rules: {
+        Row: {
+          created_at: string
+          daily_cap: number | null
+          delay_minutes: number
+          filters: Json
+          from_name: string | null
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          mailchimp_tag: string | null
+          mailchimp_template_id: string
+          name: string
+          quiet_hours_enabled: boolean
+          repeat_policy: string
+          repeat_window_days: number | null
+          reply_to: string | null
+          subject: string
+          template_name: string | null
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_cap?: number | null
+          delay_minutes?: number
+          filters?: Json
+          from_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          mailchimp_tag?: string | null
+          mailchimp_template_id: string
+          name: string
+          quiet_hours_enabled?: boolean
+          repeat_policy?: string
+          repeat_window_days?: number | null
+          reply_to?: string | null
+          subject: string
+          template_name?: string | null
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_cap?: number | null
+          delay_minutes?: number
+          filters?: Json
+          from_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          mailchimp_tag?: string | null
+          mailchimp_template_id?: string
+          name?: string
+          quiet_hours_enabled?: boolean
+          repeat_policy?: string
+          repeat_window_days?: number | null
+          reply_to?: string | null
+          subject?: string
+          template_name?: string | null
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conditional_email_sends: {
+        Row: {
+          attempts: number
+          created_at: string
+          customer_email: string
+          customer_name: string | null
+          error: string | null
+          id: string
+          mailchimp_campaign_id: string | null
+          occurrence_key: string
+          payload: Json
+          rule_id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          customer_email: string
+          customer_name?: string | null
+          error?: string | null
+          id?: string
+          mailchimp_campaign_id?: string | null
+          occurrence_key: string
+          payload?: Json
+          rule_id: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          customer_email?: string
+          customer_name?: string | null
+          error?: string | null
+          id?: string
+          mailchimp_campaign_id?: string | null
+          occurrence_key?: string
+          payload?: Json
+          rule_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conditional_email_sends_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "conditional_email_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conditional_email_settings: {
+        Row: {
+          global_daily_cap: number
+          id: string
+          kill_switch: boolean
+          quiet_hours_end: number
+          quiet_hours_start: number
+          updated_at: string
+        }
+        Insert: {
+          global_daily_cap?: number
+          id?: string
+          kill_switch?: boolean
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          updated_at?: string
+        }
+        Update: {
+          global_daily_cap?: number
+          id?: string
+          kill_switch?: boolean
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           admin_reply: string | null
