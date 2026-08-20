@@ -67,19 +67,19 @@ export const Navigation = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="w-full px-4 sm:px-6 lg:px-3 xl:px-4 2xl:px-6">
+      <div className="w-full px-4 sm:px-6 lg:px-1 xl:px-3 2xl:px-6">
         <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 lg:h-32">
           {/* Logo */}
           <Link to="/" className="flex items-center flex-shrink-0">
             <img 
               src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-20 sm:h-24 md:h-28 lg:h-30 xl:h-34 2xl:h-36 w-auto transition-all duration-300 hover:scale-105"
+              className="h-20 sm:h-24 md:h-28 lg:h-28 xl:h-32 2xl:h-36 w-auto transition-all duration-300 hover:scale-105"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1 lg:space-x-2 xl:space-x-4 2xl:space-x-6">
+          <div className="hidden lg:flex items-center space-x-0 lg:space-x-1 xl:space-x-3 2xl:space-x-5">
             {/* Home Link */}
             <Link
               to="/"
