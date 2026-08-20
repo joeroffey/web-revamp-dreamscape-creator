@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Menu, X, Calendar, User, LogOut, Settings, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/components/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
