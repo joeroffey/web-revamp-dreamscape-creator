@@ -17,6 +17,7 @@ export interface TriggerDefinition {
   kind: "event" | "sweep" | "manual";
   fields?: TriggerField[];
   summary: (cfg: Record<string, any>) => string;
+  description: string;
 }
 
 const n = (cfg: Record<string, any>, key: string, fallback: number) =>
