@@ -7,8 +7,12 @@ serve(async (req) => {
 
   try {
     const supabase = serviceClient();
-    const authError = await requireAdmin(req, supabase);
-    if (authError) return json({ error: authError.message }, authError.status);
+    const cronSecret = Deno.env.get("CONDITIONAL_EMAILS_CRON_SECRET");
+    const isInternal = !!cronSecret && req.headers.get("x-cron-secret") === cronSecret;
+    if (!isInternal) {
+      const authError = await requireAdmin(req, supabase);
+      if (authError) return json({ error: authError.message }, authError.status);
+    }
 
     const cfg = getMailchimpConfig();
 
