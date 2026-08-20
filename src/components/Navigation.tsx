@@ -67,19 +67,19 @@ export const Navigation = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="w-full px-4 sm:px-6 lg:px-4">
+      <div className="w-full px-4 sm:px-6 lg:px-3 xl:px-4 2xl:px-6">
         <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 lg:h-32">
           {/* Logo */}
           <Link to="/" className="flex items-center flex-shrink-0">
             <img 
               src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
               alt="Revitalise Hub Logo" 
-              className="h-20 sm:h-24 md:h-28 lg:h-36 xl:h-40 w-auto transition-all duration-300 hover:scale-105"
+              className="h-20 sm:h-24 md:h-28 lg:h-30 xl:h-34 2xl:h-36 w-auto transition-all duration-300 hover:scale-105"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4 xl:space-x-6 2xl:space-x-8">
+          <div className="hidden lg:flex items-center space-x-2 lg:space-x-3 xl:space-x-5 2xl:space-x-7">
             {/* Home Link */}
             <Link
               to="/"
@@ -126,9 +126,13 @@ export const Navigation = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="rounded-full px-4 lg:px-6 py-2 transition-all duration-300 hover:scale-105">
-                    <User className="h-4 w-4 mr-2" />
-                    {firstName || user.email?.split('@')[0] || 'Account'}
+                  <Button
+                    variant="outline"
+                    aria-label="Account menu"
+                    className="rounded-full p-2 lg:px-3 lg:py-2 xl:px-4 xl:py-2 transition-all duration-300 hover:scale-105"
+                  >
+                    <User className="h-4 w-4 xl:mr-2" />
+                    <span className="hidden xl:inline">{firstName || user.email?.split('@')[0] || 'Account'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -151,9 +155,13 @@ export const Navigation = () => {
               </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <Button variant="outline" className="rounded-full px-4 lg:px-6 py-2 transition-all duration-300 hover:scale-105">
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
+                <Button
+                  variant="outline"
+                  aria-label="Sign in"
+                  className="rounded-full p-2 lg:px-3 lg:py-2 xl:px-4 xl:py-2 transition-all duration-300 hover:scale-105"
+                >
+                  <User className="h-4 w-4 xl:mr-2" />
+                  <span className="hidden xl:inline">Sign In</span>
                 </Button>
               </Link>
             )}
