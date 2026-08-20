@@ -222,29 +222,40 @@ export const Navigation = () => {
                   {user ? (
                     <>
                       <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)}>
-                        <Button variant="outline" className="w-full rounded-full">
-                          <Settings className="h-4 w-4 mr-2" />
-                          {isAdmin ? "Admin Dashboard" : "Dashboard"}
-                        </Button>
+                        <button className="group flex items-center justify-center gap-2 w-full h-11 rounded-full bg-primary hover:bg-accent transition-all duration-300 border border-transparent shadow-md">
+                          <span className="w-8 h-8 flex items-center justify-center bg-primary-foreground rounded-full group-hover:scale-90 transition-transform duration-300">
+                            <Settings className="h-4 w-4 text-primary" />
+                          </span>
+                          <span className="text-xs font-semibold text-primary-foreground tracking-[0.08em] leading-none uppercase">
+                            {isAdmin ? "Admin Dashboard" : "Dashboard"}
+                          </span>
+                        </button>
                       </Link>
-                      <Button 
-                        variant="outline" 
-                        className="w-full rounded-full text-red-600"
+                      <button 
+                        className="group flex items-center justify-center gap-2 w-full h-11 rounded-full bg-primary/10 hover:bg-primary/20 transition-all duration-300 border border-transparent"
                         onClick={() => {
                           setIsOpen(false);
                           handleSignOut();
                         }}
                       >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign Out
-                      </Button>
+                        <span className="w-8 h-8 flex items-center justify-center bg-red-100 rounded-full group-hover:scale-90 transition-transform duration-300">
+                          <LogOut className="h-4 w-4 text-red-600" />
+                        </span>
+                        <span className="text-xs font-semibold text-red-600 tracking-[0.08em] leading-none uppercase">
+                          Sign Out
+                        </span>
+                      </button>
                     </>
                   ) : (
                     <Link to="/auth" onClick={() => setIsOpen(false)}>
-                      <Button variant="outline" className="w-full rounded-full">
-                        <User className="h-4 w-4 mr-2" />
-                        Sign In
-                      </Button>
+                      <button className="group flex items-center justify-center gap-2 w-full h-11 rounded-full bg-primary hover:bg-accent transition-all duration-300 border border-transparent shadow-md">
+                        <span className="w-8 h-8 flex items-center justify-center bg-primary-foreground rounded-full group-hover:scale-90 transition-transform duration-300">
+                          <User className="h-4 w-4 text-primary" />
+                        </span>
+                        <span className="text-xs font-semibold text-primary-foreground tracking-[0.08em] leading-none uppercase">
+                          Sign In
+                        </span>
+                      </button>
                     </Link>
                   )}
                 </div>
