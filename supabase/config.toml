@@ -55,3 +55,15 @@ verify_jwt = false
 verify_jwt = false
 [functions.migrate-unlimited-price]
 verify_jwt = false
+
+[functions.mailchimp-templates]
+verify_jwt = false
+
+[functions.conditional-emails-evaluate]
+verify_jwt = false
+
+[functions.conditional-emails-dispatch]
+verify_jwt = false
+
+[functions.conditional-emails-test-send]
+verify_jwt = false

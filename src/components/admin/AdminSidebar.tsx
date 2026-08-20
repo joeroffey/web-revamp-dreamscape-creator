@@ -26,6 +26,7 @@ import {
   CalendarDays,
   FileText,
   MessageSquare,
+  MailCheck,
   BarChart3,
   Settings,
   Home,
@@ -62,6 +63,7 @@ const groups: { label: string; items: NavItem[] }[] = [
       { href: '/admin/events', icon: CalendarDays, label: 'Events' },
       { href: '/admin/blog', icon: FileText, label: 'Blog' },
       { href: '/admin/messages', icon: MessageSquare, label: 'Messages', badgeKey: 'unreadMessages' },
+      { href: '/admin/conditional-emails', icon: MailCheck, label: 'Conditional Emails' },
     ],
   },
   {
