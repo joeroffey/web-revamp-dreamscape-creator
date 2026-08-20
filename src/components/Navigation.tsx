@@ -79,7 +79,7 @@ export const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-2 lg:space-x-3 xl:space-x-5 2xl:space-x-7">
+          <div className="hidden lg:flex items-center space-x-1 lg:space-x-2 xl:space-x-4 2xl:space-x-6">
             {/* Home Link */}
             <Link
               to="/"
@@ -129,10 +129,10 @@ export const Navigation = () => {
                   <Button
                     variant="outline"
                     aria-label="Account menu"
-                    className="rounded-full p-2 lg:px-3 lg:py-2 xl:px-4 xl:py-2 transition-all duration-300 hover:scale-105"
+                    className="rounded-full px-2 lg:px-3 xl:px-4 py-2 shrink-0 transition-all duration-300 hover:scale-105"
                   >
-                    <User className="h-4 w-4 2xl:mr-2" />
-                    <span className="hidden 2xl:inline max-w-[120px] truncate">{firstName || user.email?.split('@')[0] || 'Account'}</span>
+                    <User className="h-4 w-4 mr-2" />
+                    <span className="max-w-[120px] truncate">{firstName || user.email?.split('@')[0] || 'Account'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -158,10 +158,10 @@ export const Navigation = () => {
                 <Button
                   variant="outline"
                   aria-label="Sign in"
-                  className="rounded-full p-2 lg:px-3 lg:py-2 xl:px-4 xl:py-2 transition-all duration-300 hover:scale-105"
+                  className="rounded-full px-2 lg:px-3 xl:px-4 py-2 shrink-0 transition-all duration-300 hover:scale-105"
                 >
-                  <User className="h-4 w-4 2xl:mr-2" />
-                  <span className="hidden 2xl:inline">Sign In</span>
+                  <User className="h-4 w-4 mr-2" />
+                  Sign In
                 </Button>
               </Link>
             )}
