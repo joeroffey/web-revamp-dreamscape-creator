@@ -52,6 +52,18 @@ serve(async (req) => {
         const sub = await stripe.subscriptions.retrieve(membership.stripe_subscription_id);
         const shouldCancel = ["active", "trialing", "past_due", "unpaid", "paused"].includes(sub.status);
 
+        // Subscriptions attached to a schedule cannot be cancelled directly.
+        if (sub.schedule && sub.status !== "canceled") {
+          const scheduleId = typeof sub.schedule === "string" ? sub.schedule : (sub.schedule as { id: string }).id;
+          try {
+            await stripe.subscriptionSchedules.release(scheduleId);
+            console.log("Released subscription schedule:", scheduleId);
+          } catch (relErr) {
+            console.error("Schedule release failed, cancelling schedule instead:", relErr);
+            await stripe.subscriptionSchedules.cancel(scheduleId);
+          }
+        }
+
         if (shouldCancel && !sub.cancel_at_period_end) {
           await stripe.subscriptions.update(membership.stripe_subscription_id, {
             cancel_at_period_end: true,
