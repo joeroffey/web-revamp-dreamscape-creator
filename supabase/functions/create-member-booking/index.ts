@@ -63,20 +63,44 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "User ID mismatch" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Check user has an active membership with available credits
-    const { data: memberships, error: membershipError } = await supabase
+    // Check user has an active membership with available credits.
+    // Match by user_id first, then fall back to the account email so that
+    // memberships created before the account was linked still work.
+    const today = new Date().toISOString().split('T')[0];
+    const authEmail = (authData.user.email || customerEmail || "").toLowerCase();
+
+    let { data: memberships, error: membershipError } = await supabase
       .from('memberships')
       .select('*')
       .eq('user_id', userId)
       .eq('status', 'active')
-      .gte('end_date', new Date().toISOString().split('T')[0])
+      .gte('end_date', today)
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (membershipError) throw membershipError;
+
+    if ((!memberships || memberships.length === 0) && authEmail) {
+      const { data: byEmail, error: byEmailError } = await supabase
+        .from('memberships')
+        .select('*')
+        .is('user_id', null)
+        .ilike('customer_email', authEmail)
+        .eq('status', 'active')
+        .gte('end_date', today)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (byEmailError) throw byEmailError;
+      if (byEmail && byEmail.length > 0) {
+        memberships = byEmail;
+        await supabase.from('memberships').update({ user_id: userId, updated_at: new Date().toISOString() }).eq('id', byEmail[0].id);
+      }
+    }
+
     if (!memberships || memberships.length === 0) {
       throw new Error("No active membership found");
     }
+
 
     const membership = memberships[0];
     const isUnlimited = membership.membership_type === 'unlimited' || membership.sessions_per_week === 999;
