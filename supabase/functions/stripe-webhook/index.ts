@@ -990,6 +990,14 @@ serve(async (req) => {
             .eq('id', existingMembership.id);
 
           console.log('Membership renewed:', existingMembership.id, 'new end:', newEndDate);
+
+          fireConditionalEmailEvent({
+            type: 'membership_renewed',
+            email: existingMembership.customer_email || '',
+            name: existingMembership.customer_name,
+            user_id: existingMembership.user_id,
+            data: { membership_id: existingMembership.id, period_end: newEndDate, amount: (invoice.amount_paid || 0) / 100 },
+          });
         } else {
           console.error('DATA DRIFT: invoice.paid subscription_cycle received with NO matching membership record. subscriptionId=', subscriptionId, 'invoice=', invoice.id, 'customer=', invoice.customer, '— manual attention required.');
         }
@@ -1001,15 +1009,26 @@ serve(async (req) => {
       const subscription = event.data.object as Stripe.Subscription;
 
       // Mark membership as cancelled
-      await supabase
+      const { data: cancelledMemberships } = await supabase
         .from('memberships')
         .update({
           status: 'cancelled',
           is_auto_renew: false,
           updated_at: new Date().toISOString()
         })
-        .eq('stripe_subscription_id', subscription.id);
+        .eq('stripe_subscription_id', subscription.id)
+        .select('id, customer_email, customer_name, user_id');
       console.log("Membership cancelled via subscription.deleted:", subscription.id);
+
+      for (const m of cancelledMemberships || []) {
+        await fireConditionalEmailEvent({
+          type: 'membership_cancelled',
+          email: m.customer_email || '',
+          name: m.customer_name,
+          user_id: m.user_id,
+          data: { membership_id: m.id },
+        });
+      }
     }
 
     // Handle subscription updates (including cancel_at_period_end toggles and pauses)
