@@ -55,10 +55,11 @@ serve(async (req) => {
       .gte('end_date', new Date().toISOString().split('T')[0]);
 
     if (userId) {
-      query = query.eq('user_id', userId);
+      query = query.or(`user_id.eq.${userId},and(user_id.is.null,customer_email.eq.${callerEmail})`);
     } else if (email) {
       query = query.eq('customer_email', email);
     }
+
 
     const { data: memberships, error } = await query.order('created_at', { ascending: false }).limit(1);
 
