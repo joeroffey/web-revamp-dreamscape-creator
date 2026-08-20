@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { TimeSlotPicker } from "@/components/TimeSlotPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getFunctionErrorMessage } from "@/lib/functionError";
+
 
 interface Props {
   open: boolean;
@@ -34,9 +36,11 @@ export const RescheduleBookingDialog = ({ open, onOpenChange, bookingId, booking
       onSuccess();
       onOpenChange(false);
     } catch (e: any) {
-      toast({ title: "Could not reschedule", description: e.message || "Please try again.", variant: "destructive" });
+      const description = await getFunctionErrorMessage(e);
+      toast({ title: "Could not reschedule", description, variant: "destructive" });
     } finally {
       setSubmitting(false);
+
     }
   };
 
@@ -51,7 +55,7 @@ export const RescheduleBookingDialog = ({ open, onOpenChange, bookingId, booking
         </DialogHeader>
 
         <TimeSlotPicker
-          serviceType={bookingType === "private" ? "private" : "combined"}
+          serviceType="combined"
           onSlotSelect={(slotId) => setSelectedSlotId(slotId)}
           selectedSlotId={selectedSlotId}
         />

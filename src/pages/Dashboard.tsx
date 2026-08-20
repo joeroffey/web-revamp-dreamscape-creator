@@ -16,6 +16,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RescheduleBookingDialog } from "@/components/RescheduleBookingDialog";
+import { getFunctionErrorMessage } from "@/lib/functionError";
+
 
 interface Booking {
   id: string;
@@ -243,7 +245,9 @@ const Dashboard = () => {
       setCancelTarget(null);
       fetchUserData();
     } catch (e: any) {
-      toast({ title: "Could not cancel", description: e.message || "Please try again.", variant: "destructive" });
+      const description = await getFunctionErrorMessage(e);
+      toast({ title: "Could not cancel", description, variant: "destructive" });
+
     } finally {
       setCancelling(false);
     }
