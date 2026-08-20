@@ -55,7 +55,10 @@ serve(async (req) => {
       .gte('end_date', new Date().toISOString().split('T')[0]);
 
     if (userId) {
-      query = query.or(`user_id.eq.${userId},and(user_id.is.null,customer_email.eq.${callerEmail})`);
+      // Include memberships not yet linked to an account but matching the caller's own email
+      query = (userId === authData.user.id && callerEmail)
+        ? query.or(`user_id.eq.${userId},and(user_id.is.null,customer_email.eq.${callerEmail})`)
+        : query.eq('user_id', userId);
     } else if (email) {
       query = query.eq('customer_email', email);
     }
