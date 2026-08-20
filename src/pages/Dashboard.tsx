@@ -16,6 +16,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RescheduleBookingDialog } from "@/components/RescheduleBookingDialog";
+import { getFunctionErrorMessage } from "@/lib/functionError";
+
 
 interface Booking {
   id: string;
