@@ -125,11 +125,11 @@ export const Navigation = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="group flex items-center gap-2 h-10 pl-1.5 pr-4 rounded-full bg-primary hover:bg-accent transition-all duration-300 border border-transparent shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button className="group flex items-center justify-center 2xl:justify-start h-10 w-10 2xl:w-auto 2xl:pl-1.5 2xl:pr-4 2xl:gap-2 rounded-full bg-primary hover:bg-accent transition-all duration-300 border border-transparent shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <span className="w-7 h-7 flex items-center justify-center bg-primary-foreground rounded-full group-hover:scale-90 transition-transform duration-300">
                       <User className="h-4 w-4 text-primary" />
                     </span>
-                    <span className="text-[11px] font-semibold text-primary-foreground tracking-[0.08em] leading-none uppercase whitespace-nowrap max-w-[80px] truncate">
+                    <span className="hidden 2xl:inline text-[11px] font-semibold text-primary-foreground tracking-[0.08em] leading-none uppercase whitespace-nowrap max-w-[80px] truncate">
                       {firstName || user.email?.split('@')[0] || 'Account'}
                     </span>
                   </button>
