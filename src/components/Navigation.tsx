@@ -131,8 +131,8 @@ export const Navigation = () => {
                     aria-label="Account menu"
                     className="rounded-full p-2 lg:px-3 lg:py-2 xl:px-4 xl:py-2 transition-all duration-300 hover:scale-105"
                   >
-                    <User className="h-4 w-4 xl:mr-2" />
-                    <span className="hidden xl:inline">{firstName || user.email?.split('@')[0] || 'Account'}</span>
+                    <User className="h-4 w-4 2xl:mr-2" />
+                    <span className="hidden 2xl:inline max-w-[120px] truncate">{firstName || user.email?.split('@')[0] || 'Account'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -160,8 +160,8 @@ export const Navigation = () => {
                   aria-label="Sign in"
                   className="rounded-full p-2 lg:px-3 lg:py-2 xl:px-4 xl:py-2 transition-all duration-300 hover:scale-105"
                 >
-                  <User className="h-4 w-4 xl:mr-2" />
-                  <span className="hidden xl:inline">Sign In</span>
+                  <User className="h-4 w-4 2xl:mr-2" />
+                  <span className="hidden 2xl:inline">Sign In</span>
                 </Button>
               </Link>
             )}
