@@ -44,7 +44,7 @@ export const Navigation = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Our Hub", href: "/our-hub" },
-    { name: "Red Light Therapy", href: "/red-light-therapy" },
+    { name: "Red Light", href: "/red-light-therapy" },
     { name: "Your Visit", href: "/your-visit" },
     { name: "Memberships", href: "/memberships" },
     { name: "Fitness & Recovery", href: "/fitness-recovery" },
@@ -82,14 +82,14 @@ export const Navigation = () => {
             {/* Home Link */}
             <Link
               to="/"
-              className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+              className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-xs xl:text-sm tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
             >
               Home
             </Link>
 
             {/* About Dropdown */}
             <div className="relative group">
-              <button className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap flex items-center gap-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 group-hover:after:w-full">
+              <button className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-xs xl:text-sm tracking-wide uppercase whitespace-nowrap flex items-center gap-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 group-hover:after:w-full">
                 About
                 <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
               </button>
@@ -113,7 +113,7 @@ export const Navigation = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-xs xl:text-sm tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
               >
                 {item.name}
               </Link>
