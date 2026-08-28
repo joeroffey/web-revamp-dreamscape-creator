@@ -211,7 +211,33 @@ export default function ModernCustomerManagement() {
 
       if (error) throw error;
 
-      toast.success(mode === 'create' ? 'Customer created' : 'Customer updated');
+      if (mode === 'create') {
+        let suffix = '';
+        try {
+          const { data: result, error: fnError } = await supabase.functions.invoke('provision-customer-account', {
+            body: {
+              email: payload.email,
+              full_name: payload.full_name,
+              phone: payload.phone,
+              sendEmail: true,
+            },
+          });
+          if (fnError) throw fnError;
+          if (result?.created && result?.emailSent) {
+            suffix = ' — account set up and password email sent';
+          } else if (result?.alreadyExisted) {
+            suffix = ' — account already existed';
+          } else {
+            suffix = ' — but account/email failed';
+          }
+        } catch (provisionError) {
+          console.error('Account provisioning error:', provisionError);
+          suffix = ' — but account/email failed';
+        }
+        toast.success(`Customer created${suffix}`);
+      } else {
+        toast.success('Customer updated');
+      }
       queryClient.invalidateQueries({ queryKey: ['modern-customers'] });
       setCreateCustomerOpen(false);
       setEditCustomerOpen(false);
@@ -221,6 +247,30 @@ export default function ModernCustomerManagement() {
       toast.error(e?.message || 'Failed to save customer');
     }
   };
+
+  const resendPasswordSetup = async (customer: Customer) => {
+    try {
+      const { data: result, error: fnError } = await supabase.functions.invoke('provision-customer-account', {
+        body: {
+          email: customer.email,
+          full_name: customer.full_name,
+          phone: customer.phone,
+          sendEmail: true,
+          forceResend: true,
+        },
+      });
+      if (fnError) throw fnError;
+      if (result?.emailSent) {
+        toast.success(`Password setup email sent to ${customer.email}`);
+      } else {
+        toast.error(result?.error || 'Could not send password setup email');
+      }
+    } catch (e: any) {
+      console.error('Resend password setup error:', e);
+      toast.error(e?.message || 'Failed to send password setup email');
+    }
+  };
+
 
   const deleteCustomer = async (customer: Customer) => {
     if (customer.isDerived) {
