@@ -63,12 +63,24 @@ serve(async (req) => {
 
     const cronSecret = Deno.env.get("CONDITIONAL_EMAILS_CRON_SECRET");
     const providedSecret = req.headers.get("x-cron-secret");
-    const internal = !!cronSecret && providedSecret === cronSecret;
+    let internal = !!cronSecret && providedSecret === cronSecret;
+
+    // One-off maintenance token stored in system_settings (removed after the backfill run)
+    if (!internal && providedSecret) {
+      const { data: tokenRow } = await supabase
+        .from("system_settings")
+        .select("setting_value")
+        .eq("setting_key", "backfill_accounts_token")
+        .maybeSingle();
+      const stored = (tokenRow?.setting_value as any)?.token;
+      if (stored && stored === providedSecret) internal = true;
+    }
 
     if (!internal) {
       const authError = await requireAdmin(req, supabase);
       if (authError) return json({ error: authError.message }, authError.status);
     }
+
 
     const payload = await req.json().catch(() => ({}));
     const dryRun = payload?.dryRun === true;
