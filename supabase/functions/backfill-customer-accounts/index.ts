@@ -95,19 +95,43 @@ serve(async (req) => {
       if (users.length < 200) break;
     }
 
-    const { data: customers, error: custError } = await supabase
-      .from("customers")
-      .select("email, full_name, phone")
-      .order("created_at", { ascending: true });
-    if (custError) return json({ error: custError.message }, 500);
+    // Fetch all customers (paginated past the 1000-row default)
+    const customers: any[] = [];
+    for (let from = 0; from < 20000; from += 1000) {
+      const { data, error: custError } = await supabase
+        .from("customers")
+        .select("email, full_name, phone")
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      if (custError) return json({ error: custError.message }, 500);
+      customers.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
 
-    const missing = (customers ?? [])
-      .filter((c: any) => c.email && !existing.has(String(c.email).toLowerCase()))
-      .slice(0, limit);
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalid: any[] = [];
+    const missing: any[] = [];
+    for (const c of customers) {
+      const email = String(c.email ?? "").trim();
+      if (!email || existing.has(email.toLowerCase())) continue;
+      if (!emailRe.test(email)) {
+        invalid.push({ email, name: c.full_name });
+        continue;
+      }
+      if (missing.length < limit) missing.push(c);
+    }
 
     if (dryRun) {
-      return json({ dryRun: true, totalCustomers: customers?.length ?? 0, missingCount: missing.length, missing });
+      return json({
+        dryRun: true,
+        totalCustomers: customers.length,
+        missingCount: missing.length,
+        missing,
+        invalidCount: invalid.length,
+        invalid,
+      });
     }
+
 
     const emailed: any[] = [];
     const failed: any[] = [];
@@ -158,7 +182,10 @@ serve(async (req) => {
     }
 
     return json({
-      totalCustomers: customers?.length ?? 0,
+      totalCustomers: customers.length,
+      invalidCount: invalid.length,
+      invalid,
+
       processed: missing.length,
       emailedCount: emailed.length,
       emailed,
