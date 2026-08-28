@@ -847,6 +847,11 @@ export default function ModernCustomerManagement() {
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => resendPasswordSetup(customer)}>
+                                <KeyRound className="h-4 w-4 mr-2" />
+                                Resend password setup email
+                              </DropdownMenuItem>
+
                               {!customer.isDerived && (
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
