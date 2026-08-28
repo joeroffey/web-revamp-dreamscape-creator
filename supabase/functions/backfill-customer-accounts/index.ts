@@ -182,7 +182,10 @@ serve(async (req) => {
     }
 
     return json({
-      totalCustomers: customers?.length ?? 0,
+      totalCustomers: customers.length,
+      invalidCount: invalid.length,
+      invalid,
+
       processed: missing.length,
       emailedCount: emailed.length,
       emailed,
