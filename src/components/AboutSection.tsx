@@ -20,47 +20,47 @@ interface Benefit {
 }
 
 const benefits: Benefit[] = [
-  { 
-    icon: Zap, 
-    title: "Boosts Recovery", 
-    description: "Reduces muscle soreness",
-    detail: "Accelerate your body's natural healing process and get back to peak performance faster."
+  {
+    icon: Zap,
+    title: "Supports Recovery",
+    description: "May ease muscle soreness",
+    detail: "Many active people use contrast therapy to help them feel ready for their next training session sooner."
   },
-  { 
-    icon: Heart, 
-    title: "Improves Circulation", 
-    description: "Enhances blood flow",
-    detail: "Promote cardiovascular health and optimize oxygen delivery throughout your body."
+  {
+    icon: Heart,
+    title: "Gets Blood Flowing",
+    description: "The hot–cold contrast",
+    detail: "Moving between heat and cold makes blood vessels widen and narrow — part of why so many guests leave feeling energised."
   },
-  { 
-    icon: Leaf, 
-    title: "Stress Relief", 
-    description: "Nervous system regulation",
-    detail: "Reset your parasympathetic nervous system and find deep, lasting calm."
+  {
+    icon: Leaf,
+    title: "Stress Relief",
+    description: "A calmer nervous system",
+    detail: "The slow breathing of the ice bath and the warmth of the sauna leave many guests feeling deeply calm."
   },
-  { 
-    icon: Brain, 
-    title: "Mental Clarity", 
-    description: "Enhances focus",
-    detail: "Sharpen your mind and unlock heightened concentration and cognitive performance."
+  {
+    icon: Brain,
+    title: "Mental Clarity",
+    description: "A clearer head",
+    detail: "Guests often describe feeling alert and clear-headed after a session."
   },
-  { 
-    icon: Flame, 
-    title: "Reduces Inflammation", 
-    description: "Manages joint stiffness",
-    detail: "Combat chronic inflammation and support joint health naturally."
+  {
+    icon: Flame,
+    title: "Joint Comfort",
+    description: "May ease stiffness",
+    detail: "Some people find regular cold water immersion helps with stiffness. If you have a medical condition, speak to your GP first."
   },
-  { 
-    icon: Moon, 
-    title: "Better Sleep", 
-    description: "Promotes sleep quality",
-    detail: "Improve your sleep architecture for deeper, more restorative rest."
+  {
+    icon: Moon,
+    title: "Better Sleep",
+    description: "Unwind before bed",
+    detail: "Many guests say they sleep more soundly after an evening session."
   },
-  { 
-    icon: Shield, 
-    title: "Builds Resilience", 
+  {
+    icon: Shield,
+    title: "Builds Resilience",
     description: "Physical & mental stress",
-    detail: "Train your body and mind to adapt and thrive under pressure."
+    detail: "Regularly stepping into the cold is a simple way to practise staying calm under pressure."
   },
 ];
 

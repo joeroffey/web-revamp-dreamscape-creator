@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { openCookieSettings } from "@/lib/consent";
 
 const CookiePolicy = () => {
   return (
@@ -52,6 +53,16 @@ const CookiePolicy = () => {
                   <p>
                     You have the right to decide whether to accept or reject cookies. You can exercise your cookie rights by setting your preferences in the Cookie Consent Manager. The Cookie Consent Manager allows you to select which categories of cookies you accept or reject.
                   </p>
+
+                  <p>
+                    <button
+                      type="button"
+                      onClick={openCookieSettings}
+                      className="rounded-full border border-foreground/30 px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-foreground/5"
+                    >
+                      Change your cookie settings
+                    </button>
+                  </p>
                   
                   <p>
                     You can also set or amend your web browser controls to accept or refuse cookies. If you choose to reject cookies, you may still use our website though your access to some functionality and areas of our website may be restricted.
@@ -63,6 +74,12 @@ const CookiePolicy = () => {
                   
                   <p>
                     In addition to our own cookies, we may also use various third-party cookies to report usage statistics of the website, deliver advertisements on and through the website, and so on. These cookies are served by third parties and we have no control over these cookies.
+                  </p>
+
+                  <p>
+                    With your permission, these are Google Analytics and Microsoft Clarity (analytics), and Google Ads
+                    (marketing), loaded through Google Tag Manager. None of them are used until you agree, and you can
+                    change your mind at any time using the cookie settings link at the bottom of every page.
                   </p>
                 </div>
 

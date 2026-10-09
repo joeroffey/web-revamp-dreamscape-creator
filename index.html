@@ -8,19 +8,53 @@
     <meta name="author" content="Revitalise Hub" />
     <link rel="icon" href="/favicon.png" type="image/png">
 
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-M4QXFBLS');</script>
-    <!-- End Google Tag Manager -->
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-181WZFQL8F"></script>
+    <!-- Cookie consent (Google Consent Mode v2). Every signal starts as "denied";
+         a visitor's saved choice (src/lib/consent.ts) is re-applied on each visit.
+         Google Analytics / Ads only set cookies once allowed, and Google Tag Manager
+         (which also loads Microsoft Clarity) is only loaded after consent. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'granted',
+        security_storage: 'granted',
+        wait_for_update: 500
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('set', 'url_passthrough', true);
+
+      // Google Tag Manager — loaded only once the visitor has agreed.
+      window.rhLoadTags = function () {
+        if (window.rhTagsLoaded) return;
+        window.rhTagsLoaded = true;
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-M4QXFBLS');
+      };
+
+      try {
+        var rhConsent = JSON.parse(localStorage.getItem('rh-consent') || 'null');
+        if (rhConsent && rhConsent.v === 1) {
+          gtag('consent', 'update', {
+            analytics_storage: rhConsent.analytics ? 'granted' : 'denied',
+            ad_storage: rhConsent.marketing ? 'granted' : 'denied',
+            ad_user_data: rhConsent.marketing ? 'granted' : 'denied',
+            ad_personalization: rhConsent.marketing ? 'granted' : 'denied'
+          });
+          if (rhConsent.analytics || rhConsent.marketing) window.rhLoadTags();
+        }
+      } catch (e) {}
+    </script>
+
+    <!-- Google tag (gtag.js) — respects the consent settings above -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-181WZFQL8F"></script>
+    <script>
       gtag('js', new Date());
       gtag('config', 'G-181WZFQL8F');
     </script>
@@ -41,10 +75,6 @@
   </head>
 
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M4QXFBLS"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

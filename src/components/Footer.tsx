@@ -3,6 +3,8 @@ import { Instagram, Facebook, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FACEBOOK_URL, INSTAGRAM_URL, LOGO_SRC, OPENING_HOURS } from "@/lib/site";
 import { LocalBusinessSchema } from "@/components/LocalBusinessSchema";
+import { CookieConsent } from "@/components/CookieConsent";
+import { openCookieSettings } from "@/lib/consent";
 
 export const Footer = () => {
   const scrollToTop = () => {
@@ -31,6 +33,7 @@ export const Footer = () => {
   return (
     <footer className="text-foreground" style={{ backgroundColor: 'hsl(var(--footer-background))' }}>
       <LocalBusinessSchema />
+      <CookieConsent />
       <div className="max-w-7xl mx-auto px-6">
         {/* Main Footer Content */}
         <div className="py-16">
@@ -200,6 +203,13 @@ export const Footer = () => {
               >
                 Cookie Policy
               </Link>
+              <button
+                type="button"
+                onClick={openCookieSettings}
+                className="text-foreground/70 hover:text-foreground transition-colors"
+              >
+                Cookie settings
+              </button>
             </div>
           </div>
         </div>

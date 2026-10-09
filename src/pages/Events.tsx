@@ -62,21 +62,14 @@ const Events = () => {
     });
   };
 
-  // Split events into upcoming and past using their (free-text) dates.
+  // Every published event is shown exactly as entered in the admin area. The
+  // dates are only parsed (behind the scenes) so that search engines get Event
+  // structured data for sessions that are still in the future.
   const now = new Date();
-  const dated = events.map((event) => ({ event, ...splitEventDates(event, now) }));
-  const upcomingEvents = dated.filter(
-    ({ upcoming, past }) => upcoming.length > 0 || past.length === 0
-  );
-  const pastEvents = dated
-    .filter(({ upcoming, past }) => upcoming.length === 0 && past.length > 0)
-    .sort(
-      (a, b) =>
-        Math.max(...b.past.map((d) => d.date.getTime())) - Math.max(...a.past.map((d) => d.date.getTime()))
-    );
+  const scheduled = events.map((event) => ({ event, ...splitEventDates(event, now) }));
 
-  // Event structured data: one entry per upcoming dated session.
-  const eventSchema = upcomingEvents.flatMap(({ event, upcoming }) =>
+  // Event structured data: one entry per future dated session.
+  const eventSchema = scheduled.flatMap(({ event, upcoming }) =>
     upcoming
       .filter((d) => d.date)
       .map((d) => ({
@@ -116,13 +109,13 @@ const Events = () => {
       {eventSchema.length > 0 && <JsonLd data={eventSchema} />}
       <Navigation />
 
-      <main className="rh-main pb-20">
+      <main className="rh-main">
         {/* Hero Section */}
         <section className="py-16 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4 text-center">
             <span className="rh-rule mb-8" aria-hidden="true" />
             <h1 className="rh-display text-foreground mb-6">
-              Events at Revitalise Hub in Lymington
+              Events at Revitalise Hub, Lymington
             </h1>
             <p className="rh-lede max-w-3xl mx-auto">
               Guided experiences combining movement, breath, recovery, and contrast therapy.
@@ -172,14 +165,14 @@ const Events = () => {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : upcomingEvents.length === 0 ? (
+        ) : events.length === 0 ? (
           <section className="py-12">
             <div className="container mx-auto px-4 text-center">
               <p className="text-muted-foreground text-lg">No upcoming events at the moment. Check back soon!</p>
             </div>
           </section>
         ) : (
-          upcomingEvents.map(({ event, upcoming }, index) => (
+          events.map((event, index) => (
             <section key={event.id} className="py-12 md:py-16">
               <div className="container mx-auto px-4">
                 <div className="max-w-6xl mx-auto">
@@ -223,10 +216,10 @@ const Events = () => {
                   </div>
 
                   {/* Dates */}
-                  {upcoming.length > 0 && (
+                  {event.event_dates && event.event_dates.length > 0 && (
                     <div className="bg-muted/30 border border-border/60 rounded-2xl p-6 md:p-8 mb-12">
                       <h4 className="text-xl font-light mb-6 text-center">
-                        {upcoming.length > 1 ? 'Upcoming Dates' : 'Upcoming Date'}
+                        {event.event_dates.length > 1 ? 'Upcoming Dates' : 'Upcoming Date'}
                       </h4>
                       {event.event_time && (
                         <p className="text-center text-muted-foreground mb-6 flex items-center justify-center gap-2">
@@ -235,17 +228,13 @@ const Events = () => {
                         </p>
                       )}
                       <ul className="flex flex-wrap justify-center gap-3">
-                        {upcoming.map(({ label, date }) => (
+                        {event.event_dates.map((date) => (
                           <li
-                            key={label}
+                            key={date}
                             className="flex items-center gap-2 bg-background rounded-full px-4 py-2 border border-border"
                           >
                             <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                            {date ? (
-                              <time dateTime={toSchemaDate(date)} className="text-sm">{label}</time>
-                            ) : (
-                              <span className="text-sm">{label}</span>
-                            )}
+                            <span className="text-sm">{date}</span>
                           </li>
                         ))}
                       </ul>
@@ -277,57 +266,13 @@ const Events = () => {
               </div>
 
               {/* Divider between events */}
-              {index < upcomingEvents.length - 1 && (
+              {index < events.length - 1 && (
                 <div className="container mx-auto px-4 mt-16">
                   <div className="max-w-4xl mx-auto border-t border-border" />
                 </div>
               )}
             </section>
           ))
-        )}
-
-        {/* Past events */}
-        {!loading && pastEvents.length > 0 && (
-          <section className="py-16 md:py-20" aria-labelledby="past-events-heading">
-            <div className="container mx-auto px-4">
-              <div className="max-w-5xl mx-auto">
-                <h2 id="past-events-heading" className="text-2xl md:text-3xl font-light tracking-tight text-center mb-10">
-                  Past Events
-                </h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pastEvents.map(({ event, past }) => (
-                    <article
-                      key={event.id}
-                      className="bg-background/50 border border-border/70 rounded-2xl overflow-hidden"
-                    >
-                      {event.image_url && (
-                        <div className="aspect-[4/3] overflow-hidden">
-                          <img
-                            src={optimisedImage(event.image_url, 600)}
-                            alt={event.title}
-                            width={800}
-                            height={600}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover object-center opacity-90"
-                          />
-                        </div>
-                      )}
-                      <div className="p-6">
-                        <h3 className="text-lg font-light text-foreground">{event.title}</h3>
-                        {event.instructor && (
-                          <p className="text-sm text-muted-foreground mt-1">With {event.instructor}</p>
-                        )}
-                        <p className="rh-eyebrow mt-4">
-                          {past.map((d) => d.label).join(" · ")}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
         )}
 
         {/* Booking CTA */}

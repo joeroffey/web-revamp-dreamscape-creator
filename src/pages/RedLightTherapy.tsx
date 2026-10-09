@@ -26,14 +26,14 @@ const benefits = [
     points: [
       "Supports muscle recovery",
       "Helps reduce soreness and fatigue",
-      "Enhances circulation",
+      "May support circulation",
     ],
   },
   {
     icon: Zap,
     title: "Energy & Cellular Function",
     points: [
-      "Boosts natural energy production",
+      "May support natural energy production",
       "Supports cellular repair processes",
       "Helps the body recover more efficiently",
     ],
@@ -142,15 +142,22 @@ const RedLightTherapy = () => {
               Light that works at a cellular level
             </h2>
             <p className="text-lg text-muted-foreground font-light leading-relaxed mb-4">
-              Red light therapy uses specific wavelengths of light to penetrate the skin and
-              support your body at a cellular level. This process helps stimulate energy
-              production within your cells, promoting faster recovery, improved skin health,
-              and reduced inflammation.
+              Red light therapy uses specific wavelengths of red and near-infrared light that
+              reach into the skin. Research suggests this light may help stimulate energy
+              production within your cells, which is why it&apos;s popular for recovery, skin
+              health and easing inflammation.
             </p>
             <p className="text-lg text-muted-foreground font-light leading-relaxed">
-              Regular use can support muscle recovery, enhance collagen production and
-              contribute to overall wellbeing — making it the perfect addition to your
-              contrast therapy routine.
+              Studies suggest regular use may support muscle recovery and collagen production,
+              and many guests simply find it a calm, warming way to finish their sauna and ice
+              bath routine.{" "}
+              <Link
+                to="/blog/red-light-infrared-therapy-benefits"
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                Read what the research says
+              </Link>
+              .
             </p>
           </div>
         </section>
@@ -210,15 +217,15 @@ const RedLightTherapy = () => {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  Increases cellular energy (ATP production)
+                  Thought to increase cellular energy (ATP production)
                 </li>
                 <li className="flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  Improves circulation
+                  May improve local circulation
                 </li>
                 <li className="flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  Supports tissue repair and recovery
+                  May support tissue repair and recovery
                 </li>
               </ul>
             </div>

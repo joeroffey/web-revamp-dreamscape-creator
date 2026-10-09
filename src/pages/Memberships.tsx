@@ -2,6 +2,8 @@ import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { FAQSection } from "@/components/FAQSection";
 import { SEOHead } from "@/components/SEOHead";
+import { JsonLd } from "@/components/JsonLd";
+import { BUSINESS_ID, SITE_URL } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -390,6 +392,42 @@ const Memberships = () => {
   return (
     <div className="rh-site min-h-screen">
       <SEOHead title="Ice Bath & Sauna Membership Lymington" description="Join Revitalise Hub with flexible membership plans. Unlimited or weekly contrast therapy sessions in Lymington, Hampshire." path="/memberships" />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "Contrast therapy memberships",
+          serviceType: "Ice bath and sauna membership",
+          provider: { "@id": BUSINESS_ID },
+          areaServed: "Lymington, Hampshire",
+          url: `${SITE_URL}/memberships`,
+          offers: [
+            {
+              "@type": "Offer",
+              name: "Introductory offer – 3 sessions",
+              description: "3 contrast therapy sessions for first-time customers, to use within 3 months.",
+              price: "35.00",
+              priceCurrency: "GBP",
+              url: `${SITE_URL}/memberships`,
+            },
+            ...membershipPlans.map((plan) => ({
+              "@type": "Offer",
+              name: plan.name,
+              description: plan.description,
+              price: plan.price.toFixed(2),
+              priceCurrency: "GBP",
+              url: `${SITE_URL}/memberships`,
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                price: plan.price.toFixed(2),
+                priceCurrency: "GBP",
+                billingDuration: "P1M",
+                unitText: "month",
+              },
+            })),
+          ],
+        }}
+      />
       <Navigation />
       
       <main className="rh-main bg-gallery">
@@ -604,12 +642,101 @@ const Memberships = () => {
             </div>
           </div>
         </section>
+        {/* Compare plans */}
+        <section className="py-20 md:py-24 bg-background" aria-labelledby="compare-heading">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="text-center mb-10">
+              <span className="rh-eyebrow mb-4">Compare</span>
+              <h2 id="compare-heading" className="text-3xl md:text-4xl font-light tracking-tight text-foreground">
+                Which option is right for you?
+              </h2>
+            </div>
+            <div className="overflow-x-auto rounded-2xl border border-border bg-background/60">
+              <table className="w-full min-w-[560px] text-left text-sm md:text-base">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th scope="col" className="p-4 md:p-5 font-normal text-muted-foreground w-[28%]">
+                      <span className="sr-only">Feature</span>
+                    </th>
+                    <th scope="col" className="p-4 md:p-5 font-medium text-foreground">Introductory offer</th>
+                    {membershipPlans.map((plan) => (
+                      <th key={plan.id} scope="col" className="p-4 md:p-5 font-medium text-foreground">
+                        {plan.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="text-foreground/90">
+                  <tr className="border-b border-border/70">
+                    <th scope="row" className="p-4 md:p-5 font-normal text-muted-foreground">Price</th>
+                    <td className="p-4 md:p-5">£35 one-off</td>
+                    {membershipPlans.map((plan) => (
+                      <td key={plan.id} className="p-4 md:p-5">
+                        £{plan.price} a month
+                        {plan.promo && <span className="block text-xs text-muted-foreground">Limited-time price</span>}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border/70">
+                    <th scope="row" className="p-4 md:p-5 font-normal text-muted-foreground">Sessions</th>
+                    <td className="p-4 md:p-5">3 sessions</td>
+                    {membershipPlans.map((plan) => (
+                      <td key={plan.id} className="p-4 md:p-5">
+                        {plan.sessions > 0 ? `${plan.sessions} per month` : "Unlimited"}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border/70">
+                    <th scope="row" className="p-4 md:p-5 font-normal text-muted-foreground">Who can buy</th>
+                    <td className="p-4 md:p-5">First-time customers</td>
+                    {membershipPlans.map((plan) => (
+                      <td key={plan.id} className="p-4 md:p-5">Anyone</td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border/70">
+                    <th scope="row" className="p-4 md:p-5 font-normal text-muted-foreground">Commitment</th>
+                    <td className="p-4 md:p-5">Use within 3 months</td>
+                    {membershipPlans.map((plan) => (
+                      <td key={plan.id} className="p-4 md:p-5">Monthly, 30-day cancellation</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th scope="row" className="p-4 md:p-5 font-normal text-muted-foreground">Red light therapy</th>
+                    <td className="p-4 md:p-5">Included</td>
+                    {membershipPlans.map((plan) => (
+                      <td key={plan.id} className="p-4 md:p-5">Included</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-10 grid md:grid-cols-3 gap-6 text-muted-foreground leading-relaxed">
+              <p>
+                <span className="block text-foreground font-medium mb-1">New to contrast therapy?</span>
+                The introductory offer is the easiest way to try it — three sessions for £35 to use within three
+                months.
+              </p>
+              <p>
+                <span className="block text-foreground font-medium mb-1">Visiting about once a week?</span>
+                The 4 sessions per month plan gives you a steady routine, with sessions to use any time in your
+                billing period.
+              </p>
+              <p>
+                <span className="block text-foreground font-medium mb-1">Want to come more often?</span>
+                The Unlimited Membership lets you book as many sessions as you like each month.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <FAQSection
           faqs={[
             { question: "Can I cancel my membership anytime?", answer: "Yes, all memberships come with a flexible 30-day cancellation policy. Simply contact us to cancel, and your membership will end at the close of your current billing period." },
             { question: "What happens if I miss a session?", answer: "Sessions are allocated per billing period. Unused sessions do not roll over to the next period, so we encourage you to make the most of your allocation each month." },
             { question: "Can I upgrade or downgrade my membership?", answer: "Yes, you can change your membership plan at any time. Contact us and we'll adjust your subscription from your next billing cycle." },
             { question: "Is there a joining fee?", answer: "No, there are no joining fees or hidden costs. You simply pay the monthly membership price and can cancel with 30 days' notice." },
+            { question: "Is red light therapy included with membership sessions?", answer: "Yes. Complimentary red light therapy is included with every session, whichever membership you choose." },
+            { question: "Can I try contrast therapy before committing to a membership?", answer: "Yes. First-time customers can buy our introductory offer — 3 sessions for £35, to use within 3 months — before choosing a monthly plan." },
             { question: "Can I share my membership with someone else?", answer: "Memberships are for personal use only and cannot be shared or transferred to other people. Each person needs their own membership to book sessions." },
           ]}
           title="Membership FAQs"

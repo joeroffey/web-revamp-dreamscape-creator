@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { FAQSection } from "@/components/FAQSection";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -178,7 +179,7 @@ const FitnessRecovery = () => {
                         </p>
                         <ul className="text-sm text-muted-foreground space-y-1">
                           <li>• Recommended usage plan tailored to your fitness routine</li>
-                          <li>• Speed up recovery, reduce inflammation, and boost performance</li>
+                          <li>• Built-in recovery time to support your training between sessions</li>
                         </ul>
                       </div>
                     </div>
@@ -187,12 +188,72 @@ const FitnessRecovery = () => {
               </div>
 
               <div className="text-center">
-                <Link to="/contact">
-                  <Button size="lg" className="text-lg px-8 py-6">
+                <Button asChild size="lg" className="text-lg px-8 py-6 rounded-full">
+                  <Link to="/contact">
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Contact Us Now
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Who it's for + how the 8 weeks work */}
+        <section className="py-20 md:py-24 bg-gallery" aria-labelledby="fitness-how-heading">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+              <div className="space-y-5">
+                <span className="rh-eyebrow">Who it&apos;s for</span>
+                <h2 className="text-3xl md:text-4xl font-light tracking-tight text-foreground">
+                  Training and recovery, planned together
+                </h2>
+                <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
+                  The Fitness &amp; Recovery package is for anyone who wants a clear plan and someone to keep them
+                  on track — whether you&apos;re building strength, working on fat loss, preparing for a HYROX race
+                  or simply getting fitter. Your coach plans your training and nutrition around your lifestyle, and
+                  your recovery happens here at the hub in Lymington.
+                </p>
+                <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
+                  Because ice bath and sauna access is unlimited for the full eight weeks, recovery becomes part of
+                  your routine rather than an afterthought — and complimentary red light therapy is included with
+                  every session.
+                </p>
+              </div>
+              <div>
+                <h2 id="fitness-how-heading" className="text-2xl md:text-3xl font-light tracking-tight text-foreground mb-8">
+                  How the eight weeks work
+                </h2>
+                <ol className="space-y-6">
+                  {[
+                    {
+                      title: "Get matched with a coach",
+                      body: "Tell us your goals and we'll pair you with the coach best suited to them — our team covers HYROX training, fat loss, functional fitness and bodybuilding.",
+                    },
+                    {
+                      title: "Receive your personal plan",
+                      body: "Your coach builds a training and nutrition plan around your lifestyle and goals, with a recommended recovery routine to match.",
+                    },
+                    {
+                      title: "Train and check in every week",
+                      body: "Weekly virtual check-ins keep you accountable, and your plan is adjusted as you progress.",
+                    },
+                    {
+                      title: "Recover at the hub",
+                      body: "Use the ice baths and sauna as often as you like for the full eight weeks.",
+                    },
+                  ].map((step, i) => (
+                    <li key={step.title} className="flex gap-5">
+                      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-foreground/25 text-sm text-foreground">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <h3 className="text-lg font-medium text-foreground">{step.title}</h3>
+                        <p className="text-muted-foreground leading-relaxed mt-1">{step.body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </div>
           </div>
@@ -258,6 +319,19 @@ const FitnessRecovery = () => {
             </div>
           </div>
         </section>
+
+        <FAQSection
+          faqs={[
+            { question: "How long is the Fitness & Recovery package?", answer: "The package runs for eight weeks, with weekly check-ins from your coach throughout." },
+            { question: "How much does it cost?", answer: "£370 for the full eight weeks. That covers 1-on-1 online coaching, your tailored training and nutrition plan, weekly check-ins and unlimited ice bath and sauna access at Revitalise Hub." },
+            { question: "Is the coaching online or in person?", answer: "Your coaching, plans and weekly check-ins are delivered online, so they fit around your week. Your recovery sessions take place at the hub in Lymington." },
+            { question: "Which coach will I work with?", answer: "We match you with a coach based on your goals and preferences. Our team includes specialists in HYROX training, fat loss, functional fitness and bodybuilding." },
+            { question: "Is red light therapy included?", answer: "Yes. Complimentary red light therapy is included with every session at the hub." },
+            { question: "How do I get started?", answer: "Get in touch through our contact page and we'll talk through your goals and match you with a coach." },
+          ]}
+          title="Fitness & Recovery FAQs"
+          subtitle="What's included and how the package works."
+        />
       </main>
 
       <Footer />
