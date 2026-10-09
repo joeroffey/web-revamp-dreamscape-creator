@@ -5,7 +5,6 @@ import { HomeCTASection } from "@/components/HomeCTASection";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
-import { LocalBusinessSchema } from "@/components/LocalBusinessSchema";
 import { HomeIntroSection } from "@/components/HomeIntroSection";
 import { GoogleReviewsSection } from "@/components/GoogleReviewsSection";
 import { LatestPostsSection } from "@/components/LatestPostsSection";
@@ -46,13 +45,12 @@ const homeFaqs = [
 
 const Home = () => {
   return (
-    <div className="min-h-screen">
+    <div className="rh-site min-h-screen">
       <SEOHead
         title="Home"
         description="Contrast therapy in Lymington: two ice baths, an eight-person sauna and free red light therapy with every one-hour session. Book communal or private sessions."
         path="/"
       />
-      <LocalBusinessSchema />
       <Navigation />
 
       <main className="bg-gallery">

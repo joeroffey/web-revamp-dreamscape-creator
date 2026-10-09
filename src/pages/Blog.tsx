@@ -9,6 +9,7 @@ import { ArrowRight } from "lucide-react";
 import { JsonLd, breadcrumbSchema } from "@/components/JsonLd";
 import { BLOG_LIST_COLUMNS, BlogPostSummary as BlogPost, blogPostPath, getCardExcerpt } from "@/lib/blogPosts";
 import { BUSINESS_ID, SITE_URL } from "@/lib/site";
+import { optimisedImage } from "@/lib/images";
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
@@ -25,7 +26,7 @@ const Blog = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="rh-site min-h-screen bg-background">
       <SEOHead
         title="Journal – Cold Water, Sauna & Recovery Advice"
         description="Evidence-informed articles on cold water therapy, contrast therapy, sauna, red light therapy and recovery from the Revitalise Hub team in Lymington."
@@ -56,13 +57,14 @@ const Blog = () => {
       />
       <Navigation />
 
-      <main className="pt-32 pb-20">
-        <section className="py-16 bg-muted/30">
+      <main className="rh-main pb-20">
+        <section className="py-16 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-light mb-6 tracking-wide">
+            <span className="rh-rule mb-8" aria-hidden="true" />
+            <h1 className="rh-display text-foreground mb-6">
               The Revitalise Hub Journal
             </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="rh-lede max-w-3xl mx-auto">
               Evidence-informed articles on cold water therapy, sauna, contrast therapy, red light and recovery —
               written by the team at our contrast therapy hub in Lymington, Hampshire.
             </p>
@@ -96,8 +98,10 @@ const Blog = () => {
                           {post.image_url ? (
                             <div className="aspect-[4/3] md:aspect-auto overflow-hidden">
                               <img
-                                src={post.image_url}
+                                src={optimisedImage(post.image_url, 1000)}
                                 alt={post.title}
+                                width={800}
+                                height={600}
                                 loading="lazy"
                                 decoding="async"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -113,7 +117,7 @@ const Blog = () => {
                                   <time dateTime={post.published_at}>{format(new Date(post.published_at), "d MMMM yyyy")}</time>
                                 </span>
                               )}
-                              <h2 className="text-2xl md:text-3xl font-light tracking-wide text-foreground">
+                              <h2 className="text-2xl md:text-3xl font-light tracking-tight leading-snug text-foreground">
                                 {post.title}
                               </h2>
                               {post.excerpt && (

@@ -98,21 +98,23 @@ const guidelines = [
 
 const RedLightTherapy = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="rh-site min-h-screen bg-background">
       <SEOHead
-        title="Red Light Therapy"
+        title="Red Light Therapy in Lymington – Free with Every Session"
         description="Red light therapy at Revitalise Hub in Lymington — included with every session at no extra cost. Support recovery, energy, skin and wellbeing."
         path="/red-light-therapy"
       />
       <Navigation />
 
-      <main className="pt-20">
+      <main className="rh-main">
         {/* Hero */}
         <section className="relative">
           <div className="relative h-[60vh] min-h-[420px] w-full overflow-hidden">
             <img
               src="/images/red-light/panel.webp"
               alt="Red light therapy panel glowing inside the Revitalise Hub recovery room"
+              width={1200}
+              height={1600}
               className="absolute inset-0 w-full h-full object-cover"
               loading="eager"
               decoding="async"
@@ -122,10 +124,10 @@ const RedLightTherapy = () => {
               <Badge className="mb-4 bg-primary/90 text-primary-foreground">
                 Now at Revitalise Hub
               </Badge>
-              <h1 className="text-4xl md:text-6xl font-light tracking-tight text-foreground mb-4">
+              <h1 className="rh-display text-foreground mb-4">
                 Red Light Therapy
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl font-light">
+              <p className="rh-lede max-w-2xl">
                 Included with every session at no extra cost — no separate booking required.
               </p>
             </div>
@@ -133,9 +135,9 @@ const RedLightTherapy = () => {
         </section>
 
         {/* Intro */}
-        <section className="py-20 bg-white">
+        <section className="py-20 rh-surface">
           <div className="max-w-4xl mx-auto px-6 text-center">
-            <Sun className="h-10 w-10 text-primary mx-auto mb-6" />
+            <span className="rh-rule mb-8" aria-hidden="true" />
             <h2 className="text-3xl md:text-4xl font-light mb-6">
               Light that works at a cellular level
             </h2>
@@ -186,12 +188,14 @@ const RedLightTherapy = () => {
         </section>
 
         {/* How it works */}
-        <section className="py-20 bg-white">
+        <section className="py-20 rh-surface">
           <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
             <div className="rounded-2xl overflow-hidden shadow-lg">
               <img
                 src="/images/red-light/session.webp"
                 alt="Guest enjoying a red light therapy session at Revitalise Hub"
+                width={1200}
+                height={1600}
                 className="w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
@@ -255,7 +259,7 @@ const RedLightTherapy = () => {
         </section>
 
         {/* Guidelines */}
-        <section className="py-20 bg-white">
+        <section className="py-20 rh-surface">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-light mb-4">Guidelines</h2>

@@ -24,7 +24,7 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="rh-site min-h-screen flex flex-col bg-background">
       {/* Served with a real 404 status by Vercel (dist/404.html) and never indexed */}
       <SEOHead
         title="Page not found"
@@ -33,7 +33,7 @@ const NotFound = () => {
         noindex
       />
       <Navigation />
-      <main className="flex-1 flex items-center justify-center pt-32 pb-20 px-6 bg-gallery">
+      <main className="flex-1 flex items-center justify-center rh-main-loose pb-20 px-6 bg-gallery">
         <div className="text-center max-w-xl">
           <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground mb-4">Error 404</p>
           <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-4">We can&apos;t find that page</h1>

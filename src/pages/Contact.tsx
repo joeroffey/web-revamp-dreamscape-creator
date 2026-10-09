@@ -3,7 +3,6 @@ import { Navigation } from "@/components/Navigation";
 import { ContactSection } from "@/components/ContactSection";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
-import { LocalBusinessSchema } from "@/components/LocalBusinessSchema";
 import { FAQSection } from "@/components/FAQSection";
 import { Car, MapPin, Users } from "lucide-react";
 import { GOOGLE_REVIEWS_URL } from "@/lib/site";
@@ -33,16 +32,15 @@ const contactFaqs = [
 
 const Contact = () => {
   return (
-    <div className="min-h-screen">
+    <div className="rh-site min-h-screen">
       <SEOHead
         title="Contact Us – Find Us in Lymington"
         description="Contact Revitalise Hub at Ensign Yard, Ampress Lane, Lymington SO41 8QY. Call 01590 698691 or email us about sessions, private bookings and memberships."
         path="/contact"
       />
-      <LocalBusinessSchema />
       <Navigation />
 
-      <main className="pt-20 bg-gallery">
+      <main className="rh-main bg-gallery">
         <ContactSection />
 
         <section className="pb-8" aria-labelledby="finding-us-heading">
@@ -59,7 +57,7 @@ const Contact = () => {
                 <p className="text-muted-foreground leading-relaxed">
                   We&apos;re at Unit 7, Ensign Yard, 670 Ampress Lane, Lymington SO41 8QY — an easy trip from
                   across the New Forest, Milford on Sea, Brockenhurst and New Milton.{" "}
-                  <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer" className="underline">
+                  <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
                     Open in Google Maps
                   </a>
                   .
@@ -73,7 +71,7 @@ const Contact = () => {
                 <p className="text-muted-foreground leading-relaxed">
                   Free parking is available. When you arrive, our team will welcome you at reception — first-time
                   guests complete a short health questionnaire, so allow a few extra minutes.{" "}
-                  <Link to="/your-visit" className="underline">
+                  <Link to="/your-visit" className="underline underline-offset-4 hover:text-foreground">
                     What to expect on your visit
                   </Link>
                   .
@@ -87,7 +85,7 @@ const Contact = () => {
                 <p className="text-muted-foreground leading-relaxed">
                   Celebrating, training as a team or just want the space to yourselves? Private sessions give your
                   group the whole hub for an hour.{" "}
-                  <Link to="/booking" className="underline">
+                  <Link to="/booking" className="underline underline-offset-4 hover:text-foreground">
                     Check availability
                   </Link>{" "}
                   or message us with your plans.

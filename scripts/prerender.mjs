@@ -113,9 +113,12 @@ async function writeFileSafe(file, contents) {
 
 function buildSitemap(blogEntries) {
   const today = new Date().toISOString().slice(0, 10);
+  // Static pages get no <lastmod>: a build date isn't a real modification date,
+  // and Google ignores lastmod values it can't trust. Blog posts use their own
+  // published/updated dates below.
   const urls = STATIC_ROUTES.map(
     ([route, changefreq, priority]) =>
-      `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`
+      `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`
   );
   for (const { slug, post } of blogEntries) {
     const lastmod = (post.updated_at || post.published_at || post.created_at || today).slice(0, 10);

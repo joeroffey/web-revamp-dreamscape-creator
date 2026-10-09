@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Menu, X, User, LogOut, Settings, ChevronDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,12 +13,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { LOGO_SRC } from "@/lib/site";
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [firstName, setFirstName] = useState<string>("");
   const { user, signOut } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const { pathname } = useLocation();
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
   // Fetch user's first name from profile
   useEffect(() => {
@@ -70,9 +74,12 @@ export const Navigation = () => {
         <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 lg:h-32">
           {/* Logo */}
           <Link to="/" className="flex items-center flex-shrink-0">
-            <img 
-              src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
-              alt="Revitalise Hub Logo" 
+            <img
+              src={LOGO_SRC}
+              alt="Revitalise Hub Logo"
+              width={480}
+              height={465}
+              decoding="async"
               className="h-20 sm:h-24 md:h-28 lg:h-36 xl:h-40 w-auto transition-all duration-300 hover:scale-105"
             />
           </Link>
@@ -82,24 +89,38 @@ export const Navigation = () => {
             {/* Home Link */}
             <Link
               to="/"
-              className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+              aria-current={isActive("/") ? "page" : undefined}
+              className={cn(
+                "text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-px after:bg-foreground after:transition-all after:duration-300 hover:after:w-full",
+                isActive("/") && "after:w-full"
+              )}
             >
               Home
             </Link>
 
             {/* About Dropdown */}
             <div className="relative group">
-              <button className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap flex items-center gap-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 group-hover:after:w-full">
+              <button
+                type="button"
+                className={cn(
+                  "text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap flex items-center gap-1 relative after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-px after:bg-foreground after:transition-all after:duration-300 group-hover:after:w-full",
+                  aboutSubItems.some((item) => isActive(item.href)) && "after:w-full"
+                )}
+              >
                 About
                 <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
               </button>
               <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <div className="bg-background border border-border rounded-md shadow-lg py-2 min-w-[140px]">
+                <div className="bg-background border border-border rounded-xl shadow-lg py-2 min-w-[160px]">
                   {aboutSubItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
-                      className="block px-4 py-2 text-sm font-light text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                      aria-current={isActive(item.href) ? "page" : undefined}
+                      className={cn(
+                        "block px-4 py-2 text-sm font-light text-foreground hover:bg-foreground/5 transition-colors",
+                        isActive(item.href) && "bg-foreground/5"
+                      )}
                     >
                       {item.name}
                     </Link>
@@ -113,7 +134,11 @@ export const Navigation = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-foreground after:transition-all after:duration-300 hover:after:w-full"
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cn(
+                  "text-foreground hover:text-foreground/80 transition-all duration-300 font-light text-sm xl:text-base tracking-wide uppercase whitespace-nowrap relative after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-px after:bg-foreground after:transition-all after:duration-300 hover:after:w-full",
+                  isActive(item.href) && "after:w-full"
+                )}
               >
                 {item.name}
               </Link>
@@ -121,7 +146,7 @@ export const Navigation = () => {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center flex-shrink-0">
+          <div className="hidden lg:flex items-center flex-shrink-0">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -169,7 +194,7 @@ export const Navigation = () => {
           {/* Mobile Menu Button */}
           <button
             type="button"
-            className="md:hidden p-2 -mr-2 touch-manipulation"
+            className="lg:hidden p-2 -mr-2 touch-manipulation"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
@@ -180,7 +205,7 @@ export const Navigation = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden border-t border-border">
+          <div className="lg:hidden border-t border-border">
             <div className="max-h-[calc(100vh-5rem)] overflow-y-auto py-6">
               <div className="flex flex-col space-y-6">
                 <Link

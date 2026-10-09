@@ -1,7 +1,8 @@
 
 import { Instagram, Facebook, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { FACEBOOK_URL, INSTAGRAM_URL, OPENING_HOURS } from "@/lib/site";
+import { FACEBOOK_URL, INSTAGRAM_URL, LOGO_SRC, OPENING_HOURS } from "@/lib/site";
+import { LocalBusinessSchema } from "@/components/LocalBusinessSchema";
 
 export const Footer = () => {
   const scrollToTop = () => {
@@ -29,17 +30,22 @@ export const Footer = () => {
 
   return (
     <footer className="text-foreground" style={{ backgroundColor: 'hsl(var(--footer-background))' }}>
+      <LocalBusinessSchema />
       <div className="max-w-7xl mx-auto px-6">
         {/* Main Footer Content */}
         <div className="py-16">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
             {/* Brand */}
             <div className="lg:col-span-1">
               <div className="flex flex-col items-center w-fit">
                 <Link to="/" className="mb-4">
-                  <img 
-                    src="/images/7213f936-2c10-4a80-a628-96054c5c6507.png" 
-                    alt="Revitalise Hub Logo" 
+                  <img
+                    src={LOGO_SRC}
+                    alt="Revitalise Hub Logo"
+                    width={480}
+                    height={465}
+                    loading="lazy"
+                    decoding="async"
                     className="h-32 w-auto"
                   />
                 </Link>
@@ -49,18 +55,18 @@ export const Footer = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Revitalise Hub on Instagram"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/20 bg-transparent hover:bg-foreground/10 transition-colors"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-foreground/25 bg-transparent hover:bg-foreground hover:text-background transition-colors"
                   >
-                    <Instagram className="h-5 w-5" />
+                    <Instagram className="h-[18px] w-[18px]" />
                   </a>
                   <a
                     href={FACEBOOK_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Revitalise Hub on Facebook"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/20 bg-transparent hover:bg-foreground/10 transition-colors"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-foreground/25 bg-transparent hover:bg-foreground hover:text-background transition-colors"
                   >
-                    <Facebook className="h-5 w-5" />
+                    <Facebook className="h-[18px] w-[18px]" />
                   </a>
                 </div>
               </div>
@@ -68,13 +74,13 @@ export const Footer = () => {
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
-              <ul className="space-y-3">
+              <h3 className="text-xs font-medium tracking-[0.25em] uppercase text-foreground/70 mb-6">Quick Links</h3>
+              <ul className="space-y-3.5">
                 {quickLinks.map((link) => (
                   <li key={link.name}>
                     <Link 
                       to={link.href}
-                      className="text-foreground/80 hover:text-foreground transition-colors"
+                      className="text-sm text-foreground/80 hover:text-foreground transition-colors"
                       onClick={scrollToTop}
                     >
                       {link.name}
@@ -86,13 +92,13 @@ export const Footer = () => {
 
             {/* Services */}
             <div>
-              <h3 className="text-lg font-semibold mb-6">Our Services</h3>
-              <ul className="space-y-3">
+              <h3 className="text-xs font-medium tracking-[0.25em] uppercase text-foreground/70 mb-6">Our Services</h3>
+              <ul className="space-y-3.5">
                 {services.map((service) => (
                   <li key={service.name}>
                     <Link 
                       to={service.href}
-                      className="text-foreground/80 hover:text-foreground transition-colors"
+                      className="text-sm text-foreground/80 hover:text-foreground transition-colors"
                       onClick={scrollToTop}
                     >
                       {service.name}
@@ -104,10 +110,10 @@ export const Footer = () => {
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-6">Contact</h3>
+              <h3 className="text-xs font-medium tracking-[0.25em] uppercase text-foreground/70 mb-6">Contact</h3>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-foreground/70 mt-0.5 flex-shrink-0" />
+                  <MapPin className="h-4 w-4 text-foreground/60 mt-[3px] flex-shrink-0" />
                   <address className="not-italic text-foreground/80 text-sm">
                     Revitalise Hub<br />
                     Unit 7, Ensign Yard<br />
@@ -116,7 +122,7 @@ export const Footer = () => {
                   </address>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-foreground/70 flex-shrink-0" />
+                  <Phone className="h-4 w-4 text-foreground/60 flex-shrink-0" />
                   <a 
                     href="tel:+441590698691"
                     className="text-foreground/80 hover:text-foreground transition-colors text-sm"
@@ -125,7 +131,7 @@ export const Footer = () => {
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-foreground/70 flex-shrink-0" />
+                  <Mail className="h-4 w-4 text-foreground/60 flex-shrink-0" />
                   <a 
                     href="mailto:info@revitalisehub.co.uk"
                     className="text-foreground/80 hover:text-foreground transition-colors text-sm"
@@ -134,7 +140,7 @@ export const Footer = () => {
                   </a>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-foreground/70 mt-0.5 flex-shrink-0" />
+                  <Clock className="h-4 w-4 text-foreground/60 mt-[3px] flex-shrink-0" />
                   <dl className="text-foreground/80 text-sm grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
                     {OPENING_HOURS.map((row) => (
                       <div key={row.days} className="contents">
@@ -150,11 +156,11 @@ export const Footer = () => {
         </div>
 
         {/* Google Maps Banner */}
-        <div className="border-t border-foreground/20 py-8">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-center">Find Us</h3>
+        <div className="border-t border-foreground/15 py-10">
+          <div className="mb-5">
+            <h3 className="text-xs font-medium tracking-[0.25em] uppercase text-foreground/70 text-center">Find Us</h3>
           </div>
-          <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
+          <div className="w-full h-64 rounded-2xl overflow-hidden border border-foreground/15">
             <iframe
               src="https://www.google.com/maps?q=Revitalise+Hub+Ensign+Yard+Lymington&output=embed"
               width="100%"
@@ -163,16 +169,16 @@ export const Footer = () => {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Revitalise Hub Location - Unit 7, Ensign yard, 670 Ampress Ln, Lymington SO41 8QY"
+              title="Revitalise Hub location: Unit 7, Ensign Yard, 670 Ampress Lane, Lymington SO41 8QY"
             />
           </div>
         </div>
-        <div className="border-t border-foreground/20 py-8">
+        <div className="border-t border-foreground/15 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-foreground/70 text-sm">
+            <p className="text-foreground/70 text-xs tracking-wide">
               © {new Date().getFullYear()} Revitalise Hub. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs tracking-wide">
               <Link 
                 to="/privacy-policy" 
                 className="text-foreground/70 hover:text-foreground transition-colors"

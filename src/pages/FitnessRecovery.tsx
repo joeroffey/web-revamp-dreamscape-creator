@@ -68,35 +68,38 @@ const FitnessRecovery = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SEOHead title="Fitness & Recovery - Coaching Package" description="Our 8-week Fitness and Recovery coaching package. Expert-guided training with contrast therapy sessions at Revitalise Hub, Lymington." path="/fitness-recovery" />
+    <div className="rh-site min-h-screen bg-background">
+      <SEOHead title="Fitness & Recovery Coaching in Lymington" description="Our 8-week Fitness and Recovery coaching package. Expert-guided training with contrast therapy sessions at Revitalise Hub, Lymington." path="/fitness-recovery" />
       <Navigation />
       
-      <main className="pt-20">
+      <main className="rh-main">
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden">
+        <section className="relative py-24 md:py-32 overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
-            <img 
-              src="/images/c6e090ae-1284-4412-996c-21d0b99ffa2c.webp" 
+            <img
+              src="/images/c6e090ae-1284-4412-996c-21d0b99ffa2c.webp"
               alt="Our Expert Coaching Team"
-              className="w-full h-full object-cover opacity-60"
+              width={1066}
+              height={1600}
+              className="w-full h-full object-cover"
             />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/60" />
           </div>
           
           {/* Content */}
           <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
+              <h1 className="rh-display mb-5 text-white drop-shadow-lg">
                 Fitness & Recovery Package
               </h1>
-              <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-white/90 drop-shadow-lg">
+              <p className="text-xl md:text-2xl font-light tracking-wide mb-6 text-white/90 drop-shadow-lg">
                 8 Weeks to Your Best Self
-              </h2>
-              <div className="text-4xl md:text-5xl font-bold text-white mb-8 drop-shadow-lg">
+              </p>
+              <div className="text-4xl md:text-5xl font-light text-white mb-8 drop-shadow-lg">
                 £370
               </div>
-              <p className="text-lg md:text-xl text-white/95 max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
+              <p className="text-base md:text-lg text-white/90 max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
                 Whether you're looking to build strength, boost energy, improve recovery, or completely transform your body, 
                 this all-in-one package combines elite fitness coaching with powerful recovery tools – all in one place.
               </p>
@@ -108,7 +111,7 @@ const FitnessRecovery = () => {
         <section className="py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">What's Included</h2>
+              <h2 className="text-3xl md:text-4xl font-light tracking-tight text-center mb-16">What's Included</h2>
               
               <div className="grid md:grid-cols-2 gap-8 mb-12">
                 <Card className="p-8 hover:shadow-lg transition-shadow">
@@ -196,10 +199,10 @@ const FitnessRecovery = () => {
         </section>
 
         {/* Coaches Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 rh-surface">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Meet Your Expert Coaches</h2>
+              <h2 className="text-3xl md:text-4xl font-light tracking-tight text-center mb-4">Meet Your Expert Coaches</h2>
               <p className="text-lg text-muted-foreground text-center mb-16 max-w-3xl mx-auto">
                 Our team of certified professionals are here to guide you on your fitness journey. 
                 Click on any coach to learn more about their expertise and approach.
@@ -209,14 +212,18 @@ const FitnessRecovery = () => {
                 {coaches.map((coach) => (
                   <Card 
                     key={coach.id} 
-                    className="cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group"
+                    className="cursor-pointer hover:shadow-xl transition-all duration-300 group"
                     onClick={() => openCoachModal(coach)}
                   >
                     <CardContent className="p-0">
                       <div className="aspect-square overflow-hidden rounded-t-lg">
                         <img 
-                          src={coach.images[0]} 
+                          src={coach.images[0]}
                           alt={coach.name}
+                          width={800}
+                          height={800}
+                          loading="lazy"
+                          decoding="async"
                           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
                             coach.id === 'amy' ? 'object-[center_20%]' : 'object-center'
                           }`}
@@ -244,11 +251,9 @@ const FitnessRecovery = () => {
               </div>
 
               <div className="text-center mt-16">
-                <Link to="/contact">
-                  <Button size="lg" variant="outline" className="text-lg px-8 py-6">
-                    Ready to Start? Contact Us Today
-                  </Button>
-                </Link>
+                <Button asChild size="lg" variant="outline" className="text-lg px-8 py-6 rounded-full">
+                  <Link to="/contact">Ready to Start? Contact Us Today</Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -263,7 +268,7 @@ const FitnessRecovery = () => {
           {selectedCoach && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">{selectedCoach.name}</DialogTitle>
+                <DialogTitle className="text-2xl font-light tracking-tight">{selectedCoach.name}</DialogTitle>
                 <p className="text-lg text-primary font-medium">{selectedCoach.title}</p>
               </DialogHeader>
               
@@ -271,8 +276,10 @@ const FitnessRecovery = () => {
                 <div className="space-y-4">
                   <div className="aspect-square overflow-hidden rounded-lg">
                     <img 
-                      src={selectedCoach.images[selectedImageIndex]} 
+                      src={selectedCoach.images[selectedImageIndex]}
                       alt={selectedCoach.name}
+                      width={800}
+                      height={800}
                       className={`w-full h-full object-cover ${
                         selectedCoach.id === 'amy' ? 'object-[center_20%]' : 'object-center'
                       }`}
@@ -289,8 +296,10 @@ const FitnessRecovery = () => {
                           }`}
                         >
                           <img 
-                            src={image} 
+                            src={image}
                             alt={`${selectedCoach.name} ${index + 1}`}
+                            width={160}
+                            height={160}
                             className="w-full h-full object-cover object-center"
                           />
                         </button>

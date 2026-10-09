@@ -49,6 +49,8 @@ export const PhotoGallery = () => {
               <img 
                 src={image.src}
                 alt={image.alt}
+                width={800}
+                height={800}
                 loading="lazy"
                 decoding="async"
                 className={`w-full h-full object-cover ${(image as any).position ?? ""} transition-transform duration-500 group-hover:scale-110`}

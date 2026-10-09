@@ -2,10 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
+import { JsonLd } from "@/components/JsonLd";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ADDRESS, BUSINESS_ID, SITE_URL, absoluteUrl } from "@/lib/site";
+import { splitEventDates, toSchemaDate } from "@/lib/events";
+import { optimisedImage } from "@/lib/images";
 
 interface Event {
   id: string;
@@ -19,6 +23,8 @@ interface Event {
   event_dates: string[] | null;
   event_time: string | null;
   display_order: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 const Events = () => {
@@ -56,35 +62,85 @@ const Events = () => {
     });
   };
 
+  // Split events into upcoming and past using their (free-text) dates.
+  const now = new Date();
+  const dated = events.map((event) => ({ event, ...splitEventDates(event, now) }));
+  const upcomingEvents = dated.filter(
+    ({ upcoming, past }) => upcoming.length > 0 || past.length === 0
+  );
+  const pastEvents = dated
+    .filter(({ upcoming, past }) => upcoming.length === 0 && past.length > 0)
+    .sort(
+      (a, b) =>
+        Math.max(...b.past.map((d) => d.date.getTime())) - Math.max(...a.past.map((d) => d.date.getTime()))
+    );
+
+  // Event structured data: one entry per upcoming dated session.
+  const eventSchema = upcomingEvents.flatMap(({ event, upcoming }) =>
+    upcoming
+      .filter((d) => d.date)
+      .map((d) => ({
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: event.title,
+        description: event.short_description || event.subtitle || undefined,
+        startDate: toSchemaDate(d.date as Date, event.event_time),
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        image: event.image_url ? [absoluteUrl(event.image_url)] : undefined,
+        url: `${SITE_URL}/events`,
+        location: {
+          "@type": "Place",
+          name: "Revitalise Hub",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: `${ADDRESS.line1}, ${ADDRESS.line2}`,
+            addressLocality: ADDRESS.town,
+            addressRegion: ADDRESS.county,
+            postalCode: ADDRESS.postcode,
+            addressCountry: "GB",
+          },
+        },
+        organizer: { "@type": "Organization", "@id": BUSINESS_ID, name: "Revitalise Hub", url: SITE_URL },
+        performer: event.instructor ? { "@type": "Person", name: event.instructor } : undefined,
+      }))
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <SEOHead title="Events - Wellness Workshops" description="Discover upcoming wellness events at Revitalise Hub, Lymington. Breathwork, yoga, workshops and community gatherings." path="/events" />
+    <div className="rh-site min-h-screen bg-background">
+      <SEOHead
+        title="Wellness Events & Workshops in Lymington"
+        description="Discover upcoming wellness events at Revitalise Hub, Lymington. Breathwork, yoga, workshops and community gatherings."
+        path="/events"
+      />
+      {eventSchema.length > 0 && <JsonLd data={eventSchema} />}
       <Navigation />
-      
-      <main className="pt-32 pb-20">
+
+      <main className="rh-main pb-20">
         {/* Hero Section */}
-        <section className="py-16 bg-muted/30">
+        <section className="py-16 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-light mb-6 tracking-wide">
-              Events at Revitalise Hub | Lymington
+            <span className="rh-rule mb-8" aria-hidden="true" />
+            <h1 className="rh-display text-foreground mb-6">
+              Events at Revitalise Hub in Lymington
             </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="rh-lede max-w-3xl mx-auto">
               Guided experiences combining movement, breath, recovery, and contrast therapy.
             </p>
           </div>
         </section>
 
         {/* About Our Events */}
-        <section className="py-16">
+        <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-3xl md:text-4xl font-light mb-8 tracking-wide">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl md:text-4xl font-light mb-8 tracking-tight">
                 About Our Events
               </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+              <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-6">
                 Our events at Revitalise Hub in Lymington bring together expert-led practices and contrast therapy in a calm, supportive environment.
               </p>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
                 Each event is thoughtfully structured and may include guided movement, breathwork, or education, followed by sauna and ice bath contrast therapy. Events vary in focus but share the same intention: supporting recovery, nervous system regulation, and overall wellbeing.
               </p>
             </div>
@@ -92,19 +148,21 @@ const Events = () => {
         </section>
 
         {/* Location Banner */}
-        <section className="py-8 bg-muted/30">
+        <section className="py-6 border-y border-border/60">
           <div className="container mx-auto px-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <MapPin className="h-5 w-5" />
-              <span className="text-lg">Revitalise Hub, 7 Ensign Yard, 670 Ampress Ln, Lymington SO41 8QY</span>
-            </div>
+            <address className="not-italic flex items-start sm:items-center justify-center gap-2 text-muted-foreground text-sm md:text-base">
+              <MapPin className="h-4 w-4 mt-1 sm:mt-0 flex-shrink-0" aria-hidden="true" />
+              <span>
+                Revitalise Hub, {ADDRESS.line1}, {ADDRESS.line2}, {ADDRESS.town} {ADDRESS.postcode}
+              </span>
+            </address>
           </div>
         </section>
 
         {/* Upcoming Events Header */}
-        <section className="pt-16 pb-8">
+        <section className="pt-16 md:pt-20 pb-4">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-light tracking-wide">
+            <h2 className="text-3xl md:text-4xl font-light tracking-tight">
               Upcoming Events
             </h2>
           </div>
@@ -114,105 +172,83 @@ const Events = () => {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : events.length === 0 ? (
-          <section className="py-16">
+        ) : upcomingEvents.length === 0 ? (
+          <section className="py-12">
             <div className="container mx-auto px-4 text-center">
               <p className="text-muted-foreground text-lg">No upcoming events at the moment. Check back soon!</p>
             </div>
           </section>
         ) : (
-          events.map((event, index) => (
-            <section key={event.id} className="py-16">
+          upcomingEvents.map(({ event, upcoming }, index) => (
+            <section key={event.id} className="py-12 md:py-16">
               <div className="container mx-auto px-4">
                 <div className="max-w-6xl mx-auto">
-                  {/* Main Event Info */}
-                  <div className={`grid md:grid-cols-2 gap-12 items-center mb-12 ${index % 2 === 1 ? '' : ''}`}>
-                    {index % 2 === 0 ? (
-                      <>
-                        <div className="space-y-6">
-                          <h3 className="text-2xl md:text-3xl font-light tracking-wide">
-                            {event.title}
-                          </h3>
-                          {event.instructor && (
-                            <p className="text-lg text-muted-foreground italic">With {event.instructor}</p>
-                          )}
-                          {event.subtitle && (
-                            <p className="text-xl font-light text-foreground">
-                              {event.subtitle}
-                            </p>
-                          )}
-                          {event.short_description && (
-                            <p className="text-muted-foreground leading-relaxed">
-                              {event.short_description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl">
-                          {event.image_url && (
-                            <img 
-                              src={event.image_url} 
-                              alt={event.title}
-                              className="w-full h-full object-cover object-center"
-                            />
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl">
-                          {event.image_url && (
-                            <img 
-                              src={event.image_url} 
-                              alt={event.title}
-                              className="w-full h-full object-cover object-center"
-                            />
-                          )}
-                        </div>
-                        <div className="space-y-6">
-                          <h3 className="text-2xl md:text-3xl font-light tracking-wide">
-                            {event.title}
-                          </h3>
-                          {event.instructor && (
-                            <p className="text-lg text-muted-foreground italic">With {event.instructor}</p>
-                          )}
-                          {event.subtitle && (
-                            <p className="text-xl font-light text-foreground">
-                              {event.subtitle}
-                            </p>
-                          )}
-                          {event.short_description && (
-                            <p className="text-muted-foreground leading-relaxed">
-                              {event.short_description}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    )}
+                  {/* Main Event Info (image alternates sides on larger screens) */}
+                  <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center mb-12">
+                    <div className="space-y-5">
+                      <h3 className="text-2xl md:text-3xl font-light tracking-tight">
+                        {event.title}
+                      </h3>
+                      {event.instructor && (
+                        <p className="text-lg text-muted-foreground italic">With {event.instructor}</p>
+                      )}
+                      {event.subtitle && (
+                        <p className="text-xl font-light text-foreground">
+                          {event.subtitle}
+                        </p>
+                      )}
+                      {event.short_description && (
+                        <p className="text-muted-foreground leading-relaxed">
+                          {event.short_description}
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className={`aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl ${
+                        index % 2 === 1 ? "md:order-first" : ""
+                      }`}
+                    >
+                      {event.image_url && (
+                        <img
+                          src={optimisedImage(event.image_url, 900)}
+                          alt={event.title}
+                          width={800}
+                          height={800}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          decoding="async"
+                          className="w-full h-full object-cover object-center"
+                        />
+                      )}
+                    </div>
                   </div>
 
                   {/* Dates */}
-                  {event.event_dates && event.event_dates.length > 0 && (
-                    <div className="bg-muted/30 rounded-2xl p-8 mb-12">
+                  {upcoming.length > 0 && (
+                    <div className="bg-muted/30 border border-border/60 rounded-2xl p-6 md:p-8 mb-12">
                       <h4 className="text-xl font-light mb-6 text-center">
-                        {event.event_dates.length > 1 ? 'Upcoming Dates' : 'Upcoming Date'}
+                        {upcoming.length > 1 ? 'Upcoming Dates' : 'Upcoming Date'}
                       </h4>
                       {event.event_time && (
                         <p className="text-center text-muted-foreground mb-6 flex items-center justify-center gap-2">
-                          <Clock className="h-4 w-4" />
+                          <Clock className="h-4 w-4" aria-hidden="true" />
                           All sessions begin at {event.event_time}
                         </p>
                       )}
-                      <div className="flex flex-wrap justify-center gap-4">
-                        {event.event_dates.map((date) => (
-                          <div 
-                            key={date}
+                      <ul className="flex flex-wrap justify-center gap-3">
+                        {upcoming.map(({ label, date }) => (
+                          <li
+                            key={label}
                             className="flex items-center gap-2 bg-background rounded-full px-4 py-2 border border-border"
                           >
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-light">{date}</span>
-                          </div>
+                            <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                            {date ? (
+                              <time dateTime={toSchemaDate(date)} className="text-sm">{label}</time>
+                            ) : (
+                              <span className="text-sm">{label}</span>
+                            )}
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
 
@@ -221,9 +257,13 @@ const Events = () => {
                     <div className={`grid md:grid-cols-2 gap-12 items-start ${event.secondary_image_url ? '' : 'md:grid-cols-1'}`}>
                       {event.secondary_image_url && (
                         <div className="aspect-[3/4] md:aspect-square overflow-hidden rounded-2xl order-2 md:order-1">
-                          <img 
-                            src={event.secondary_image_url} 
+                          <img
+                            src={optimisedImage(event.secondary_image_url, 900)}
                             alt={`${event.title} detail`}
+                            width={800}
+                            height={800}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover object-center"
                           />
                         </div>
@@ -237,7 +277,7 @@ const Events = () => {
               </div>
 
               {/* Divider between events */}
-              {index < events.length - 1 && (
+              {index < upcomingEvents.length - 1 && (
                 <div className="container mx-auto px-4 mt-16">
                   <div className="max-w-4xl mx-auto border-t border-border" />
                 </div>
@@ -246,20 +286,62 @@ const Events = () => {
           ))
         )}
 
+        {/* Past events */}
+        {!loading && pastEvents.length > 0 && (
+          <section className="py-16 md:py-20" aria-labelledby="past-events-heading">
+            <div className="container mx-auto px-4">
+              <div className="max-w-5xl mx-auto">
+                <h2 id="past-events-heading" className="text-2xl md:text-3xl font-light tracking-tight text-center mb-10">
+                  Past Events
+                </h2>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {pastEvents.map(({ event, past }) => (
+                    <article
+                      key={event.id}
+                      className="bg-background/50 border border-border/70 rounded-2xl overflow-hidden"
+                    >
+                      {event.image_url && (
+                        <div className="aspect-[4/3] overflow-hidden">
+                          <img
+                            src={optimisedImage(event.image_url, 600)}
+                            alt={event.title}
+                            width={800}
+                            height={600}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover object-center opacity-90"
+                          />
+                        </div>
+                      )}
+                      <div className="p-6">
+                        <h3 className="text-lg font-light text-foreground">{event.title}</h3>
+                        {event.instructor && (
+                          <p className="text-sm text-muted-foreground mt-1">With {event.instructor}</p>
+                        )}
+                        <p className="rh-eyebrow mt-4">
+                          {past.map((d) => d.label).join(" · ")}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Booking CTA */}
-        <section className="py-16 bg-muted/30">
+        <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4 text-center">
-            <h3 className="text-2xl md:text-3xl font-light mb-6 tracking-wide">
+            <h3 className="text-2xl md:text-3xl font-light mb-6 tracking-tight">
               Ready to Join Us?
             </h3>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
               Get in touch to book your place at one of our upcoming events. We'd love to welcome you to the Revitalise Hub community.
             </p>
-            <Link to="/contact">
-              <Button size="lg" className="rounded-full px-8">
-                Book Your Place
-              </Button>
-            </Link>
+            <Button asChild size="lg" className="rounded-full px-8">
+              <Link to="/contact">Book Your Place</Link>
+            </Button>
           </div>
         </section>
       </main>

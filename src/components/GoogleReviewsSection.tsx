@@ -11,7 +11,7 @@ export const GoogleReviewsSection = () => {
   const reviews = GUEST_REVIEWS.slice(0, 6);
 
   return (
-    <section className="relative py-24 overflow-hidden" aria-labelledby="reviews-heading">
+    <section className={`relative overflow-hidden ${reviews.length > 0 ? "py-24" : "py-20"}`} aria-labelledby="reviews-heading">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/images/e66be255-48c0-42a2-92bb-1f189a14976d.webp')" }}
@@ -21,10 +21,10 @@ export const GoogleReviewsSection = () => {
 
       <div className="relative max-w-6xl mx-auto px-6 text-center">
         <span className="text-white/50 text-xs tracking-[0.3em] uppercase mb-4 block">Reviews</span>
-        <h2 id="reviews-heading" className="text-4xl md:text-6xl font-bold text-white tracking-wider mb-6">
+        <h2 id="reviews-heading" className="rh-title text-white mb-6">
           WHAT OUR GUESTS SAY
         </h2>
-        <p className="text-white/70 max-w-2xl mx-auto text-base md:text-lg leading-relaxed mb-12">
+        <p className="text-white/80 max-w-2xl mx-auto text-base md:text-lg leading-relaxed mb-10">
           Don&apos;t just take our word for it — read what guests say about their visits on Google, and if
           you&apos;ve been to the hub, we&apos;d love to hear about your experience.
         </p>

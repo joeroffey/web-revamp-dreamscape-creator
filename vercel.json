@@ -22,6 +22,24 @@
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex" }
       ]
+    },
+    {
+      "source": "/:path(auth|dashboard|reset-password|redeem-gift-card|booking-success|membership-success|gift-card-success|intro-offer-success)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
+    },
+    {
+      "source": "/admin/:path*",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
+    },
+    {
+      "source": "/admin",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
     }
   ],
   "redirects": [
@@ -55,7 +73,6 @@
     { "source": "/gift-cards", "destination": "/spa" },
     { "source": "/events", "destination": "/spa" },
     { "source": "/blog", "destination": "/spa" },
-    { "source": "/blog/:slug", "destination": "/spa" },
     { "source": "/fitness-recovery", "destination": "/spa" },
     { "source": "/your-visit", "destination": "/spa" },
     { "source": "/our-hub", "destination": "/spa" },

@@ -116,6 +116,8 @@ export const BlogBlocksRenderer = ({ blocks, title }: Props) => {
                 <img
                   src={block.url}
                   alt={block.alt || ""}
+                  width={1200}
+                  height={800}
                   loading="lazy"
                   decoding="async"
                   className={`${imageSizeClass(block.size)} w-full h-auto rounded-2xl object-cover`}

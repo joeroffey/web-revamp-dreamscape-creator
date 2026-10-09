@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, Thermometer, Snowflake, Waves, Users, Sun, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { LocalBusinessSchema } from "@/components/LocalBusinessSchema";
 
 const OurHub = () => {
   const facilities = [
@@ -52,23 +51,20 @@ const OurHub = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="rh-site min-h-screen bg-background">
       <SEOHead title="Our Hub – Ice Baths, Sauna & Red Light Room" description="Inside Revitalise Hub, Lymington: two ice baths (3–7°C), an eight-person sauna (85–90°C), a red light therapy room, private changing rooms and free parking." path="/our-hub" />
-      <LocalBusinessSchema />
       <Navigation />
       
-      <main className="pt-20">
+      <main className="rh-main">
         {/* Hero Section */}
-        <section className="py-24 bg-white">
+        <section className="py-24 rh-surface">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Waves className="h-10 w-10 text-primary" />
-              </div>
-              <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+              <span className="rh-rule mb-8" aria-hidden="true" />
+              <h1 className="rh-display text-foreground mb-6">
                 Inside Our Contrast Therapy Hub in Lymington
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
+              <p className="rh-lede max-w-3xl mx-auto">
                 Step into our state-of-the-art facility designed for optimal contrast therapy experiences. 
                 Every detail has been carefully crafted to enhance your wellness journey.
               </p>
@@ -83,8 +79,8 @@ const OurHub = () => {
                     <h3 className="text-lg font-semibold">Location</h3>
                   </div>
                   <p className="text-muted-foreground mb-2">
-                    Unit 7, Ensign yard<br />
-                    670 Ampress Ln<br />
+                    Unit 7, Ensign Yard<br />
+                    670 Ampress Lane<br />
                     Lymington SO41 8QY
                   </p>
                   <Badge variant="secondary" className="mt-2">
@@ -133,6 +129,8 @@ const OurHub = () => {
                     <img
                       src={facility.image}
                       alt={facility.title}
+                      width={1600}
+                      height={900}
                       loading="lazy"
                       decoding="async"
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
@@ -167,7 +165,7 @@ const OurHub = () => {
 
 
         {/* Inside the hub — detail for first-time visitors */}
-        <section className="py-20 bg-white" aria-labelledby="inside-heading">
+        <section className="py-20 rh-surface" aria-labelledby="inside-heading">
           <div className="max-w-5xl mx-auto px-6">
             <h2 id="inside-heading" className="text-2xl md:text-4xl font-light tracking-tight text-center mb-10">
               How a Session at the Hub Works

@@ -48,27 +48,29 @@ export const FAQSection = ({ faqs, title = "Frequently Asked Questions", subtitl
         <script type="application/ld+json">{JSON.stringify(schemaData)}</script>
       </Helmet>
 
-      <section className="py-20 bg-muted/20">
-        <div className="max-w-4xl mx-auto px-6">
+      <section className="rh-faq py-20 bg-muted/20">
+        <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-4xl font-light text-foreground mb-4 tracking-tight">
+            <h2 className="text-3xl md:text-4xl font-light text-foreground mb-4 tracking-tight">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-muted-foreground font-light text-lg">{subtitle}</p>
+              <p className="text-muted-foreground text-base md:text-lg">{subtitle}</p>
             )}
           </div>
 
           <Card className="wellness-card">
-            <CardContent className="p-2 sm:p-6">
+            <CardContent className="px-5 py-2 sm:px-8 sm:py-4">
               <Accordion type="single" collapsible className="w-full">
                 {faqs.map((faq, index) => (
-                  <AccordionItem key={index} value={`faq-${index}`}>
-                    <AccordionTrigger>{faq.question}</AccordionTrigger>
+                  <AccordionItem key={index} value={`faq-${index}`} className="last:border-b-0">
+                    <AccordionTrigger className="gap-4 py-5 text-left text-base md:text-[1.0625rem] font-normal text-foreground hover:no-underline">
+                      {faq.question}
+                    </AccordionTrigger>
                     {/* forceMount keeps answers in the page HTML (hidden until opened) so
                         search engines and AI crawlers can read them */}
-                    <AccordionContent forceMount>
-                      <p className="text-muted-foreground leading-relaxed">{faq.answer}</p>
+                    <AccordionContent forceMount className="pb-5 pr-8">
+                      <p className="text-muted-foreground text-[0.9375rem] md:text-base leading-relaxed">{faq.answer}</p>
                     </AccordionContent>
                   </AccordionItem>
                 ))}

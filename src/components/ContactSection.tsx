@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 export const ContactSection = () => {
@@ -84,10 +85,11 @@ export const ContactSection = () => {
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+          <span className="rh-rule mb-8" aria-hidden="true" />
+          <h1 className="rh-display text-foreground mb-6">
             Contact Revitalise Hub
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
+          <p className="rh-lede max-w-3xl mx-auto">
             Questions about contrast therapy, private group bookings, memberships or gift cards? Call us,
             email or send a message below and a member of the team will get back to you.
           </p>
@@ -260,17 +262,17 @@ export const ContactSection = () => {
         </div>
 
         {/* Call to Action */}
-        <div className="mt-16 text-center bg-muted/30 rounded-lg p-8">
-          <h2 className="text-xl font-semibold mb-4">Ready to Book Your Session?</h2>
+        <div className="mt-16 text-center bg-muted/30 border border-border/60 rounded-2xl p-8 md:p-10">
+          <h2 className="text-2xl font-light tracking-tight mb-4">Ready to Book Your Session?</h2>
           <p className="text-muted-foreground mb-6">
             Skip the contact form and book your thermal therapy session directly.
           </p>
-          <Button 
+          <Button
+            asChild
             size="lg"
-            onClick={() => window.location.href = '/booking'}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
           >
-            Book Now
+            <Link to="/booking">Book Now</Link>
           </Button>
         </div>
       </div>

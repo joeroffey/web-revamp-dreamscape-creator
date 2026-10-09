@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { 
   Zap, 
@@ -65,7 +65,6 @@ const benefits: Benefit[] = [
 ];
 
 export const AboutSection = () => {
-  const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -99,10 +98,10 @@ export const AboutSection = () => {
       <section className="py-24 bg-gallery">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
-            <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase mb-4 block">
+            <span className="rh-eyebrow mb-5">
               About us
             </span>
-            <h1 className="text-3xl md:text-5xl font-light text-foreground mb-8 tracking-tight">
+            <h1 className="rh-display text-foreground mb-8">
               About Revitalise Hub: Contrast Therapy in Lymington
             </h1>
             
@@ -121,12 +120,12 @@ export const AboutSection = () => {
             </div>
             
             <div className="mt-12">
-              <Button 
-                size="lg" 
+              <Button
+                asChild
+                size="lg"
                 className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-4 text-lg font-medium rounded-full"
-                onClick={() => navigate('/booking')}
               >
-                Book A Session
+                <Link to="/booking">Book A Session</Link>
               </Button>
             </div>
           </div>
@@ -147,7 +146,7 @@ export const AboutSection = () => {
         <div className="relative max-w-5xl mx-auto px-6 flex flex-col items-center justify-center h-full">
           {/* Section Label */}
           <div className="mb-8">
-            <span className="text-white/40 text-sm tracking-[0.3em] uppercase">
+            <span className="text-white/60 text-xs tracking-[0.3em] uppercase">
               Why Contrast Therapy
             </span>
           </div>
@@ -165,7 +164,7 @@ export const AboutSection = () => {
 
             {/* Title */}
             <h3 
-              className={`text-3xl md:text-5xl lg:text-6xl font-light text-white mb-4 tracking-wide transition-all duration-500 ${
+              className={`text-3xl md:text-5xl lg:text-6xl font-light text-white mb-4 tracking-tight transition-all duration-500 ${
                 isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
               }`}
             >
@@ -174,7 +173,7 @@ export const AboutSection = () => {
 
             {/* Subtitle */}
             <p 
-              className={`text-white/60 text-lg md:text-xl mb-6 transition-all duration-500 delay-75 ${
+              className={`text-white/80 text-lg md:text-xl mb-6 transition-all duration-500 delay-75 ${
                 isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
               }`}
             >
@@ -183,7 +182,7 @@ export const AboutSection = () => {
 
             {/* Detail Text */}
             <p 
-              className={`text-white/40 text-sm md:text-base max-w-xl mx-auto leading-relaxed transition-all duration-500 delay-100 ${
+              className={`text-white/65 text-sm md:text-base max-w-xl mx-auto leading-relaxed transition-all duration-500 delay-100 ${
                 isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
               }`}
             >
@@ -242,6 +241,8 @@ export const AboutSection = () => {
             <img
               src="/images/founders-lewis-tommy.webp"
               alt="Lewis and Tommy, founders of Revitalise Hub"
+              width={1006}
+              height={1578}
               className="w-full h-auto object-cover"
               loading="lazy"
             />
@@ -267,18 +268,11 @@ export const AboutSection = () => {
               </p>
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button 
-                  className="rounded-full px-6"
-                  onClick={() => navigate('/booking')}
-                >
-                  Book a Session
+                <Button asChild className="rounded-full px-6">
+                  <Link to="/booking">Book a Session</Link>
                 </Button>
-                <Button 
-                  variant="outline"
-                  className="rounded-full px-6"
-                  onClick={() => navigate('/your-visit')}
-                >
-                  Plan Your Visit
+                <Button asChild variant="outline" className="rounded-full px-6">
+                  <Link to="/your-visit">Plan Your Visit</Link>
                 </Button>
               </div>
             </div>

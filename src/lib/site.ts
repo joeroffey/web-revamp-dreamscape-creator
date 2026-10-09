@@ -5,7 +5,13 @@
 export const SITE_URL = "https://www.revitalisehub.co.uk";
 export const SITE_NAME = "Revitalise Hub";
 export const BUSINESS_ID = `${SITE_URL}/#business`;
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/7213f936-2c10-4a80-a628-96054c5c6507.png`;
+export const WEBSITE_ID = `${SITE_URL}/#website`;
+/** 1200×630 photo of the ice baths, used when a page is shared on social media */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/og-revitalise-hub.jpg`;
+/** Square logo for search engines (structured data) */
+export const LOGO_URL = `${SITE_URL}/images/revitalise-hub-logo-512.png`;
+/** Logo shown in the navigation and footer */
+export const LOGO_SRC = "/images/revitalise-hub-logo.webp";
 
 export const PHONE_DISPLAY = "01590 698691";
 export const PHONE_TEL = "+441590698691";
@@ -22,6 +28,7 @@ export const ADDRESS = {
 // Google Business Profile (place id looked up from Google Maps)
 export const GOOGLE_PLACE_ID = "ChIJXSaDBACHc0gRwIiwiMiGK8I";
 export const GOOGLE_REVIEWS_URL = `https://www.google.com/maps/place/?q=place_id:${GOOGLE_PLACE_ID}`;
+export const GOOGLE_MAPS_URL = GOOGLE_REVIEWS_URL;
 export const GOOGLE_WRITE_REVIEW_URL = `https://search.google.com/local/writereview?placeid=${GOOGLE_PLACE_ID}`;
 
 export const INSTAGRAM_URL = "https://www.instagram.com/revitalise.hub";

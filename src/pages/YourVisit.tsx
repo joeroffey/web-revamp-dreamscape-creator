@@ -104,22 +104,20 @@ const YourVisit = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <SEOHead title="Your Visit - Session Guide" description="Everything you need to know before visiting Revitalise Hub. What to bring, session guide, and tips for your contrast therapy experience." path="/your-visit" />
+    <div className="rh-site min-h-screen bg-background">
+      <SEOHead title="Your First Visit – Ice Bath & Sauna, Lymington" description="Everything you need to know before visiting Revitalise Hub. What to bring, session guide, and tips for your contrast therapy experience." path="/your-visit" />
       <Navigation />
 
-      <main className="pt-20">
+      <main className="rh-main">
         {/* Hero */}
-        <section className="py-20 bg-white">
+        <section className="py-20 rh-surface">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-12">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Info className="h-10 w-10 text-primary" />
-              </div>
-              <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+              <span className="rh-rule mb-8" aria-hidden="true" />
+              <h1 className="rh-display text-foreground mb-6">
                 Your Visit to Revitalise Hub: What to Expect
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
+              <p className="rh-lede max-w-3xl mx-auto">
                 Welcome to Revitalise Hub, a premium sauna and ice bath recovery space designed to help you relax,
                 recover, and reset. Whether it’s your first visit or you’re a regular, this guide walks you through
                 exactly what to expect when you arrive.
@@ -146,6 +144,9 @@ const YourVisit = () => {
                   <img
                     src={img.src}
                     alt={img.alt}
+                    width={1200}
+                    height={800}
+                    decoding="async"
                     className="w-full h-72 md:h-80 object-cover object-[70%_center]"
                     loading="lazy"
                   />
@@ -158,6 +159,9 @@ const YourVisit = () => {
                   <img
                     src={heroImages[2].src}
                     alt={heroImages[2].alt}
+                    width={1200}
+                    height={800}
+                    decoding="async"
                     className="w-full h-72 md:h-80 object-cover object-[70%_center]"
                     loading="lazy"
                   />
@@ -194,7 +198,7 @@ const YourVisit = () => {
         </section>
 
         {/* Etiquette */}
-        <section className="py-20 bg-white">
+        <section className="py-20 rh-surface">
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid lg:grid-cols-3 gap-8 items-start">
               <div className="lg:col-span-1">
@@ -307,8 +311,8 @@ const YourVisit = () => {
 
         <section className="py-10 bg-background">
           <div className="max-w-4xl mx-auto px-6">
-            <div className="rounded-2xl border border-border bg-white p-6 md:p-8 text-center">
-              <h2 className="text-xl md:text-2xl font-semibold mb-2">
+            <div className="rounded-2xl border border-border rh-surface p-6 md:p-10 text-center">
+              <h2 className="text-2xl md:text-3xl font-light tracking-tight mb-3">
                 Now Included: Red Light Therapy
               </h2>
               <p className="text-muted-foreground font-light mb-4">
@@ -321,7 +325,7 @@ const YourVisit = () => {
           </div>
         </section>
 
-        <section className="py-10 bg-white">
+        <section className="py-10 rh-surface">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <p className="text-muted-foreground font-light mb-4">
               Ready to relax, recover, and reset?

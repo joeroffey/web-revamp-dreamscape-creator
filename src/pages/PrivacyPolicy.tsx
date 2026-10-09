@@ -4,11 +4,11 @@ import { SEOHead } from "@/components/SEOHead";
 
 const PrivacyPolicy = () => {
   return (
-    <div className="min-h-screen">
+    <div className="rh-site min-h-screen">
       <SEOHead title="Privacy Policy" description="Read the Revitalise Hub privacy policy. Learn how we collect, use and protect your personal information." path="/privacy-policy" />
       <Navigation />
       
-      <main className="pt-20">
+      <main className="rh-main">
         <section className="py-24 bg-background">
           <div className="max-w-4xl mx-auto px-6">
             <div className="prose prose-lg max-w-none">

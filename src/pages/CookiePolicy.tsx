@@ -4,10 +4,10 @@ import { SEOHead } from "@/components/SEOHead";
 
 const CookiePolicy = () => {
   return (
-    <div className="min-h-screen">
+    <div className="rh-site min-h-screen">
       <SEOHead title="Cookie Policy" description="Revitalise Hub cookie policy. Understand how we use cookies and similar technologies on our website." path="/cookie-policy" />
       <Navigation />
-      <main className="py-24 px-6">
+      <main className="rh-main-loose pb-24 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="space-y-8">
             <div className="prose prose-lg max-w-none">
@@ -87,8 +87,8 @@ const CookiePolicy = () => {
                   
                   <div className="bg-muted/30 p-6 rounded-lg mt-4">
                     <p className="font-medium">Revitalise Hub</p>
-                    <p>Unit 7, Ensign yard</p>
-                    <p>670 Ampress Ln</p>
+                    <p>Unit 7, Ensign Yard</p>
+                    <p>670 Ampress Lane</p>
                     <p>Lymington SO41 8QY</p>
                     <p>United Kingdom</p>
                   </div>

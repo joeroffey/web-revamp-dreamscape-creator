@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BLOG_LIST_COLUMNS, BlogPostSummary, blogPostPath, getCardExcerpt } from "@/lib/blogPosts";
+import { optimisedImage } from "@/lib/images";
 
 /** Latest journal articles — gives every post more internal links than just /blog. */
 export const LatestPostsSection = ({
@@ -33,7 +34,7 @@ export const LatestPostsSection = ({
     <section className="py-24 bg-background" aria-labelledby="journal-heading">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-14">
-          <h2 id="journal-heading" className="text-4xl md:text-6xl font-bold text-foreground tracking-wider mb-4">
+          <h2 id="journal-heading" className="rh-title text-foreground mb-5">
             {title}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
@@ -53,8 +54,10 @@ export const LatestPostsSection = ({
               {post.image_url ? (
                 <div className="aspect-[4/3] overflow-hidden">
                   <img
-                    src={post.image_url}
+                    src={optimisedImage(post.image_url, 800)}
                     alt={post.title}
+                    width={800}
+                    height={600}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"

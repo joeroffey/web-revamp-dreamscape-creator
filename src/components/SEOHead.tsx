@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/site";
+import { BUSINESS_ID, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, WEBSITE_ID } from "@/lib/site";
 
 interface SEOHeadProps {
   title: string;
@@ -17,7 +17,7 @@ interface SEOHeadProps {
   };
 }
 
-const HOME_TITLE = "Revitalise Hub | Cold Water & Contrast Therapy | Lymington";
+const HOME_TITLE = "Ice Bath & Sauna Lymington | Contrast Therapy | Revitalise Hub";
 
 /**
  * Builds the final <title>. The brand is only appended when it isn't already
@@ -44,6 +44,21 @@ export const SEOHead = ({
   const fullTitle = buildTitle(title);
   const url = `${SITE_URL}${path}`;
   const robotsContent = robots ?? (noindex ? "noindex,follow" : "index,follow,max-image-preview:large");
+  const isDefaultImage = ogImage === DEFAULT_OG_IMAGE;
+  // A WebPage node for every indexable page, tied to the site and business nodes
+  // output by <LocalBusinessSchema/> in the footer.
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name: fullTitle,
+    description,
+    inLanguage: "en-GB",
+    isPartOf: { "@id": WEBSITE_ID },
+    about: { "@id": BUSINESS_ID },
+    primaryImageOfPage: { "@type": "ImageObject", url: ogImage },
+  };
 
   return (
     <Helmet>
@@ -59,6 +74,9 @@ export const SEOHead = ({
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="en_GB" />
       <meta property="og:image" content={ogImage} />
+      {isDefaultImage && <meta property="og:image:width" content="1200" />}
+      {isDefaultImage && <meta property="og:image:height" content="630" />}
+      <meta property="og:image:alt" content={fullTitle} />
       {article?.publishedTime && (
         <meta property="article:published_time" content={article.publishedTime} />
       )}
@@ -69,6 +87,7 @@ export const SEOHead = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
+      {!noindex && <script type="application/ld+json">{JSON.stringify(webPageSchema)}</script>}
     </Helmet>
   );
 };

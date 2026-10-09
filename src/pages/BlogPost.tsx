@@ -23,7 +23,8 @@ import {
   readingTimeMinutes,
 } from "@/lib/blogPosts";
 import { MEDICAL_REVIEWER, POST_SOURCES, getPostAuthor } from "@/content/blogAuthors";
-import { BUSINESS_ID, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/site";
+import { BUSINESS_ID, DEFAULT_OG_IMAGE, LOGO_URL, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/site";
+import { optimisedImage } from "@/lib/images";
 
 const fetchPostById = async (id: string) => {
   const { data, error } = await supabase
@@ -94,7 +95,7 @@ const BlogPost = () => {
   const related = (allPosts ?? []).filter((p) => p.id !== post?.id).slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="rh-site min-h-screen bg-background">
       {post ? (
         <>
           <SEOHead
@@ -128,7 +129,7 @@ const BlogPost = () => {
                   "@type": "Organization",
                   "@id": BUSINESS_ID,
                   name: SITE_NAME,
-                  logo: { "@type": "ImageObject", url: DEFAULT_OG_IMAGE },
+                  logo: { "@type": "ImageObject", url: LOGO_URL, width: 512, height: 512 },
                 },
                 ...(sources.length > 0 ? { citation: sources.map((s) => s.url) } : {}),
               },
@@ -164,7 +165,7 @@ const BlogPost = () => {
       )}
       <Navigation />
 
-      <main className="pt-32 pb-20">
+      <main className="rh-main-loose pb-20">
         <article className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
@@ -187,17 +188,17 @@ const BlogPost = () => {
               </div>
             ) : !post ? (
               <div className="text-center py-16">
-                <h1 className="text-3xl font-light mb-4">Article not found</h1>
+                <h1 className="text-3xl font-light tracking-tight mb-4">Article not found</h1>
                 <p className="text-muted-foreground mb-6">This article may have moved or been unpublished.</p>
                 <Link to="/blog" className="underline">Browse all articles</Link>
               </div>
             ) : (
               <>
                 <header className="space-y-5 mb-10">
-                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  <Link to="/blog" className="rh-eyebrow hover:text-foreground transition-colors w-fit">
                     Revitalise Hub Journal
-                  </span>
-                  <h1 className="text-4xl md:text-5xl font-light tracking-wide leading-tight">
+                  </Link>
+                  <h1 className="text-[2rem] leading-[1.15] md:text-5xl md:leading-[1.1] font-light tracking-tight text-foreground">
                     {post.title}
                   </h1>
                   {post.excerpt && (
@@ -246,8 +247,10 @@ const BlogPost = () => {
                 {post.image_url && (
                   <div className="aspect-[16/9] overflow-hidden rounded-2xl mb-10">
                     <img
-                      src={post.image_url}
+                      src={optimisedImage(post.image_url, 1400, 80)}
                       alt={post.title}
+                      width={1200}
+                      height={675}
                       className="w-full h-full object-cover"
                       decoding="async"
                     />
@@ -258,7 +261,7 @@ const BlogPost = () => {
 
                 {sources.length > 0 && (
                   <section className="mt-12" aria-labelledby="sources-heading">
-                    <h2 id="sources-heading" className="text-xl font-light tracking-wide mb-4">
+                    <h2 id="sources-heading" className="text-xl font-light tracking-tight mb-4">
                       Sources &amp; further reading
                     </h2>
                     <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
@@ -326,7 +329,7 @@ const BlogPost = () => {
         {post && related.length > 0 && (
           <section className="container mx-auto px-4 mt-20" aria-labelledby="related-heading">
             <div className="max-w-5xl mx-auto">
-              <h2 id="related-heading" className="text-2xl md:text-3xl font-light tracking-wide mb-8 text-center">
+              <h2 id="related-heading" className="text-2xl md:text-3xl font-light tracking-tight mb-8 text-center">
                 More from the journal
               </h2>
               <div className="grid gap-6 md:grid-cols-3">
@@ -339,8 +342,10 @@ const BlogPost = () => {
                     {item.image_url ? (
                       <div className="aspect-[4/3] overflow-hidden">
                         <img
-                          src={item.image_url}
-                          alt=""
+                          src={optimisedImage(item.image_url, 800)}
+                          alt={item.title}
+                          width={800}
+                          height={600}
                           loading="lazy"
                           decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -350,7 +355,7 @@ const BlogPost = () => {
                       <div className="aspect-[4/3] bg-gradient-to-br from-muted/40 to-muted" />
                     )}
                     <div className="p-6 flex flex-col flex-1">
-                      <h3 className="text-lg font-light tracking-wide text-foreground mb-2">{item.title}</h3>
+                      <h3 className="text-lg font-light text-foreground mb-2 leading-snug">{item.title}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{getCardExcerpt(item, 140)}</p>
                       <span className="mt-4 inline-flex items-center gap-2 text-sm">
                         Read article <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

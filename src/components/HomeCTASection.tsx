@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 const cards = [
@@ -45,8 +45,6 @@ const cards = [
 ];
 
 export const HomeCTASection = () => {
-  const navigate = useNavigate();
-
   return (
     <section
       className="relative py-24 bg-background"
@@ -56,7 +54,7 @@ export const HomeCTASection = () => {
         <div className="text-center mb-16">
           <h2
             id="why-choose-heading"
-            className="text-4xl md:text-6xl font-bold text-foreground tracking-wider mb-4"
+            className="rh-title text-foreground mb-5"
           >
             WHY CHOOSE REVITALISE HUB?
           </h2>
@@ -89,13 +87,13 @@ export const HomeCTASection = () => {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => navigate(card.href)}
+                <Link
+                  to={card.href}
                   className="mt-6 inline-flex items-center gap-3 text-foreground border-b border-foreground/40 pb-1 w-fit group-hover:border-foreground transition-colors duration-300"
                 >
                   <span className="text-sm tracking-wider">{card.cta}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                </button>
+                </Link>
               </div>
             </div>
           );

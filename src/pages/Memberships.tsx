@@ -1,10 +1,11 @@
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 import { FAQSection } from "@/components/FAQSection";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Sparkles, LogIn, Gift, Loader2, Eye, EyeOff, Tag } from "lucide-react";
+import { Check, Star, LogIn, Gift, Loader2, Eye, EyeOff, Tag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -387,21 +388,19 @@ const Memberships = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <SEOHead title="Memberships - Contrast Therapy Plans" description="Join Revitalise Hub with flexible membership plans. Unlimited or weekly contrast therapy sessions in Lymington, Hampshire." path="/memberships" />
+    <div className="rh-site min-h-screen">
+      <SEOHead title="Ice Bath & Sauna Membership Lymington" description="Join Revitalise Hub with flexible membership plans. Unlimited or weekly contrast therapy sessions in Lymington, Hampshire." path="/memberships" />
       <Navigation />
       
-      <main className="pt-20 bg-gallery">
+      <main className="rh-main bg-gallery">
         <section className="py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="h-10 w-10 text-primary" />
-              </div>
-              <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+              <span className="rh-rule mb-8" aria-hidden="true" />
+              <h1 className="rh-display text-foreground mb-6">
                 Become a Member
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
+              <p className="rh-lede max-w-3xl mx-auto">
                 Experience the life-changing benefits of contrast therapy by becoming a member of Revitalise Hub. 
                 Take advantage of substantial savings and unique perks as you seamlessly integrate this rejuvenating practice into your daily routine.
               </p>
@@ -617,6 +616,8 @@ const Memberships = () => {
           subtitle="Everything you need to know about our membership plans."
         />
       </main>
+
+      <Footer />
 
       {/* Introductory Offer Dialog */}
       <Dialog open={introDialogOpen} onOpenChange={setIntroDialogOpen}>

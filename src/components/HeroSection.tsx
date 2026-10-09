@@ -231,15 +231,12 @@ export const HeroSection = () => {
               Welcome To
             </p>
 
-            {/* One H1 covering the brand and the service + location keyword phrase (visual unchanged) */}
-            <h1 className="space-y-2">
-              <span className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light text-white tracking-tight leading-tight drop-shadow-2xl">
-                REVITALISE HUB
-              </span>
-              <span className="sr-only"> – </span>
-              <span className="block text-lg sm:text-xl md:text-2xl text-white/80 font-light tracking-wide drop-shadow-lg max-w-2xl mx-auto">
-                Contrast Therapy, Sauna &amp; Cold Plunge in Lymington
-              </span>
+            {/* Brand shown large; the H1 leads with the service + location (visual unchanged) */}
+            <p className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light text-white tracking-tight leading-tight drop-shadow-2xl">
+              REVITALISE HUB
+            </p>
+            <h1 className="text-lg sm:text-xl md:text-2xl text-white/80 font-light tracking-wide drop-shadow-lg max-w-2xl mx-auto">
+              Ice Bath, Sauna &amp; Contrast Therapy in Lymington
             </h1>
           </div>
         </div>

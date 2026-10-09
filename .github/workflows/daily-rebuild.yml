@@ -1,0 +1,26 @@
+name: Daily site rebuild
+
+# Rebuilds the live site once a day so newly published journal posts and
+# events are pre-rendered for search engines, and past events move to the
+# "Past events" list. It does nothing until a Vercel Deploy Hook URL is saved
+# as the repository secret VERCEL_DEPLOY_HOOK_URL.
+
+on:
+  schedule:
+    - cron: "17 5 * * *" # every day at about 05:17 UTC
+  workflow_dispatch: # allows a manual "Run workflow" from the Actions tab
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deploy hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL secret is not set - skipping."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Rebuild requested."

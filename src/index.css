@@ -224,3 +224,134 @@
   .main-content {
     @apply bg-gallery min-h-screen;
   }
+
+/* ---------------------------------------------------------------------------
+   Public website polish
+   Everything below is scoped to `.rh-site` (the wrapper on public pages), so
+   the admin area, dashboard and shared UI components look exactly as before.
+   --------------------------------------------------------------------------- */
+.rh-site {
+  /* Same brown family, a shade deeper so body copy is crisp and readable
+     (AA contrast on both cream backgrounds). */
+  --muted-foreground: 22 32% 30%;
+  /* Softer hairlines instead of heavy mid-brown borders. */
+  --border: 26 20% 64%;
+  /* Warm off-white used instead of stark pure-white bands. */
+  --rh-surface: 33 30% 91%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings and display text stay light; body copy uses the regular weight so
+   it doesn't look washed out on the cream background. */
+.rh-site p.font-light.text-muted-foreground,
+:where(.rh-site .font-light.text-muted-foreground) :where(p, li):not([class*="font-"]) {
+  font-weight: 400;
+}
+
+.rh-site :where(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+.rh-site :where(p) {
+  text-wrap: pretty;
+}
+
+/* Calm cards: no jumping on hover. */
+.rh-site .wellness-card:hover {
+  transform: none;
+}
+
+/* Warm surface used instead of bg-white sections. */
+.rh-site .rh-surface {
+  background-color: hsl(var(--rh-surface));
+}
+
+/* Consistent offset below the fixed navigation (matches its height at every
+   breakpoint). */
+.rh-main {
+  padding-top: 5rem;
+}
+@media (min-width: 640px) {
+  .rh-main { padding-top: 6rem; }
+}
+@media (min-width: 768px) {
+  .rh-main { padding-top: 7rem; }
+}
+@media (min-width: 1024px) {
+  .rh-main { padding-top: 8rem; }
+}
+
+/* Same, with extra breathing room for pages that start with plain text. */
+.rh-main-loose {
+  padding-top: 8rem;
+}
+@media (min-width: 640px) {
+  .rh-main-loose { padding-top: 9rem; }
+}
+@media (min-width: 768px) {
+  .rh-main-loose { padding-top: 10rem; }
+}
+@media (min-width: 1024px) {
+  .rh-main-loose { padding-top: 11rem; }
+}
+
+/* Card and sub-section headings: medium rather than heavy semibold/bold. */
+.rh-site :where(h2, h3, h4):is(.font-semibold, .font-bold) {
+  font-weight: 500;
+}
+
+/* Small uppercase label above headings. */
+.rh-eyebrow {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Short hairline accent used above page titles. */
+.rh-rule {
+  display: block;
+  width: 3rem;
+  height: 1px;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: currentColor;
+  opacity: 0.35;
+}
+
+/* Section titles: light, tracked capitals at a consistent size. */
+.rh-title {
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  line-height: 1.15;
+  font-size: clamp(1.75rem, 1.15rem + 2.4vw, 3rem);
+}
+
+/* Page titles (H1) on inner pages. */
+.rh-display {
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  font-size: clamp(2.125rem, 1.4rem + 2.8vw, 3.5rem);
+}
+
+/* Intro paragraph under a page title. */
+.rh-lede {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: hsl(var(--muted-foreground));
+}
+@media (min-width: 768px) {
+  .rh-lede { font-size: 1.1875rem; }
+}
+
+/* FAQ: answers stay in the HTML for search engines but are only shown once
+   their question is opened. */
+.rh-faq [role="region"][data-state="closed"] {
+  display: none;
+}

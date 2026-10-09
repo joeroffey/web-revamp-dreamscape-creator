@@ -4,11 +4,11 @@ import { SEOHead } from "@/components/SEOHead";
 
 const TermsConditions = () => {
   return (
-    <div className="min-h-screen">
+    <div className="rh-site min-h-screen">
       <SEOHead title="Terms & Conditions" description="Terms and conditions for sessions at Revitalise Hub. Understand our policies on bookings, cancellations and use of services." path="/terms-conditions" />
       <Navigation />
       
-      <main className="pt-20">
+      <main className="rh-main">
         <section className="py-24 bg-background">
           <div className="max-w-4xl mx-auto px-6">
             <div className="prose prose-lg max-w-none">

@@ -132,21 +132,19 @@ const GiftCards = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="rh-site min-h-screen">
       <SEOHead title="Gift Cards – Ice Bath & Sauna Vouchers" description="Give the gift of wellness with a Revitalise Hub gift card for ice bath, sauna and contrast therapy sessions in Lymington. Delivered instantly by email." path="/gift-cards" />
       <Navigation />
       
-      <main className="pt-20 bg-gallery">
+      <main className="rh-main bg-gallery">
         <section className="py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Gift className="h-10 w-10 text-primary" />
-              </div>
-              <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
+              <span className="rh-rule mb-8" aria-hidden="true" />
+              <h1 className="rh-display text-foreground mb-6">
                 Contrast Therapy Gift Cards
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
+              <p className="rh-lede max-w-2xl mx-auto">
                 Give the gift of wellness. A Revitalise Hub gift card is the perfect present for birthdays,
                 anniversaries, Christmas, or just because — delivered instantly by email.
               </p>
@@ -156,7 +154,7 @@ const GiftCards = () => {
               <div className="grid lg:grid-cols-2 gap-12">
                 {/* Amount Selection - Now First */}
                 <div>
-                  <h2 className="text-2xl font-semibold mb-6">Choose Amount</h2>
+                  <h2 className="text-2xl md:text-3xl font-light tracking-tight mb-6">Choose Amount</h2>
                   
                   <div className="grid gap-4 mb-6">
                     {presetAmounts.map((preset) => (
@@ -179,7 +177,7 @@ const GiftCards = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-2xl font-semibold">£{preset.amount}</span>
                             <div className={`w-4 h-4 rounded-full border-2 ${
-                              selectedAmount === preset.amount ? 'bg-primary border-primary' : 'border-gray-300'
+                              selectedAmount === preset.amount ? 'bg-primary border-primary' : 'border-foreground/30'
                             }`} />
                           </div>
                         </CardContent>
