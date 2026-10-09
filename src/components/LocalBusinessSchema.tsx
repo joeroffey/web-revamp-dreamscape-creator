@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { GOOGLE_PLACE_ID, PHONE_TEL } from "@/lib/site";
 
 export const LocalBusinessSchema = () => {
   const schema = {
@@ -8,7 +9,7 @@ export const LocalBusinessSchema = () => {
     "name": "Revitalise Hub",
     "description": "Premium cold water immersion, contrast therapy, saunas and recovery sessions in Lymington, Hampshire.",
     "url": "https://www.revitalisehub.co.uk",
-    "telephone": "01590698691",
+    "telephone": PHONE_TEL,
     "email": "info@revitalisehub.co.uk",
     "logo": "https://www.revitalisehub.co.uk/favicon.png",
     "image": [
@@ -26,16 +27,16 @@ export const LocalBusinessSchema = () => {
     },
     "geo": {
       "@type": "GeoCoordinates",
-      "latitude": 50.7572,
-      "longitude": -1.5369
+      "latitude": 50.7702,
+      "longitude": -1.5474
     },
-    "hasMap": "https://maps.google.com/?q=Revitalise+Hub,+Unit+7,+Ensign+Yard,+670+Ampress+Ln,+Lymington+SO41+8QY",
+    "hasMap": `https://www.google.com/maps/place/?q=place_id:${GOOGLE_PLACE_ID}`,
     "areaServed": {
       "@type": "GeoCircle",
       "geoMidpoint": {
         "@type": "GeoCoordinates",
-        "latitude": 50.7572,
-        "longitude": -1.5369
+        "latitude": 50.7702,
+        "longitude": -1.5474
       },
       "geoRadius": "30000"
     },

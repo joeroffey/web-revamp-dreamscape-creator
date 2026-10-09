@@ -25,9 +25,9 @@ import { Link } from "react-router-dom";
 
 const YourVisit = () => {
   const heroImages = [
-    { src: "/visit/DSC09637.jpg", alt: "Revitalise Hub ice bath recovery" },
-    { src: "/visit/DSC09659.jpg", alt: "Revitalise Hub sauna experience" },
-    { src: "/visit/DSC09792.jpg", alt: "Revitalise Hub reception and check-in" },
+    { src: "/visit/DSC09637.webp", alt: "Revitalise Hub ice bath recovery" },
+    { src: "/visit/DSC09659.webp", alt: "Revitalise Hub sauna experience" },
+    { src: "/visit/DSC09792.webp", alt: "Revitalise Hub reception and check-in" },
   ];
 
   const whoItsFor = [

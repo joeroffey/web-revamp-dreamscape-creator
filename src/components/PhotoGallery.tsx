@@ -2,36 +2,36 @@
 export const PhotoGallery = () => {
   const images = [
     {
-      src: "/images/162ed27b-7afc-4f87-aa37-6ca7dd50990e.png",
+      src: "/images/162ed27b-7afc-4f87-aa37-6ca7dd50990e.webp",
       alt: "Client enjoying ice bath therapy"
     },
     {
-      src: "/images/81a80e52-fdb3-4434-af6a-736586d75f1c.png",
+      src: "/images/81a80e52-fdb3-4434-af6a-736586d75f1c.webp",
       alt: "Revitalise Hub entrance wall"
     },
     {
-      src: "/images/13ce1fd0-0ae1-4b68-bc23-115c4cad4df5.png",
+      src: "/images/13ce1fd0-0ae1-4b68-bc23-115c4cad4df5.webp",
       alt: "Traditional sauna session"
     },
     {
-      src: "/images/red-light/panel.jpg",
+      src: "/images/red-light/panel.webp",
       alt: "Red light therapy panel at Revitalise Hub",
       position: "object-bottom"
     },
     {
-      src: "/images/0c4c3a2b-152f-4e1e-892e-82c619d37291.png",
+      src: "/images/0c4c3a2b-152f-4e1e-892e-82c619d37291.webp",
       alt: "Ice bath recovery session"
     },
     {
-      src: "/images/3a215db5-7a7e-4b25-be51-5ea78060e1b5.png",
+      src: "/images/3a215db5-7a7e-4b25-be51-5ea78060e1b5.webp",
       alt: "Wellness towels and amenities"
     },
     {
-      src: "/images/1ade2762-70a2-4195-b776-a285f0680dd2.png",
+      src: "/images/1ade2762-70a2-4195-b776-a285f0680dd2.webp",
       alt: "Shared ice bath experience"
     },
     {
-      src: "/images/0dfff09d-022d-4b30-a6d6-dffc870d36c4.png",
+      src: "/images/0dfff09d-022d-4b30-a6d6-dffc870d36c4.webp",
       alt: "Recovery shower area"
     }
   ];
@@ -49,6 +49,8 @@ export const PhotoGallery = () => {
               <img 
                 src={image.src}
                 alt={image.alt}
+                loading="lazy"
+                decoding="async"
                 className={`w-full h-full object-cover ${(image as any).position ?? ""} transition-transform duration-500 group-hover:scale-110`}
               />
             </div>

@@ -99,20 +99,24 @@ export const AboutSection = () => {
       <section className="py-24 bg-gallery">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-light text-foreground mb-8 tracking-tight">
+            <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase mb-4 block">
               About us
-            </h2>
+            </span>
+            <h1 className="text-3xl md:text-5xl font-light text-foreground mb-8 tracking-tight">
+              About Revitalise Hub: Contrast Therapy in Lymington
+            </h1>
             
             <div className="space-y-8 text-lg md:text-xl text-muted-foreground leading-relaxed font-light">
               <p>
-                The wellness centre offers a unique experience that combines the benefits of 
-                cold-water immersion and heat therapies, creating an experience that promotes 
-                health, recovery, and mental clarity.
+                Revitalise Hub is a contrast therapy centre in Lymington, Hampshire, that combines the
+                benefits of cold-water immersion and heat therapy in one calm, welcoming space — an
+                experience designed to support health, recovery and mental clarity.
               </p>
               
               <p>
                 Our facility features two ice baths and an eight-person sauna, allowing us to 
                 accommodate up to five clients at a time for personalised and impactful sessions.
+                Complimentary red light therapy is included with every visit.
               </p>
             </div>
             
@@ -135,7 +139,7 @@ export const AboutSection = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{
-            backgroundImage: `url('/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.png')`,
+            backgroundImage: `url('/images/0c9e8b9e-c7cf-48f4-b85b-860370fe6702.webp')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/70 to-black/85" />
@@ -236,7 +240,7 @@ export const AboutSection = () => {
           {/* Image */}
           <div className="rounded-2xl overflow-hidden shadow-lg">
             <img
-              src="/images/founders-lewis-tommy.png"
+              src="/images/founders-lewis-tommy.webp"
               alt="Lewis and Tommy, founders of Revitalise Hub"
               className="w-full h-auto object-cover"
               loading="lazy"
@@ -260,10 +264,6 @@ export const AboutSection = () => {
               
               <p className="font-medium text-foreground">
                 Revitalise Hub is your space to pause, reset, and recharge.
-              </p>
-              
-              <p>
-                Our facility will feature two ice baths and an eight-person sauna, allowing us to accommodate up to five customers per hour for personalised and impactful sessions.
               </p>
 
               <div className="flex flex-wrap gap-3 pt-2">

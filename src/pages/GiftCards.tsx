@@ -26,6 +26,14 @@ const giftCardFaqs = [
     answer: "The recipient will receive an email with a unique gift card code. They can redeem it by creating an account on our website and entering the code on the Redeem Gift Card page. The value is added to their account as credit."
   },
   {
+    question: "What can the recipient spend it on?",
+    answer: "The gift card value is added to the recipient's account as credit, which they can use towards communal or private contrast therapy sessions. Every session includes the ice baths, the sauna and complimentary red light therapy."
+  },
+  {
+    question: "Can I choose any amount?",
+    answer: "Yes. Choose £25, £50 or £100, or enter a custom amount anywhere from £10 to £500."
+  },
+  {
     question: "Can I get a refund on a gift card?",
     answer: "Gift cards are non-refundable once purchased. If you have any issues with your gift card, please contact us and we'll do our best to help."
   },
@@ -125,7 +133,7 @@ const GiftCards = () => {
 
   return (
     <div className="min-h-screen">
-      <SEOHead title="Gift Cards - Wellness Vouchers" description="Give the gift of wellness. Purchase a Revitalise Hub gift card for cold water therapy and recovery sessions in Lymington." path="/gift-cards" />
+      <SEOHead title="Gift Cards – Ice Bath & Sauna Vouchers" description="Give the gift of wellness with a Revitalise Hub gift card for ice bath, sauna and contrast therapy sessions in Lymington. Delivered instantly by email." path="/gift-cards" />
       <Navigation />
       
       <main className="pt-20 bg-gallery">
@@ -136,10 +144,11 @@ const GiftCards = () => {
                 <Gift className="h-10 w-10 text-primary" />
               </div>
               <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
-                Gift Cards
+                Contrast Therapy Gift Cards
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
-                Give the gift of wellness. Perfect for birthdays, anniversaries, or just because.
+                Give the gift of wellness. A Revitalise Hub gift card is the perfect present for birthdays,
+                anniversaries, Christmas, or just because — delivered instantly by email.
               </p>
             </div>
 
@@ -147,7 +156,7 @@ const GiftCards = () => {
               <div className="grid lg:grid-cols-2 gap-12">
                 {/* Amount Selection - Now First */}
                 <div>
-                  <h3 className="text-2xl font-semibold mb-6">Choose Amount</h3>
+                  <h2 className="text-2xl font-semibold mb-6">Choose Amount</h2>
                   
                   <div className="grid gap-4 mb-6">
                     {presetAmounts.map((preset) => (
@@ -217,7 +226,7 @@ const GiftCards = () => {
 
                 {/* Gift Card Form - Now Second */}
                 <div>
-                  <h3 className="text-2xl font-semibold mb-6">Gift Card Details</h3>
+                  <h2 className="text-2xl font-semibold mb-6">Gift Card Details</h2>
                   
                   {getCurrentAmount() === 0 && (
                     <div className="mb-6 p-4 bg-muted/30 rounded-lg text-center">
@@ -325,7 +334,7 @@ const GiftCards = () => {
 
               <div className="mt-12 bg-muted/30 rounded-lg p-8 text-center">
                 <Heart className="h-8 w-8 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-4">How It Works</h3>
+                <h2 className="text-xl font-semibold mb-4">How It Works</h2>
                 <div className="grid md:grid-cols-3 gap-6 text-muted-foreground">
                   <div>
                     <p className="font-medium mb-2">1. Choose Amount</p>
@@ -342,6 +351,60 @@ const GiftCards = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="pb-20" aria-labelledby="gift-experience-heading">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="grid gap-12 lg:grid-cols-2 items-center">
+              <div className="space-y-5">
+                <h2 id="gift-experience-heading" className="text-2xl md:text-4xl font-light tracking-tight">
+                  The gift of an hour to reset
+                </h2>
+                <div className="space-y-4 text-muted-foreground text-lg font-light leading-relaxed">
+                  <p>
+                    A Revitalise Hub gift card gives someone special an hour of contrast therapy at our hub in
+                    Lymington: two ice baths kept between 3°C and 7°C, an eight-person traditional sauna at
+                    85–90°C, and complimentary red light therapy to finish.
+                  </p>
+                  <p>
+                    It&apos;s a brilliant present for runners, gym-goers and anyone in training, for friends who
+                    need to switch off from a busy week, or for someone who has always wanted to try an ice bath.
+                    First-timers are guided through everything by our team, so no experience is needed.
+                  </p>
+                  <p>
+                    The card arrives by email with a unique code. The recipient adds it to their account as
+                    credit and books a time that suits them — either a communal session or a private session for
+                    their group. Gift cards are valid for 12 months.
+                  </p>
+                </div>
+              </div>
+              <ul className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { title: "Instant delivery", text: "Sent straight to the recipient by email with your personal message." },
+                  { title: "Any amount", text: "Choose £25, £50, £100 or a custom value from £10 to £500." },
+                  { title: "Valid 12 months", text: "Plenty of time to book a session that fits around life." },
+                  { title: "Red light included", text: "Every session includes complimentary red light therapy." },
+                ].map((item) => (
+                  <li key={item.title} className="relative bg-foreground/5 border border-foreground/15 p-6">
+                    <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-foreground/30" />
+                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-foreground/30" />
+                    <h3 className="text-lg font-light tracking-wide text-foreground mb-2">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="mt-10 text-center text-muted-foreground">
+              Received a gift card?{" "}
+              <a href="/redeem-gift-card" className="underline hover:text-foreground">
+                Redeem it here
+              </a>{" "}
+              · New to contrast therapy?{" "}
+              <a href="/your-visit" className="underline hover:text-foreground">
+                See what to expect
+              </a>
+            </p>
           </div>
         </section>
 

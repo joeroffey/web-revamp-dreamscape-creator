@@ -85,11 +85,11 @@ export const ContactSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
-            Get in Touch
+            Contact Revitalise Hub
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
-            Ready to start your wellness journey? Have questions about our services? 
-            We're here to help you every step of the way.
+            Questions about contrast therapy, private group bookings, memberships or gift cards? Call us,
+            email or send a message below and a member of the team will get back to you.
           </p>
         </div>
 
@@ -107,9 +107,9 @@ export const ContactSection = () => {
                       <div>
                         <h3 className="font-semibold mb-2">Location</h3>
                         <p className="text-muted-foreground">
-                          Unit 7, Ensign yard<br />
-                          670 Ampress Ln<br />
-                          Lymington SO41 8QY
+                          Unit 7, Ensign Yard<br />
+                          670 Ampress Lane<br />
+                          Lymington, Hampshire SO41 8QY
                         </p>
                         <Badge variant="secondary" className="mt-2">
                           Free Parking Available
@@ -125,10 +125,12 @@ export const ContactSection = () => {
                       <Phone className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                       <div>
                         <h3 className="font-semibold mb-2">Phone</h3>
-                        <p className="text-muted-foreground">
-                          01590 698 691<br />
-                          0754 696 5111
-                        </p>
+                        <a
+                          href="tel:+441590698691"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          01590 698691
+                        </a>
                       </div>
                     </div>
                   </CardContent>
@@ -140,9 +142,12 @@ export const ContactSection = () => {
                       <Mail className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                       <div>
                         <h3 className="font-semibold mb-2">Email</h3>
-                        <p className="text-muted-foreground">
+                        <a
+                          href="mailto:info@revitalisehub.co.uk"
+                          className="text-muted-foreground hover:text-foreground transition-colors break-all"
+                        >
                           info@revitalisehub.co.uk
-                        </p>
+                        </a>
                       </div>
                     </div>
                   </CardContent>
@@ -256,7 +261,7 @@ export const ContactSection = () => {
 
         {/* Call to Action */}
         <div className="mt-16 text-center bg-muted/30 rounded-lg p-8">
-          <h3 className="text-xl font-semibold mb-4">Ready to Book Your Session?</h3>
+          <h2 className="text-xl font-semibold mb-4">Ready to Book Your Session?</h2>
           <p className="text-muted-foreground mb-6">
             Skip the contact form and book your thermal therapy session directly.
           </p>

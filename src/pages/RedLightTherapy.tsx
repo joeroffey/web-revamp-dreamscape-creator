@@ -111,7 +111,7 @@ const RedLightTherapy = () => {
         <section className="relative">
           <div className="relative h-[60vh] min-h-[420px] w-full overflow-hidden">
             <img
-              src="/images/red-light/panel.jpg"
+              src="/images/red-light/panel.webp"
               alt="Red light therapy panel glowing inside the Revitalise Hub recovery room"
               className="absolute inset-0 w-full h-full object-cover"
               loading="eager"
@@ -190,7 +190,7 @@ const RedLightTherapy = () => {
           <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
             <div className="rounded-2xl overflow-hidden shadow-lg">
               <img
-                src="/images/red-light/session.jpg"
+                src="/images/red-light/session.webp"
                 alt="Guest enjoying a red light therapy session at Revitalise Hub"
                 className="w-full h-full object-cover"
                 loading="lazy"

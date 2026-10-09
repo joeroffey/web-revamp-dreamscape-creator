@@ -65,7 +65,9 @@ export const FAQSection = ({ faqs, title = "Frequently Asked Questions", subtitl
                 {faqs.map((faq, index) => (
                   <AccordionItem key={index} value={`faq-${index}`}>
                     <AccordionTrigger>{faq.question}</AccordionTrigger>
-                    <AccordionContent>
+                    {/* forceMount keeps answers in the page HTML (hidden until opened) so
+                        search engines and AI crawlers can read them */}
+                    <AccordionContent forceMount>
                       <p className="text-muted-foreground leading-relaxed">{faq.answer}</p>
                     </AccordionContent>
                   </AccordionItem>

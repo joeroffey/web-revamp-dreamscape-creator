@@ -4,38 +4,40 @@ import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, Thermometer, Snowflake, Waves, Users, Sun, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { LocalBusinessSchema } from "@/components/LocalBusinessSchema";
 
 const OurHub = () => {
   const facilities = [
     {
       title: "Ice Baths",
-      description: "State-of-the-art cold immersion tanks maintained at optimal temperatures for maximum therapeutic benefit.",
+      description: "Two state-of-the-art cold immersion tanks, kept between 3°C and 7°C, with timers alongside so you can track every dip.",
       icon: Snowflake,
-      image: "/images/e66be255-48c0-42a2-92bb-1f189a14976d.png"
+      image: "/images/e66be255-48c0-42a2-92bb-1f189a14976d.webp"
     },
     {
-      title: "Traditional Saunas", 
-      description: "Premium traditional sauna pods designed for deep heat therapy and complete relaxation.",
+      title: "Traditional Sauna", 
+      description: "Our eight-person traditional sauna is heated to 85–90°C — designed for deep heat therapy and complete relaxation.",
       icon: Thermometer,
-      image: "/images/8e9e8578-24af-421e-9d1c-3b71d4e13523.png"
+      image: "/images/8e9e8578-24af-421e-9d1c-3b71d4e13523.webp"
     },
     {
       title: "Recovery Lounge",
       description: "Comfortable relaxation area for post-session recovery with refreshments and amenities.",
       icon: Users,
-      image: "/images/0f10c721-e834-4cf4-9182-2bd24811ad45.png"
+      image: "/images/0f10c721-e834-4cf4-9182-2bd24811ad45.webp"
     },
     {
       title: "EIRA Therapy Equipment",
       description: "Professional-grade therapy equipment including our signature ice baths for optimal recovery.",
       icon: Waves,
-      image: "/images/8dd0056c-d9d2-4732-b060-1c55cf4c241d.png"
+      image: "/images/8dd0056c-d9d2-4732-b060-1c55cf4c241d.webp"
     },
     {
       title: "Red Light Therapy Room",
       description: "Our new red light therapy space — included with every session at no extra cost. Wind down and recover at a cellular level.",
       icon: Sun,
-      image: "/images/red-light/room.jpg"
+      image: "/images/red-light/room.webp"
     }
   ];
 
@@ -51,7 +53,8 @@ const OurHub = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Our Hub - Facilities & Location" description="Explore Revitalise Hub's facilities in Lymington. Ice baths, traditional saunas, recovery lounge and professional-grade therapy equipment." path="/our-hub" />
+      <SEOHead title="Our Hub – Ice Baths, Sauna & Red Light Room" description="Inside Revitalise Hub, Lymington: two ice baths (3–7°C), an eight-person sauna (85–90°C), a red light therapy room, private changing rooms and free parking." path="/our-hub" />
+      <LocalBusinessSchema />
       <Navigation />
       
       <main className="pt-20">
@@ -63,7 +66,7 @@ const OurHub = () => {
                 <Waves className="h-10 w-10 text-primary" />
               </div>
               <h1 className="text-3xl md:text-5xl font-light text-foreground mb-6 tracking-tight">
-                Our Wellness Hub
+                Inside Our Contrast Therapy Hub in Lymington
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-light">
                 Step into our state-of-the-art facility designed for optimal contrast therapy experiences. 
@@ -85,7 +88,7 @@ const OurHub = () => {
                     Lymington SO41 8QY
                   </p>
                   <Badge variant="secondary" className="mt-2">
-                    Easy Parking Available
+                    Free Parking Available
                   </Badge>
                 </CardContent>
               </Card>
@@ -130,6 +133,8 @@ const OurHub = () => {
                     <img
                       src={facility.image}
                       alt={facility.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
                   </div>
@@ -160,6 +165,49 @@ const OurHub = () => {
           </div>
         </section>
 
+
+        {/* Inside the hub — detail for first-time visitors */}
+        <section className="py-20 bg-white" aria-labelledby="inside-heading">
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 id="inside-heading" className="text-2xl md:text-4xl font-light tracking-tight text-center mb-10">
+              How a Session at the Hub Works
+            </h2>
+            <div className="grid gap-10 md:grid-cols-2 text-muted-foreground text-lg font-light leading-relaxed">
+              <div className="space-y-5">
+                <p>
+                  Every session lasts one hour and includes the whole circuit: two ice baths, our eight-person
+                  traditional sauna and the red light therapy room. Communal sessions are capped at five guests,
+                  so the space never feels crowded, or you can book the hub privately for your own group.
+                </p>
+                <p>
+                  Most guests alternate between the sauna and the ice baths two to four times, spending around
+                  5–20 minutes in the heat and 1–3 minutes in the cold, then finish with time under the red light
+                  panels. Our team gives every first-timer a tour and clear guidance, so you&apos;ll know exactly
+                  what to do.
+                </p>
+              </div>
+              <div className="space-y-5">
+                <p>
+                  The hub has private changing rooms and on-site bathroom facilities, and towels are available at
+                  reception if you forget yours. We keep the space calm, clean and hygienic — shoes stay outside
+                  the main hub area.
+                </p>
+                <p>
+                  You&apos;ll find us at Ensign Yard on Ampress Lane in Lymington, with free parking available.
+                  Read our{" "}
+                  <Link to="/your-visit" className="underline underline-offset-4 hover:text-foreground">
+                    first-visit guide
+                  </Link>{" "}
+                  or{" "}
+                  <Link to="/blog/how-long-to-stay-in-an-ice-bath" className="underline underline-offset-4 hover:text-foreground">
+                    how long to stay in an ice bath
+                  </Link>{" "}
+                  before you come.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Internal Links Section */}
         <section className="py-16 bg-gallery">
@@ -194,9 +242,9 @@ const OurHub = () => {
               return (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {exploreCards.map((card) => (
-                    <a
+                    <Link
                       key={card.title}
-                      href={card.href}
+                      to={card.href}
                       className="group relative block bg-foreground/5 border border-foreground/15 p-8 transition-all duration-500 hover:bg-foreground/10 hover:border-foreground/25"
                     >
                       <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-foreground/30" />
@@ -218,7 +266,7 @@ const OurHub = () => {
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                         </span>
                       </div>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               );
@@ -236,18 +284,18 @@ const OurHub = () => {
               Book your first session today and discover the transformative power of contrast therapy in our premium facility.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="/booking"
+              <Link 
+                to="/booking"
                 className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-medium transition-colors"
               >
                 Book a Session
-              </a>
-              <a 
-                href="/contact"
+              </Link>
+              <Link 
+                to="/contact"
                 className="bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-3 rounded-full font-medium transition-colors"
               >
                 Get in Touch
-              </a>
+              </Link>
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 
-import { Button } from "@/components/ui/button";
-import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
+import { Instagram, Facebook, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FACEBOOK_URL, INSTAGRAM_URL, OPENING_HOURS } from "@/lib/site";
 
 export const Footer = () => {
   const scrollToTop = () => {
@@ -10,17 +10,21 @@ export const Footer = () => {
 
   const quickLinks = [
     { name: "Home", href: "/" },
-    { name: "Services", href: "/booking" },
-    { name: "Benefits", href: "/fitness-recovery" },
-    { name: "About", href: "/about" },
+    { name: "About Us", href: "/about" },
+    { name: "Our Hub", href: "/our-hub" },
+    { name: "Your Visit", href: "/your-visit" },
+    { name: "Events", href: "/events" },
+    { name: "Journal", href: "/blog" },
     { name: "Contact", href: "/contact" },
   ];
 
   const services = [
-    { name: "Ice Bath Therapy", href: "/booking" },
-    { name: "Sauna Sessions", href: "/booking" },
+    { name: "Book a Session", href: "/booking" },
     { name: "Contrast Therapy", href: "/booking" },
+    { name: "Red Light Therapy", href: "/red-light-therapy" },
     { name: "Membership Plans", href: "/memberships" },
+    { name: "Fitness & Recovery", href: "/fitness-recovery" },
+    { name: "Gift Cards", href: "/gift-cards" },
   ];
 
   return (
@@ -40,22 +44,24 @@ export const Footer = () => {
                   />
                 </Link>
                 <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="bg-transparent border-foreground/20 hover:bg-foreground/10"
-                    onClick={() => window.open('https://www.instagram.com/revitalise.hub?igsh=MWFwbXluYWR4bHpodw==', '_blank')}
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Revitalise Hub on Instagram"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/20 bg-transparent hover:bg-foreground/10 transition-colors"
                   >
                     <Instagram className="h-5 w-5" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="bg-transparent border-foreground/20 hover:bg-foreground/10"
-                    onClick={() => window.open('https://www.facebook.com/share/1Ak6ZqBrd1/', '_blank')}
+                  </a>
+                  <a
+                    href={FACEBOOK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Revitalise Hub on Facebook"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/20 bg-transparent hover:bg-foreground/10 transition-colors"
                   >
                     <Facebook className="h-5 w-5" />
-                  </Button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -102,19 +108,20 @@ export const Footer = () => {
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-foreground/70 mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground/80 text-sm">
-                    Unit 7, Ensign yard<br />
-                    670 Ampress Ln<br />
+                  <address className="not-italic text-foreground/80 text-sm">
+                    Revitalise Hub<br />
+                    Unit 7, Ensign Yard<br />
+                    670 Ampress Lane<br />
                     Lymington SO41 8QY
-                  </span>
+                  </address>
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-foreground/70 flex-shrink-0" />
                   <a 
-                    href="tel:01590698691"
+                    href="tel:+441590698691"
                     className="text-foreground/80 hover:text-foreground transition-colors text-sm"
                   >
-                    01590 698 691 / 0754 696 5111
+                    01590 698691
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
@@ -125,6 +132,17 @@ export const Footer = () => {
                   >
                     info@revitalisehub.co.uk
                   </a>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-foreground/70 mt-0.5 flex-shrink-0" />
+                  <dl className="text-foreground/80 text-sm grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
+                    {OPENING_HOURS.map((row) => (
+                      <div key={row.days} className="contents">
+                        <dt>{row.days}</dt>
+                        <dd>{row.hours}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 </li>
               </ul>
             </div>
@@ -152,7 +170,7 @@ export const Footer = () => {
         <div className="border-t border-foreground/20 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-foreground/70 text-sm">
-              © 2024 Revitalise Hub. All rights reserved.
+              © {new Date().getFullYear()} Revitalise Hub. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <Link 

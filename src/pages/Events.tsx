@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
@@ -22,29 +22,24 @@ interface Event {
 }
 
 const Events = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
-    try {
+  // Published events (managed in the admin area). Uses react-query so the
+  // build-time pre-render can include the events in the page HTML.
+  const { data: events = [], isLoading: loading } = useQuery({
+    queryKey: ["events-published"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('is_published', true)
         .order('display_order', { ascending: true });
 
-      if (error) throw error;
-      setEvents(data || []);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (error) {
+        console.error('Error fetching events:', error);
+        throw error;
+      }
+      return (data || []) as Event[];
+    },
+  });
 
   // Parse markdown-like bold text
   const parseDescription = (text: string) => {

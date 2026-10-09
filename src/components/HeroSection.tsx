@@ -230,13 +230,17 @@ export const HeroSection = () => {
             <p className="text-xl sm:text-2xl md:text-3xl text-white font-light tracking-wider uppercase drop-shadow-2xl">
               Welcome To
             </p>
-            
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light text-white tracking-tight leading-tight drop-shadow-2xl">
-              REVITALISE HUB
+
+            {/* One H1 covering the brand and the service + location keyword phrase (visual unchanged) */}
+            <h1 className="space-y-2">
+              <span className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light text-white tracking-tight leading-tight drop-shadow-2xl">
+                REVITALISE HUB
+              </span>
+              <span className="sr-only"> – </span>
+              <span className="block text-lg sm:text-xl md:text-2xl text-white/80 font-light tracking-wide drop-shadow-lg max-w-2xl mx-auto">
+                Contrast Therapy, Sauna &amp; Cold Plunge in Lymington
+              </span>
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-white/80 font-light tracking-wide drop-shadow-lg max-w-2xl mx-auto">
-              Contrast Therapy, Sauna &amp; Cold Plunge in Lymington
-            </p>
           </div>
         </div>
       </div>

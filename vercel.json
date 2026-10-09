@@ -1,4 +1,6 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
@@ -8,12 +10,59 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
       ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/spa",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
     }
   ],
+  "redirects": [
+    { "source": "/blog/09bec9ea-b1fe-4912-a92c-4d92149e28c7", "destination": "/blog/cold-water-therapy-arthritis", "permanent": true },
+    { "source": "/blog/3979bdbf-d927-4611-bf8c-16290c0a8497", "destination": "/blog/red-light-infrared-therapy-benefits", "permanent": true },
+    { "source": "/blog/47f2e8a5-575d-461a-b615-0f29030cfdff", "destination": "/blog/what-happens-to-your-body-in-the-heat", "permanent": true },
+    { "source": "/blog/dffc3628-20cd-4014-a6ea-c6753fb02411", "destination": "/blog/cold-water-therapy-benefits", "permanent": true },
+    { "source": "/blog/2465ec1e-d155-4b2d-b759-e7b744881309", "destination": "/blog/how-long-to-stay-in-an-ice-bath", "permanent": true },
+    { "source": "/blog/d530b62d-bfad-4020-894d-7104ae771dd3", "destination": "/blog/ancient-science-of-cold-water-therapy", "permanent": true },
+    { "source": "/blog/fe606ebb-392a-444f-b78c-54e76d60e449", "destination": "/blog/what-is-contrast-therapy", "permanent": true },
+    { "source": "/blog/0b7e6ef3-ce79-4557-b38c-e1c325a2b6f3", "destination": "/blog/cold-exposure-mental-resilience", "permanent": true },
+    { "source": "/blog/009f1f63-2804-4b66-91b6-fb68af12d994", "destination": "/blog/sauna-vs-ice-bath", "permanent": true },
+    { "source": "/index", "destination": "/", "permanent": true }
+  ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/admin", "destination": "/spa" },
+    { "source": "/admin/:path*", "destination": "/spa" },
+    { "source": "/auth", "destination": "/spa" },
+    { "source": "/dashboard", "destination": "/spa" },
+    { "source": "/reset-password", "destination": "/spa" },
+    { "source": "/redeem-gift-card", "destination": "/spa" },
+    { "source": "/booking-success", "destination": "/spa" },
+    { "source": "/membership-success", "destination": "/spa" },
+    { "source": "/gift-card-success", "destination": "/spa" },
+    { "source": "/intro-offer-success", "destination": "/spa" },
+
+    { "source": "/", "destination": "/spa" },
+    { "source": "/about", "destination": "/spa" },
+    { "source": "/booking", "destination": "/spa" },
+    { "source": "/memberships", "destination": "/spa" },
+    { "source": "/gift-cards", "destination": "/spa" },
+    { "source": "/events", "destination": "/spa" },
+    { "source": "/blog", "destination": "/spa" },
+    { "source": "/blog/:slug", "destination": "/spa" },
+    { "source": "/fitness-recovery", "destination": "/spa" },
+    { "source": "/your-visit", "destination": "/spa" },
+    { "source": "/our-hub", "destination": "/spa" },
+    { "source": "/red-light-therapy", "destination": "/spa" },
+    { "source": "/contact", "destination": "/spa" },
+    { "source": "/privacy-policy", "destination": "/spa" },
+    { "source": "/terms-conditions", "destination": "/spa" },
+    { "source": "/cookie-policy", "destination": "/spa" }
   ]
 }
